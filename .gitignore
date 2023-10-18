@@ -1,4 +1,5 @@
-update.sh
+QuantumSparse.egg-info/
+.vscode/
 **/__pychache__/
 *.pyc
 *.npz
