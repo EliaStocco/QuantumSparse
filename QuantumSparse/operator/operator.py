@@ -1,18 +1,15 @@
 # "operator" class
 import numpy as np
 import pickle
-from ..matrix import matrix #, identity
+from QuantumSparse.matrix import matrix
 
 class operator(matrix):
-    
    
     def __init__(self,*argc,**argv):
-        # https://realpython.com/python-super/
         super().__init__(*argc,**argv)
 
         self.eigenvalues = None
         self.eigenstates = None
-        # self.permutation = None
         pass
 
     def save(self,file):
@@ -47,8 +44,6 @@ class operator(matrix):
             N = len(dimensions)
             iden = np.zeros(N,dtype=object)
             for i,dim in zip(range(N),dimensions):
-                #print("\t",i+1,"/",N,end="\r")        
-                #iden[i] = sparse.diags(np.full(dim,1,dtype=int),dtype=int)  
                 iden[i] = matrix.identity(dim,dtype=int)  
             return iden
        
@@ -79,7 +74,6 @@ class operator(matrix):
         if restart :
             self.eigenvalues = None
             self.eigenstates = None
-            # self.permutation = None
 
         if not self.is_hermitean():
             raise ValueError("'operator' is not hermitean")
@@ -88,32 +82,5 @@ class operator(matrix):
         self.eigenvalues = w
         self.eigenstates = f
 
-        # self.test_diagonalization(return_norm=True)
-
         return self.eigenvalues, self.eigenstates
-
-    
-    # @staticmethod
-    # def sum(Ops):
-    #     """
-    #     Parameters
-    #     ----------
-    #     Ops : np.array of scipy.sparse
-    #         array of operator to be summed,
-    #         each acting on the system Hilbert space
-        
-    #     Returns
-    #     -------
-    #     tot : scipy.sparse
-    #         sum of given operator
-    #     """
-    #     dims = [ Op.shape for Op in Ops ]
-    #     boolean = [ dim == dims[0] for dim in dims ]
-    #     if not np.all(boolean) :
-    #         print("\t\terror in \"sum\" function: not all operator with the same (matrix representation) dimensions")
-    #         raise()
-    #     tot = 0 
-    #     for Op in Ops:
-    #         tot += Op
-    #     return tot
     

@@ -11,5 +11,4 @@ def kron(*argc,**argv):
 
 def identity(*argc,**argv):
     """identity operator"""
-    #return diags(np.full(dim,1,dtype=int),dtype=int)
     return sparse.identity(*argc,**argv)

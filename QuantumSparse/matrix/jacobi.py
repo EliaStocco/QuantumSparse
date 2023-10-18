@@ -2,8 +2,7 @@ import numpy as np
 from copy import copy
 import numba
 from QuantumSparse import matrix
-from typing import TypeVar, Union
-# T = TypeVar('T') 
+from typing import Union
 
 @numba.jit
 def maxoff(x:matrix)->Union[float,int,int]:
@@ -11,41 +10,11 @@ def maxoff(x:matrix)->Union[float,int,int]:
     if len(y.data) == 0:
         return None, None, None
     y.data = abs(y.data)
-    # indices = np.flip(np.argsort(y.data))[:Nrot] #np.argsort(y.data)[::-1][:Nrot]
     k = y.data.argmax()
-    maxval = y.data[k] #[indices]
-    maxrow = y.row[k] #[indices]
-    maxcol = y.col[k] #[indices]
+    maxval = y.data[k]
+    maxrow = y.row[k]
+    maxcol = y.col[k]
     return maxval, maxrow, maxcol
-
-# @numba.jit
-# def maxElemHermitian(matrix):
-#     # Get the shape, data, indices, and indptr arrays of the CSR matrix
-#     shape = matrix.shape
-#     data = matrix.data
-#     indices = matrix.indices
-#     indptr = matrix.indptr
-
-#     # Initialize variables to store the maximum off-diagonal value and its indices
-#     max_value = None
-#     max_row = None
-#     max_col = None
-
-#     # Iterate through the rows of the CSR matrix
-#     for row in range(shape[0]):
-#         start = indptr[row]
-#         end = indptr[row + 1]
-
-#         for i in range(start, end):
-#             col = indices[i]
-
-#             if col != row:  # Exclude diagonal elements
-#                 if max_value is None or abs(data[i]) > abs(max_value):
-#                     max_value = data[i]
-#                     max_row = row
-#                     max_col = col
-
-#     return max_value, max_row, max_col
 
 @numba.jit
 def calculate_t(aii:float, ajj:float, aij:float)->float:
@@ -96,21 +65,6 @@ def rotateHermitian(M:matrix, P:matrix, k:int, l:int)->Union[matrix,matrix]:
 
     G = Givens_rotation(M,k,l)
 
-    # # if type(k) == np. and type(l) == list :
-    # K = k
-    # L = l
-    # G = None
-    # for k,l in zip(K,L):
-    #     if G is None :
-    #         G = Givens_rotation(M,k,l)
-    #     else:
-    #         G = G @ Givens_rotation(M,k,l) # apply on the 'external', on the 'right'
-
-    # elif type(k) == int and type(l) == int:
-    #     G = Givens_rotation(M,k,l)
-    # else :
-    #     raise ValueError("'k' and 'l' should have the same type")
-    
     if not G.is_unitary():
         raise ValueError("Givens matrix is not unitary")
     
@@ -135,9 +89,6 @@ def jacobi(M:matrix,tol:float=1.0e-3,max_iter:int=None)->Union[np.ndarray,matrix
         # print("\t",a.count("off")," | aMax:", aMax,"  | off-norm:",off_norm,end="\r")
         if aMax is None or abs(off_norm) < tol:
             eigenvalues = a.diagonal()
-            # if True:
-            #     test = M @ p - p @ M.diags(eigenvalues,shape=M.shape)
-            #     print("test:",test.norm())
             print('Jacobi method has converged\n')
             return eigenvalues, p
 
