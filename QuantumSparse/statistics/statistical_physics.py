@@ -1,23 +1,30 @@
 # some function recalling statistical physics results
 import numpy as np
 from ..constants.constants import kB,g,_NA,_eV,muB
-from ..tools.quantum_mechanics import expectation_value
+from QuantumSparse.tools.quantum_mechanics import expectation_value
+from QuantumSparse import operator
+import numba
 
+@numba.jit
+def T2beta(T):
+    return 1.0/(kB*T)
 
-def partition_function(T,E,beta=None):
-    if beta is None:
-        beta = 1.0/(kB*T)
+@numba.jit
+def partition_function(E,beta):
     return np.exp(-np.tensordot(beta,E-min(E),axes=0)).sum(axis=1)
 
-def classical_thermal_average_value(T,E,Obs):
-    beta = 1.0/(kB*T)
-    Z = partition_function(T=None,E=E,beta=beta)
+@numba.jit
+def classical_thermal_average_value(T:np.ndarray,E:np.ndarray,Obs:np.ndarray):
+    beta = T2beta(T)
+    Z = partition_function(E,beta)
     return (np.exp(-np.tensordot(beta,E-min(E),axes=0))*Obs).sum(axis=1)/Z
 
+@numba.jit
 def quantum_thermal_average_value(T,E,Op,Psi):
     Obs = expectation_value(Op,Psi)
     return classical_thermal_average_value(T,E,Obs)
 
+@numba.jit
 def correlation_function(T,E,OpAs,OpBs,Psi):
     # REWRITE THIS FUNCTION EXPLOITING quantum_mechanics.standard_deviation
     NT = len(T)    
@@ -45,11 +52,13 @@ def correlation_function(T,E,OpAs,OpBs,Psi):
     
     return Chi
 
+@numba.jit
 def susceptibility(T,E,OpAs,OpBs,Psi):
     beta  = 1.0/(kB*T)
     Chi = correlation_function(T,E,OpAs,OpBs,Psi) 
     return beta * Chi * _NA * _eV * 1E3  
 
+@numba.jit
 def Curie_constant(SpinValues,gfactors=None):
     N = len(SpinValues)
     if gfactors is None :

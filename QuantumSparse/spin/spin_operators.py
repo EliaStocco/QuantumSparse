@@ -31,7 +31,7 @@ class spin_operators():
         # https://realpython.com/python-super/
         # super().__init__(**argv)
         
-        print("\n\tconstructor of \"SpinSystem\" class")     
+        # print("\n\tconstructor of \"SpinSystem\" class")     
         opts = prepare_opts(opts)
         if spin_values is not None:
             self.SpinValues = spin_values
@@ -83,25 +83,25 @@ class spin_operators():
         
         opts = prepare_opts(opts)
         SpinValues = np.asarray(SpinValues)    
-        from_list_to_str = lambda x :  '[ '+ ' '.join([str(i)+" ," for i in x ])[0:-1]+' ]'
+        from_list_to_str = lambda x :  '[ '+ ' '.join([ "{:d} ,".format(int(i)) if i.is_integer() 
+                                                        else "{:f} ,".format(i) 
+                                                        for i in x ])[0:-1]+' ]'
             
-        print("\n\t\"compute_spin_operators\" function")
-        print("\n\t\tinput parameters:")
-        print("\t\t{:>20s} : {:<60s}".format("spin values",from_list_to_str(SpinValues)))
-            
+        print("\n\tcomputing the spin operators")
+        print("\t\tinput parameters:")
         NSpin        = len(SpinValues)     
         print("\t\t{:>20s} : {:<60d}".format("N spins",NSpin))
-        
+        print("\t\t{:>20s} : {:<60s}".format("spin values",from_list_to_str(SpinValues)))
         dimensions = spin_operators.dimensions(SpinValues)#(2*SpinValues+1).astype(int)
         print("\t\t{:>20s} : {:<60s}".format("dimensions",from_list_to_str(dimensions)))
        
-        print("\t\tallocating single Sz,S+,S- operators (on the single-spin Hilbert space) ... ",end="")
+        # print("\t\tallocating single Sz,S+,S- operators (on the single-spin Hilbert space) ... ",end="")
         sz,sp,sm = spin_operators.compute_Szpm_operators(SpinValues)
-        print("done")    
+        # print("done")    
         
-        print("\t\tallocating the Sx,Sy,Sz operators (on the system Hilbert space) ... ",end="")  
+        # print("\t\tallocating the Sx,Sy,Sz operators (on the system Hilbert space) ... ",end="")  
         Sx,Sy,Sz = spin_operators.compute_Sxy_operators(dimensions,sz,sp,sm)
-        print("done")    
+        # print("done")    
 
         # for n in range(len(SpinValues)):
         #     Sx[n],Sy[n],Sz[n] = operator(Sx[n]), operator(Sy[n]), operator(Sz[n])
@@ -127,9 +127,9 @@ class spin_operators():
         return deg
     
    
-    @staticmethod
+    # @staticmethod
     # @output(operator)
-    def compute_S2(Sx,Sy,Sz,opts=None):
+    def compute_S2(self,opts=None):
         """        
         Parameters
         ----------
@@ -150,13 +150,16 @@ class spin_operators():
         S2 : scipy.sparse
             spin square operator 
         """
-        S2 = Sx@Sx +   Sy@Sy +  Sz@Sz
+        Sx, Sy, Sz = self.Sx, self.Sy, self.Sz
+        S2 = np.zeros(len(Sx),dtype=object)
+        for n,(x,y,z) in enumerate(zip(Sx,Sy,Sz)):
+            S2[n] = x@x + y@y + z@z
         return S2
     
    
-    @staticmethod
+    # @staticmethod
     # @output(operator)
-    def compute_total_S2(Sx,Sy,Sz,opts=None):
+    def compute_total_S2(self,opts=None)->operator:
         """        
         Parameters
         ----------
@@ -177,9 +180,10 @@ class spin_operators():
         S2 : scipy.sparse
             total spin square operator 
         """
-        SxTot= spin_operators.sum(Sx)
-        SyTot= spin_operators.sum(Sy)
-        SzTot= spin_operators.sum(Sz)
+        Sx, Sy, Sz = self.Sx, self.Sy, self.Sz
+        SxTot= Sx.sum()
+        SyTot= Sy.sum()
+        SzTot= Sz.sum()
         S2 = SxTot@SxTot +   SyTot@SyTot +  SzTot@SzTot
         return S2
             

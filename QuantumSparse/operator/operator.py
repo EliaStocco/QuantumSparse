@@ -1,5 +1,6 @@
 # "operator" class
 import numpy as np
+import pickle
 from ..matrix import matrix #, identity
 
 class operator(matrix):
@@ -11,8 +12,19 @@ class operator(matrix):
 
         self.eigenvalues = None
         self.eigenstates = None
-        self.permutation = None
+        # self.permutation = None
         pass
+
+    def save(self,file):
+        with open(file, 'wb') as f:
+            pickle.dump(self, f)
+        
+    @classmethod
+    def load(cls,file):
+        with open(file, 'rb') as f:
+            obj = pickle.load(f)
+        return obj
+
     
     @staticmethod
     def identity(dimensions):
@@ -53,15 +65,30 @@ class operator(matrix):
     def eigen(self):
         return {"eigenvalues":self.eigenvalues,"eigenstates":self.eigenstates}
     
-    def diagonalize(self,inplace=False,**argv):
+    def test_diagonalization(self,tol=1e-6,return_norm=False):
+        """Test the accuracy of the eigen-ecomposition"""
+        test = self @ self.eigenstates - self.eigenstates @ self.diags(diagonals=self.eigenvalues,shape=self.shape)
+        norm = test.norm()
+        if return_norm:
+            return norm < tol, norm
+        else :
+            return norm < tol
+
+    def diagonalize(self,method="jacobi",restart=False,tol:float=1.0e-3,max_iter:int=None):
+
+        if restart :
+            self.eigenvalues = None
+            self.eigenstates = None
+            # self.permutation = None
 
         if not self.is_hermitean():
             raise ValueError("'operator' is not hermitean")
         
-        w,f,permutation = super().diagonalize()
+        w,f = super().diagonalize(method=method,original=True,tol=tol,max_iter=max_iter)
         self.eigenvalues = w
         self.eigenstates = f
-        self.permutation = permutation
+
+        # self.test_diagonalization(return_norm=True)
 
         return self.eigenvalues, self.eigenstates
 

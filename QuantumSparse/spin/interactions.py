@@ -1,5 +1,7 @@
 # the most adopted interactions in Spin Hamiltonians
 import numpy as np
+from QuantumSparse.spin.functions import extract_Sxyz
+from QuantumSparse.operator import operator
 # from ..tools.functions import magnetic_moment_operator
 
 __all__ = [ #"Row_by_Col_mult",\
@@ -10,14 +12,14 @@ __all__ = [ #"Row_by_Col_mult",\
             "rhombicity",\
             "Zeeman"]
 
-def extract_Sxyz(func):
-    def wrapper(spins,*argc,**argv):
-        if spins is not None:
-            Sx,Sy,Sz = spins.Sx, spins.Sy, spins.Sz
-            return func(Sx=Sx,Sy=Sy,Sz=Sz,spins=None,*argc,**argv)
-        else :
-            return func(spins=None,*argc,**argv)
-    return wrapper
+# def extract_Sxyz(func):
+#     def wrapper(spins,*argc,**argv):
+#         if spins is not None:
+#             Sx,Sy,Sz = spins.Sx, spins.Sy, spins.Sz
+#             return func(Sx=Sx,Sy=Sy,Sz=Sz,spins=None,*argc,**argv)
+#         else :
+#             return func(spins=None,*argc,**argv)
+#     return wrapper
 
     
 
@@ -35,7 +37,7 @@ def extract_Sxyz(func):
 #     return opts["function"](A,B)
         
 
-def Ising(S,couplings=1.0,nn=1,opts=None):
+def Ising(S,couplings=1.0,nn=1,opts=None)->operator:
     H = 0
     N = len(S)
     index_I = np.arange(0,N)
@@ -51,10 +53,7 @@ def Ising(S,couplings=1.0,nn=1,opts=None):
         
     return H
 
-@extract_Sxyz
-def Heisenberg(Sx=None,Sy=None,Sz=None,spins=None,couplings=1.0,nn=1,opts=None):
-    if spins is not None:
-        Sx,Sy,Sz = spins.Sx, spins.Sy, spins.Sz
+def Heisenberg(Sx=None,Sy=None,Sz=None,couplings=1.0,nn=1,opts=None)->operator:
     N = len(Sx)
     Js = np.asarray(couplings)
     if len(Js.shape) != 2 : 
@@ -64,8 +63,8 @@ def Heisenberg(Sx=None,Sy=None,Sz=None,spins=None,couplings=1.0,nn=1,opts=None):
            Ising(Sy,Js[:,1],nn,opts=opts) +\
            Ising(Sz,Js[:,2],nn,opts=opts)
 
-@extract_Sxyz
-def DM(Sx=None,Sy=None,Sz=None,spins=None,couplings=1.0,nn=1,opts=None):
+
+def DM(Sx=None,Sy=None,Sz=None,couplings=1.0,nn=1,opts=None)->operator:
     H = 0
     N = len(Sx)
     index_I = np.arange(0,N)
@@ -86,10 +85,10 @@ def DM(Sx=None,Sy=None,Sz=None,spins=None,couplings=1.0,nn=1,opts=None):
         
     return H
 
-def anisotropy(Sz,couplings,opts=None):
+def anisotropy(Sz,couplings,opts=None)->operator:
     return Ising(Sz,couplings,nn=0,opts=opts)
 
-def rhombicity(Sx,Sy,couplings,opts=None):
+def rhombicity(Sx,Sy,couplings,opts=None)->operator:
     return Ising(Sx,couplings,nn=0,opts=opts) - Ising(Sy,couplings,nn=0,opts=opts)
 
 
