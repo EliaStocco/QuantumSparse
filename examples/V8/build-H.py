@@ -11,7 +11,7 @@ from QuantumSparse.spin.interactions import Heisenberg, DM, anisotropy, rhombici
 # build spin operators
 #print("\tbuilding spin operators ... ",end="")
 S     = 0.5
-NSpin = 8
+NSpin = 4
 SpinValues = np.full(NSpin,S)
 spins = spin_operators(SpinValues)
 
@@ -70,7 +70,7 @@ print("\t\t'Heisenberg 1nn': {:d} blocks".format(H.count_blocks(False)))
 # H.count("off")
 # H.count("diag")
 
-w,f = H.diagonalize(tol=1)
+w,f = H.diagonalize(method="jacobi",tol=1e-3)
 
 # print("\tcounting Hamiltonian blocks: ",end="") 
 # n,l = H.count_blocks(False)
@@ -86,7 +86,7 @@ print("done")
 
 H = operator.load(file)
 
-w,f = H.diagonalize(tol=1)
+w,f = H.diagonalize(method="jacobi",tol=1e-3)
 
 # M E = E L
 # E-1 M E = L    

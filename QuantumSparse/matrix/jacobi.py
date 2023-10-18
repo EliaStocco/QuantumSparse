@@ -72,32 +72,42 @@ def rotateHermitian(M:matrix, P:matrix, k:int, l:int)->Union[matrix,matrix]:
     Mnew = Gdag @ M @ G
     Pnew = P @ G
     return Mnew, Pnew
+
+def offRMSE(M):
+    N = M.shape[0]*(M.shape[0]-1) # number of elements
+    data = M.off_diagonal().data
+    return np.sqrt(np.sum(np.square(np.absolute(data)))/N)
+    
  
-# @numba.jit
-def jacobi(M:matrix,tol:float=1.0e-3,max_iter:int=None)->Union[np.ndarray,matrix]:
-    a = copy(M)
+@numba.jit
+def jacobi(M:matrix,tol:float=1.0e-3,max_iter:int=-1)->Union[np.ndarray,matrix,matrix]:
+    a = copy(M) if M.nearly_diag is None else copy(M.nearly_diag)
     n = len(a)
-    max_iter = 5 * (n**2) if max_iter is None else max_iter  # Set limit on number of rotations
+    max_iter = 5 * (n**2) if max_iter < 0 else max_iter  # Set limit on number of rotations
     # p = type(a)(a.shape,dtype=a.dtype)# np.eye(n, dtype=complex)  # Initialize transformation matrix
-    p = a.identity((len(a)))
+    p = a.identity((len(a))) if M.eigenstates is None else copy(M.eigenstates)
+
+    aMax, k, l = maxoff(a)
+    #off_norm = a.off_diagonal().norm()
+    rmse = offRMSE(a)
+    # line = "Entering | max: {:<12.6e} | off RMSE: {:<12.6e} ".format(aMax,rmse)
+    # print(line)
 
     for i in range(max_iter):
         aMax, k, l = maxoff(a)
-        off_norm = a.off_diagonal().norm()
-        line = "{:>6d}/{:<6d} | max: {:<12.6e} | off-norm: {:<12.6e} ".format(i,max_iter,aMax,off_norm)
+        #off_norm = a.off_diagonal().norm()
+        rmse = offRMSE(a)
+        line = "{:>6d}/{:<6d} | max: {:<12.6e} | off RMSE: {:<12.6e} ".format(i,max_iter,aMax,rmse)
         print(line,end="\r")
         # print("\t",a.count("off")," | aMax:", aMax,"  | off-norm:",off_norm,end="\r")
-        if aMax is None or abs(off_norm) < tol:
+        if aMax is None or rmse < tol:
             eigenvalues = a.diagonal()
-            print('Jacobi method has converged\n')
-            return eigenvalues, p
+            print('\nJacobi method has converged\n')
+            return eigenvalues, p, a
 
         a,p = rotateHermitian(a, p, k, l)
 
     print('Jacobi method reached the maximum number of iterations, i.e. {:d}'.format(max_iter))
-
-    if M.count_blocks(False)  > 1 :
-        return M.diagonalize()
     
     eigenvalues = a.diagonal()
-    return eigenvalues, p
+    return eigenvalues, p, a

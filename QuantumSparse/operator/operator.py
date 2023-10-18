@@ -7,9 +7,6 @@ class operator(matrix):
    
     def __init__(self,*argc,**argv):
         super().__init__(*argc,**argv)
-
-        self.eigenvalues = None
-        self.eigenstates = None
         pass
 
     def save(self,file):
@@ -69,18 +66,21 @@ class operator(matrix):
         else :
             return norm < tol
 
-    def diagonalize(self,method="jacobi",restart=False,tol:float=1.0e-3,max_iter:int=None):
+    def diagonalize(self,method="jacobi",restart=False,tol:float=1.0e-3,max_iter:int=-1):
 
         if restart :
             self.eigenvalues = None
             self.eigenstates = None
+            self.nearly_diag = None
 
         if not self.is_hermitean():
             raise ValueError("'operator' is not hermitean")
         
-        w,f = super().diagonalize(method=method,original=True,tol=tol,max_iter=max_iter)
-        self.eigenvalues = w
-        self.eigenstates = f
+        w,f,_ = super().diagonalize(method=method,original=True,tol=tol,max_iter=max_iter)
+        return w,f
+        # self.eigenvalues = w
+        # self.eigenstates = f
+        # self.nearly_diag = N
 
-        return self.eigenvalues, self.eigenstates
+        # return self.eigenvalues, self.eigenstates
     

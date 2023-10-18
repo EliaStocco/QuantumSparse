@@ -5,7 +5,7 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 # from scipy.sparse import issparse, diags, hstack
 from copy import copy
-import warnings
+from scipy.sparse import bmat
 import numpy as np
 import numba 
 from QuantumSparse.errors import ImplErr
@@ -40,6 +40,11 @@ class matrix(csr_matrix):
         super().__init__(*argc,**argv)
 
         self.blocks = None
+        self.n_blocks = None
+        self.eigenvalues = None
+        self.eigenstates = None
+        self.nearly_diag = None
+
         pass
 
     def save(self,file):
@@ -102,7 +107,7 @@ class matrix(csr_matrix):
             return sparse.linalg.norm(self)
         else :
             raise ImplErr
-        
+
     def adjacency(self):
         if matrix.module is sparse :
             data    = self.data
@@ -155,11 +160,6 @@ class matrix(csr_matrix):
         else :
             raise ImplErr
         
-    # def count_off_diagonal(self):
-    #     x = self.off_diagonal()
-    #     a = x.adjacency()
-    #     return len(a.data)
-
     @classmethod
     def from_blocks(cls,blocks):
         N = len(blocks)
@@ -178,115 +178,108 @@ class matrix(csr_matrix):
         else :
             raise ImplErr
         
-    # def diagonalize_jacobi(self,**argv):
+    def mask2submatrix(self,mask):
+        submatrix = matrix(self[mask][:, mask])
 
-    #     # I need to import 'jacobi' here to avoid circular imports
-    #     from QuantumSparse.matrix.jacobi import jacobi
-
-    #     return jacobi(self,**argv)
+        # this is needed to restart from a previous calculation
+        if self.eigenvalues is not None :
+            submatrix.eigenvalues = self.eigenvalues[mask]
+        if self.eigenstates is not None :
+            submatrix.eigenstates = self.eigenstates[mask][:, mask]
+        if self.nearly_diag is not None :
+            submatrix.nearly_diag = self.nearly_diag[mask][:, mask]
+            
+        return submatrix
 
     @numba.jit
     def diagonalize_each_block(self:T,labels:np.ndarray,method:str,original:bool,tol:float,max_iter:int)->Union[np.ndarray,T]:
-        # this should be parallelized by numba
+        
+        # we need to specify all the parameters if we want to speed it up with 'numba.jit'
+
+        # if not original :
+        #     raise ValueError("some error occurred")
+        
         submatrices = np.full((self.n_blocks,self.n_blocks),None,dtype=object)
-        eigenvalues = np.full(self.n_blocks,None,dtype=object) if self.eigenvalues is None else self.eigenvalues
-        eigenstates = np.full(self.n_blocks,None,dtype=object) if self.eigenstates is None else self.eigenstates
+        eigenvalues = np.full(self.n_blocks,None,dtype=object)
+        eigenstates = np.full(self.n_blocks,None,dtype=object)
+
         if original :
             indeces = np.arange(self.shape[0])
             permutation = np.arange(self.shape[0])
             k = 0
             print("\tStarting diagonalization")
+
         for n in numba.prange(self.n_blocks):
             if original : print("\t\tdiagonalizing block n. {:d}".format(n))
+
             mask = (labels == n)
-            submatrix = matrix(self[mask][:, mask])
-            submatrices[n,n] = submatrix
-            v,f = submatrix.diagonalize(original=False,method=method,tol=tol,max_iter=max_iter)
+            permutation[k:k+len(indeces[mask])] = indeces[mask]
+            k += len(indeces[mask])
+            
+            # create a submatrix from one block
+            submatrix = self.mask2submatrix(mask)
+
+            # diagonalize the block
+            v,f,M = submatrix.diagonalize(original=False,
+                                        method=method,
+                                        tol=tol,
+                                        max_iter=max_iter)
+            submatrices[n,n] = M
             eigenvalues[n] = v
             eigenstates[n] = f
-            if original :
-                permutation[k:k+len(indeces[mask])] = indeces[mask]
-                k += len(indeces[mask])
         
-        eigenvalues = np.concatenate(eigenvalues) #matrix.from_blocks(eigenvalues)
+        eigenvalues = np.concatenate(eigenvalues)
         eigenstates = matrix.from_blocks(eigenstates)
 
-        if original:
-            reverse_permutation = np.argsort(permutation)
-            eigenvalues = eigenvalues[reverse_permutation]
-            eigenstates = eigenstates[reverse_permutation][:, reverse_permutation]
-            return eigenvalues, eigenstates
-        else :
-            return eigenvalues, eigenstates
+        reverse_permutation = np.argsort(permutation)
+        eigenvalues = eigenvalues[reverse_permutation]
+        eigenstates = eigenstates[reverse_permutation][:, reverse_permutation]
+        nearly_diagonal = type(self)(bmat(submatrices))[reverse_permutation][:, reverse_permutation]
+        return eigenvalues, eigenstates, nearly_diagonal
     
-    # @numba.jit
-    def diagonalize(self,method="jacobi",original=True,tol:float=1.0e-3,max_iter:int=None):
 
-        if matrix.module is sparse :
-            n_components, labels = self.count_blocks(return_labels=True) 
-            if original : print("\tn_components:",n_components)
-            # if original : print("\tlabels:",labels)
-            
-            self.blocks = labels
-            self.n_blocks = len(np.unique(labels))
+    def diagonalize(self,method="jacobi",original=True,tol:float=1.0e-3,max_iter:int=-1):
 
-            if self.n_blocks == 1 :
-                match method:
-                    case "jacobi":
-                        from QuantumSparse.matrix.jacobi import jacobi
-                        v,f = jacobi(self,tol=tol,max_iter=max_iter)
-                    case "dense":
-                        M = np.asarray(self.todense())
-                        v,f = eigh(M)
-                    case _:
-                        raise ImplErr
+        # if matrix.module is sparse :
 
-                if original :
-                    permutation = np.arange(self.shape[0])
-                    return v,f,permutation
-                else :
-                    return v,f
-            
-            elif self.n_blocks > 1:
+        #############################
+        # |-------------------------|
+        # |          |   original   |
+        # | n_blocks | True | False |
+        # |----------|--------------|
+        # |    =1    |  ok  |  yes  |
+        # |    >1    |  ok  | error |
+        # |-------------------------|
+        
+        N = None
 
-                return self.diagonalize_each_block(labels=labels,original=False,method=method,tol=tol,max_iter=max_iter)
+        n_components, labels = self.count_blocks(return_labels=True)               
+        self.blocks = labels
+        self.n_blocks = len(np.unique(labels))
+        if original : 
+            print("\tn_components:",n_components) 
+        elif self.n_blocks != 1 :
+            raise ValueError("some error occurred")
 
-                # # this should be parallelized by numba
-                # submatrices = np.full((self.n_blocks,self.n_blocks),None,dtype=object)
-                # eigenvalues = np.full(self.n_blocks,None,dtype=object)
-                # eigenstates = np.full(self.n_blocks,None,dtype=object)
-                # if original :
-                #     indeces = np.arange(self.shape[0])
-                #     permutation = np.arange(self.shape[0])
-                #     k = 0
-                #     print("\tStarting diagonalization")
-                # for n in numba.prange(self.n_blocks):
-                #     if original : print("\t\tdiagonalizing block n. {:d}".format(n))
-                #     mask = (labels == n)
-                #     submatrix = matrix(self[mask][:, mask])
-                #     submatrices[n,n] = submatrix
-                #     v,f = submatrix.diagonalize(original=False,method=method,tol=tol,max_iter=max_iter)
-                #     eigenvalues[n] = v
-                #     eigenstates[n] = f
-                #     if original :
-                #         permutation[k:k+len(indeces[mask])] = indeces[mask]
-                #         k += len(indeces[mask])
-                
-                # eigenvalues = np.concatenate(eigenvalues) #matrix.from_blocks(eigenvalues)
-                # eigenstates = matrix.from_blocks(eigenstates)
+        if self.n_blocks == 1 :
+            match method:
+                case "jacobi":
+                    from QuantumSparse.matrix.jacobi import jacobi
+                    w,f,N = jacobi(self,tol=tol,max_iter=max_iter)
+                case "dense":
+                    M = np.asarray(self.todense())
+                    w,f = eigh(M)
+                case _:
+                    raise ImplErr
+        
+        elif self.n_blocks > 1:
+            w,f,N = self.diagonalize_each_block(labels=labels,original=True,method=method,tol=tol,max_iter=max_iter)
 
-                # if original:
-                #     reverse_permutation = np.argsort(permutation)
-                #     eigenvalues = eigenvalues[reverse_permutation]
-                #     eigenstates = eigenstates[reverse_permutation][:, reverse_permutation]
-                #     return eigenvalues, eigenstates
-                # else :
-                #     return eigenvalues, eigenstates
-
-            else :
-                raise ValueError("error: n. of block should be >= 1")
-                
         else :
-            raise ImplErr
-
-    
+            raise ValueError("error: n. of block should be >= 1")
+        
+        self.eigenvalues = copy(w)
+        self.eigenstates = copy(f)
+        self.nearly_diag = copy(N) if N is not None else None
+        
+        return w,f,N
