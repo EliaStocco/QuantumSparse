@@ -37,9 +37,12 @@ def Rz(psi):
 def rotate_spins(Sx=None,Sy=None,Sz=None,spins=None,EulerAngles=None):
     N = len(Sx)
     SxR,SyR,SzR = Sx.copy(),Sy.copy(),Sz.copy()
+    v = np.zeros(3,dtype=object)
     for n in range(N):
         phi,theta,psi   = EulerAngles[n,:]
         R = Rz(psi) @ Ry(theta) @ Rx(phi)
-        temp = R @ np.asarray([Sx[n],Sy[n],Sz[n]])
+        # v = np.asarray([Sx[n],Sy[n],Sz[n]],dtype=object)
+        v[0], v[1], v[2] = Sx[n],Sy[n],Sz[n]
+        temp = R @ v
         SxR[n],SyR[n], SzR[n] = temp[0,0],temp[0,1],  temp[0,2]
     return SxR,SyR,SzR
