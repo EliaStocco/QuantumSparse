@@ -1,5 +1,5 @@
 QuantumSparse.egg-info/
-# .vscode/
+.vscode/
 **/__pychache__/
 *.pyc
 *.npz
