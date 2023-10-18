@@ -1,2 +1,3 @@
-update.sh
 **/__pychache__/
+*.npz
+*.pyc
