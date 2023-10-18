@@ -1,4 +1,4 @@
-
+import glob
 import os
 import numpy as np
 import pandas as pd
@@ -8,88 +8,153 @@ from QuantumSparse.spin.spin_operators import spin_operators
 from QuantumSparse.spin.functions import magnetic_moments, rotate_spins
 from QuantumSparse.spin.interactions import Heisenberg, DM, anisotropy, rhombicity, Ising
 
-# build spin operators
-#print("\tbuilding spin operators ... ",end="")
-S     = 0.5
-NSpin = 4
-SpinValues = np.full(NSpin,S)
-spins = spin_operators(SpinValues)
+import argparse
 
-totS2 = spins.compute_total_S2()
-S2 = spins.compute_S2()
-#print("done")
+# Define and parse command-line arguments
+parser = argparse.ArgumentParser(description="Your script description here")
+parser.add_argument("--restart", type=bool, default=False, help="Set to True if restarting from a previous run.")
+parser.add_argument("--NSpin", type=int, default=8, help="Number of spins.")
+parser.add_argument("--S", type=float, default=1., help="Value of S.")
+parser.add_argument("--datafolder", type=str, default="data", help="Path to the data folder.")
+parser.add_argument("--output_folder", type=str, default="output", help="Path to the output folder.")
+parser.add_argument("--name", type=str, default="Hamiltonian", help="Base name for files.")
+parser.add_argument("--tol", type=float, default=1e-6, help="tolerance")
+parser.add_argument("--diagtol", type=float, default=1., help="initial diagonalization tolerance")
+parser.add_argument("--increment", type=float, default=3.0, help="initial diagonalization tolerance")
+args = parser.parse_args()
 
-# rotate spins
-print("\n\tcomputing Euler's angles ... ",end="")
-EulerAngles = np.zeros((8,3))
-EulerAngles[:,2] = 360 - np.linspace(0,360,8,endpoint=False)
-EulerAngles = np.pi * EulerAngles / 180  
-#EulerAngles.fill(0)
-print("done")
+def getfile(folder):
+    # Check if the output folder exists
+    if os.path.exists(folder):
+        # Get a list of all .npz files in the folder that match the naming convention
+        npz_files = glob.glob(os.path.join(folder, "Hamiltonian.step=*.npz"))
 
-print("\trotating spins ... ",end="")           
-# St,Sr,Sz= rotate_spins(spins=spins,EulerAngles=EulerAngles)
-St,Sr,Sz = spins.Sx,spins.Sy,spins.Sz
-print("done")
+        if npz_files:
+            max_step = -1  # Initialize the maximum step as -1
+            max_step_file = None
 
-# load coupling constants
-print("\treading coupling constants ... ",end="")           
-couplings = get_couplings(S,"data","V8")
-print("done")
+            for file in npz_files:
+                # Extract the step number from the file name
+                step = int(file.split("Hamiltonian.step=")[1].split(".npz")[0])
 
-# build the hamiltonian
+                # Check if this file has a larger step
+                if step > max_step:
+                    max_step = step
+                    max_step_file = file
 
-dim = St[0].shape[0]
-print("\tHilbert space dimension: {:d}".format(dim))   
-print("\tbuilding the Hamiltonian: ")           
-H = 0 # empty matrix
-# print("\t\t         'empty': {:d} blocks".format(operator((St[0].shape)).count_blocks(False)))   
-# H = Heisenberg(Sx=St,Sy=Sr,Sz=Sz)
-# print("\t\t         'Ising': {:d} blocks".format(H.count_blocks(False)))  
+            if max_step_file is not None:
+                print(f"The file with the largest step is: {max_step_file}")
+                print(f"Step: {max_step}")
+                return os.path.normpath("{:s}/Hamiltonian.step={:d}.npz".format(folder,max_step))
+            else:
+                print("No valid .npz files found in the 'output' folder.")
+                return None
+        else:
+            print("No .npz files found in the 'output' folder that match the naming convention.")
+            return None
+    else:
+        print(f"The '{folder}' folder does not exist.")
+        return None
+    
+def buildH(S,NSpin,folder,name):
 
-H = operator((dim,dim))
-H += Heisenberg(Sx=St,Sy=Sr,Sz=Sz,couplings=[couplings["Jt"],couplings["Jr"],couplings["Jz"]])
-print("\t\t'Heisenberg 1nn': {:d} blocks".format(H.count_blocks(False)))     
+    # build spin operators
+    #print("\tbuilding spin operators ... ",end="")
+    # S     = 1
+    # NSpin = 8
+    SpinValues = np.full(NSpin,S)
+    spins = spin_operators(SpinValues)
 
-# H += DM(Sx=St,Sy=Sr,Sz=Sz,couplings=[couplings["dt"],couplings["dr"],couplings["dz"]])
-# print("\t\t            'DM': {:d} blocks".format(H.count_blocks(False)))      
+    totS2 = spins.compute_total_S2()
+    S2 = spins.compute_S2()
+    #print("done")
 
-# H += anisotropy(Sz=Sz,couplings=couplings["D"])
-# print("\t\t    'anisotropy': {:d} blocks".format(H.count_blocks(False)))       
+    # rotate spins
+    print("\n\tcomputing Euler's angles ... ",end="")
+    EulerAngles = np.zeros((NSpin,3))
+    EulerAngles[:,2] = 360 - np.linspace(0,360,NSpin,endpoint=False)
+    EulerAngles = np.pi * EulerAngles / 180  
+    #EulerAngles.fill(0)
+    print("done")
 
-# H += rhombicity(Sx=St,Sy=Sr,couplings=couplings["E"])
-# print("\t\t    'rhombicity': {:d} blocks".format(H.count_blocks(False)))       
+    print("\trotating spins ... ",end="")           
+    St,Sr,Sz= rotate_spins(spins=spins,EulerAngles=EulerAngles)
+    # St,Sr,Sz = spins.Sx,spins.Sy,spins.Sz
+    print("done")
 
-# H += Heisenberg(Sx=St,Sy=Sr,Sz=Sz,nn=2,couplings=[couplings["Jt2"],couplings["Jr2"],couplings["Jz2"]])
-# print("\t\t'Heisenberg 2nn': {:d} blocks".format(H.count_blocks(False)))       
+    # load coupling constants
+    print("\treading coupling constants ... ",end="")           
+    couplings = get_couplings(S,folder,name)
+    print("done")
 
-# H  = H * 1E-3 # data are in meV, we build the Hamiltonian in eV
-# print("done")
+    # build the hamiltonian
+    dim = St[0].shape[0]
+    print("\tHilbert space dimension: {:d}".format(dim))   
+    print("\tbuilding the Hamiltonian: ")           
 
-# H.count("all")
-# H.count("off")
-# H.count("diag")
+    H = operator((dim,dim))
+    H += Heisenberg(Sx=St,Sy=Sr,Sz=Sz,couplings=[couplings["Jt"],couplings["Jr"],couplings["Jz"]])
+    print("\t\t'Heisenberg 1nn': {:d} blocks".format(H.count_blocks(False)))     
 
-w,f = H.diagonalize(method="jacobi",tol=1e-3)
+    H += DM(Sx=St,Sy=Sr,Sz=Sz,couplings=[couplings["dt"],couplings["dr"],couplings["dz"]])
+    print("\t\t            'DM': {:d} blocks".format(H.count_blocks(False)))      
 
-# print("\tcounting Hamiltonian blocks: ",end="") 
-# n,l = H.count_blocks(False)
-# print("done")
+    H += anisotropy(Sz=Sz,couplings=couplings["D"])
+    print("\t\t    'anisotropy': {:d} blocks".format(H.count_blocks(False)))       
 
-folder = "output"
+    H += rhombicity(Sx=St,Sy=Sr,couplings=couplings["E"])
+    print("\t\t    'rhombicity': {:d} blocks".format(H.count_blocks(False)))       
+
+    H += Heisenberg(Sx=St,Sy=Sr,Sz=Sz,nn=2,couplings=[couplings["Jt2"],couplings["Jr2"],couplings["Jz2"]])
+    print("\t\t'Heisenberg 2nn': {:d} blocks".format(H.count_blocks(False)))       
+
+    # H  = H * 1E-3 # data are in meV, we build the Hamiltonian in eV
+    print("done")
+
+    return H
+   
+folder = args.output_folder
+file = getfile(folder)
+if file is None or args.restart:
+    S = args.S
+    NSpin = args.NSpin 
+    datafolder = args.datafolder
+    name = args.name
+    H = buildH(S,NSpin,datafolder,name)
+else :
+    H = operator.load(file)
+
+# Create an empty DataFrame
+data = pd.DataFrame(columns=["step", "test", "file","diagtol"])
+
 if not os.path.exists(folder): 
     os.mkdir(folder)
-file = os.path.normpath("{:s}/Hamiltonian.npz".format(folder))
-print("\tsaving the Hamiltonian to file '{:s}' ... ".format(file),end="")  
-H.save(file)
-print("done")
 
-H = operator.load(file)
+k = 0
+test = np.inf
+tol = args.tol
+diagtol = args.diagtol
+while test > tol :
 
-w,f = H.diagonalize(method="jacobi",tol=1e-3)
+    print("\tDiagonalizing: step {:d} with tolerance {:.6e}".format(k,tol))
 
-# M E = E L
-# E-1 M E = L    
+    # diagonalize
+    w,f = H.diagonalize(method="jacobi",tol=diagtol)
+
+    # test diagonalization
+    _,test = H.test_diagonalization(tol=tol,return_norm=True)
+
+    # save to file
+    file = os.path.normpath("{:s}/Hamiltonian.step={:d}.npz".format(folder,k+1))
+    print("\tsaving results to file '{:s}'".format(file))
+    H.save(file)
+
+    data = data.append({"step": k + 1, "test": test, "file": file,"diagtol":diagtol}, ignore_index=True)
+    data.to_csv("{:s}/report.csv".format(folder),index=False)
+
+    # update parameters
+    k += 1
+    diagtol /= 10.
 
 print("\n\tJob done :)\n")
 
