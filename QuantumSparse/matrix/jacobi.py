@@ -73,12 +73,12 @@ def rotateHermitian(M:matrix, P:matrix, k:int, l:int)->Union[matrix,matrix]:
     Pnew = P @ G
     return Mnew, Pnew
 
+@numba.jit
 def offRMSE(M):
     N = M.shape[0]*(M.shape[0]-1) # number of elements
     data = M.off_diagonal().data
     return np.sqrt(np.sum(np.square(np.absolute(data)))/N)
     
- 
 @numba.jit
 def jacobi(M:matrix,tol:float=1.0e-3,max_iter:int=-1)->Union[np.ndarray,matrix,matrix]:
     a = copy(M) if M.nearly_diag is None else copy(M.nearly_diag)
