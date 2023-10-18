@@ -1,6 +1,0 @@
-Metadata-Version: 2.1
-Name: QuantumSparse
-Version: 0.0
-Summary: A scipy.sparse based package to represent quantum spin operators
-Author-email: eliastocco@gmail.com
-License-File: LICENSE
