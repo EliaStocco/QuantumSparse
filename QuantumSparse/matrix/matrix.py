@@ -12,6 +12,7 @@ from QuantumSparse.errors import ImplErr
 from typing import TypeVar, Union
 T = TypeVar('T') 
 dtype = csr_matrix
+NoJacobi = 8
 
 
 
@@ -44,8 +45,15 @@ class matrix(csr_matrix):
         self.eigenvalues = None
         self.eigenstates = None
         self.nearly_diag = None
-
-        pass
+        self.is_adjacency = None
+        # if is_adjacency:
+        #     self.is_adjacency = True
+        # else:
+        #     self.is_adjacency = self.det_is_adjacency()
+    
+    def clone(self,*argc,**argv):
+        return type(self)(*argc,**argv)
+        
 
     def save(self,file):
 
@@ -78,7 +86,7 @@ class matrix(csr_matrix):
         return cls(matrix.module.identity(*argc,**argv))
     
     def dagger(self:T)->T:
-        return type(self)(self.conjugate().transpose())
+        return self.clone(self.conjugate().transpose()) #type(self)(self.conjugate().transpose())
 
     def is_symmetric(self:T,**argv)->bool:
         if matrix.module is sparse :
@@ -100,6 +108,13 @@ class matrix(csr_matrix):
             return (self @ self.dagger() - self.identity(len(self)) ).norm() < tolerance
         else :
             raise ImplErr
+        
+    def det_is_adjacency(self):
+        if self.is_adjacency is None:
+            self.is_adjacency = self == self.adjacency()
+            
+        return self.is_adjacency
+
 
     # @staticmethod 
     def norm(self):
@@ -115,7 +130,13 @@ class matrix(csr_matrix):
             indptr  = self.indptr
             data = data.real.astype(int)
             data.fill(1)
-            return type(self)(dtype((data, indices, indptr),self.shape))
+            out = self.clone((data, indices, indptr),self.shape)
+            if self.blocks is not None:
+                out.blocks = self.blocks
+            if self.n_blocks is not None:
+                out.n_blocks = self.n_blocks
+            out.is_adjacency = True
+            return out # type(self)(dtype((data, indices, indptr),self.shape))
         else :
             raise ImplErr
     
@@ -130,6 +151,66 @@ class matrix(csr_matrix):
         # v = adjacency.flatten()
         # return float(matrix.norm(v)) / float(len(v))
 
+    def visualize(self,adjacency=True,tab='tab10',cb=True):
+        if adjacency:
+            return self.adjacency().visualize(False)
+        
+        import matplotlib.pyplot as plt  
+        # from matplotlib.colors import ListedColormap
+        # Create a figure and axis
+        fig, ax = plt.subplots()  
+        M = self.todense()
+        C = copy(M).astype(float)
+        C.fill(np.nan)
+        if self.blocks is None and cb:
+            self.count_blocks()
+        if self.blocks is not None:
+            from matplotlib.colors import LinearSegmentedColormap
+            for n in range(len(self)):
+                replace = copy(M[n,:]) * ( self.blocks[n] + 1 )
+                C[n,:] = self.blocks[n] + 1 #replace
+                C[:,n] = self.blocks[n] + 1 #replace.reshape((-1,1))
+            # Create a colormap with N+1 colors, where the first color is white
+            N = self.n_blocks+1
+            # colors = plt.cm.get_cmap('tab10', N)
+            # colors_list = [colors(i) for i in range(N)]
+            # custom_cmap = ListedColormap(colors_list)
+            # Get the 'tab10' colormap
+            tab10_cmap = plt.cm.get_cmap(tab)
+
+            # Define the new colormap
+            colors = tab10_cmap(np.linspace(0, 1, N))  # Use 11 colors for tab10
+            colors[0] = [1, 1, 1, 1]  # Set the first color (0) to white
+
+            # Create the custom colormap
+            custom_cmap = LinearSegmentedColormap.from_list('custom_tab10', colors, N=N)
+        else :
+            custom_cmap = "binary"
+        # colors = copy(M).astype(object).fill("red")
+        ax.matshow(np.multiply(M,C), cmap=custom_cmap,origin='upper',extent=[0, M.shape[1], M.shape[0], 0]) # ,facecolors=colors)
+        ax.xaxis.set(ticks=np.arange(0.5, M.shape[1]), ticklabels=np.arange(0,M.shape[1], 1))
+        ax.yaxis.set(ticks=np.arange(0.5, M.shape[0]), ticklabels=np.arange(0,M.shape[0], 1))
+        argv = {
+            "linewidth":0.5,
+            "linestyle":'--',
+            "color":"blue",
+            "alpha":0.8
+        }
+        for x in np.arange(0,M.shape[1]+1, 1):
+            ax.axhline(x, **argv) # horizontal lines
+        for y in np.arange(0,M.shape[0]+1, 1):
+            ax.axvline(y, **argv) # horizontal lines
+        plt.ylabel("rows")
+        plt.title("columns")
+        plt.tight_layout()
+        plt.show()
+        return
+
+    def __repr__(self):
+        print("\t type:",str(self.data.dtype))
+        print("\tshape:",self.shape)
+        print("\t data:",self.data.shape)
+
     def __len__(self)->int:
         M,N = self.shape
         if M != N :
@@ -137,7 +218,7 @@ class matrix(csr_matrix):
         return M
     
     def empty(self:T)->T:
-        return type(self)(self.shape,dtype=self.dtype)
+        return self.clone(self.shape,dtype=self.dtype) # type(self)(self.shape,dtype=self.dtype)
     
     def as_diagonal(self:T)->T:
         diagonal_elements = super().diagonal()
@@ -171,10 +252,14 @@ class matrix(csr_matrix):
         else :
             raise ValueError("error")
 
-    def count_blocks(self,return_labels=True):
+    def count_blocks(self,return_labels=True,inplace=True):
         adjacency = self.adjacency()
         if matrix.module is sparse : 
-            return connected_components(adjacency,directed=False,return_labels=return_labels)
+            n_components, labels = connected_components(adjacency,directed=False,return_labels=return_labels)
+            if inplace:
+                self.blocks = labels
+                self.n_blocks = len(np.unique(labels))
+            return n_components, labels
         else :
             raise ImplErr
         
@@ -191,7 +276,7 @@ class matrix(csr_matrix):
             
         return submatrix
 
-    @numba.jit
+    # @numba.jit
     def diagonalize_each_block(self:T,labels:np.ndarray,method:str,original:bool,tol:float,max_iter:int)->Union[np.ndarray,T]:
         
         # we need to specify all the parameters if we want to speed it up with 'numba.jit'
@@ -234,7 +319,8 @@ class matrix(csr_matrix):
         reverse_permutation = np.argsort(permutation)
         eigenvalues = eigenvalues[reverse_permutation]
         eigenstates = eigenstates[reverse_permutation][:, reverse_permutation]
-        nearly_diagonal = type(self)(bmat(submatrices))[reverse_permutation][:, reverse_permutation]
+        nearly_diagonal = self.clone(bmat(submatrices))[reverse_permutation][:, reverse_permutation]
+        # type(self)(bmat(submatrices))
         return eigenvalues, eigenstates, nearly_diagonal
     
 
@@ -253,15 +339,18 @@ class matrix(csr_matrix):
         
         N = None
 
-        n_components, labels = self.count_blocks(return_labels=True)               
-        self.blocks = labels
-        self.n_blocks = len(np.unique(labels))
+        n_components, labels = self.count_blocks(return_labels=True,inplace=True)               
+        # self.blocks = labels
+        # self.n_blocks = len(np.unique(labels))
+        self.visualize()
         if original : 
             print("\tn_components:",n_components) 
         elif self.n_blocks != 1 :
             raise ValueError("some error occurred")
 
         if self.n_blocks == 1 :
+            if self.shape < NoJacobi:
+                method = "dense"
             match method:
                 case "jacobi":
                     from QuantumSparse.matrix.jacobi import jacobi
