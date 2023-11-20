@@ -6,7 +6,7 @@ from scipy.sparse.csgraph import connected_components
 from copy import copy
 from scipy.sparse import bmat
 import numpy as np
-import numba 
+from QuantumSparse.tools.optimize import jit
 from QuantumSparse.errors import ImplErr
 from typing import TypeVar, Union
 T = TypeVar('T') 
@@ -296,7 +296,7 @@ class matrix(csr_matrix):
         permutation = np.arange(self.shape[0])
 
         k = 0
-        for n in numba.prange(self.n_blocks):
+        for n in range(self.n_blocks):
             mask = (labels == n)
             permutation[k:k+len(indeces[mask])] = indeces[mask]
             k += len(indeces[mask])
@@ -309,7 +309,7 @@ class matrix(csr_matrix):
             out = out[reverse_permutation][:, reverse_permutation]
         return out
     
-    # @numba.jit
+    @jit
     def diagonalize_each_block(self:T,labels:np.ndarray,method:str,original:bool,tol:float,max_iter:int)->Union[np.ndarray,T]:
         
         # we need to specify all the parameters if we want to speed it up with 'numba.jit'
@@ -329,7 +329,7 @@ class matrix(csr_matrix):
         else:
             raise ValueError("some error occurred")
 
-        for n in numba.prange(self.n_blocks):
+        for n in range(self.n_blocks):
             if original : print("\t\tdiagonalizing block n. {:d}".format(n))
 
             mask = (labels == n)

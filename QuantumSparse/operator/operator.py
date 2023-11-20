@@ -1,6 +1,7 @@
 # "operator" class
 import numpy as np
 import pickle
+from copy import copy
 from QuantumSparse.matrix import matrix
 from typing import TypeVar
 T = TypeVar('T') 
@@ -63,7 +64,7 @@ class operator(matrix):
         else :
             return norm < tol
 
-    def diagonalize(self,method="jacobi",restart=False,tol:float=1.0e-3,max_iter:int=-1):
+    def diagonalize(self,method="jacobi",restart=False,tol:float=1.0e-3,max_iter:int=-1,test=True):
 
         if restart :
             self.eigenvalues = None
@@ -74,6 +75,8 @@ class operator(matrix):
         #     raise ValueError("'operator' is not hermitean")
         
         w,f,_ = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
+        if test:
+            print("\teigensolution test:",self.test_eigensolution().norm())
         return w,f
         # self.eigenvalues = w
         # self.eigenstates = f
@@ -81,7 +84,7 @@ class operator(matrix):
 
         # return self.eigenvalues, self.eigenstates
 
-    def diagonalize_with_symmetry(self,S,**argv):
+    def diagonalize_with_symmetry(self,S,use_block_form=False,test=True,**argv):
 
         w,labels = unique_with_tolerance(S.eigenvalues)
         # ( abs(w[ii] - S.eigenvalues) > 1e-8 ).sum()
@@ -93,7 +96,7 @@ class operator(matrix):
         # new.is_hermitean() = True
 
         # little dirty trick
-        a,b = new.count_blocks()
+        # a,b = new.count_blocks()
         def new_count_blocks(self,inplace=True):
             self.blocks = labels
             self.n_blocks = len(np.unique(labels))
@@ -101,22 +104,28 @@ class operator(matrix):
         import types
         new.count_blocks  = types.MethodType(new_count_blocks, new)
 
-        new.count_blocks()
-        newB = new.divide_into_block(labels)
-        test = (new - newB).norm()
+        # new.count_blocks()
+        if use_block_form:
+            to_diag = new.divide_into_block(labels)
+        else:
+            to_diag = new
+        # test = (new - newB).norm()
 
         # import matplotlib.pyplot as plt
         # plt.imshow(np.absolute(S.todense())>0.5,cmap="tab10")
         # plt.show()
 
-        w,f = newB.diagonalize(restart=True,**argv)
+        w,f = to_diag.diagonalize(restart=True,test=False,**argv)
 
-        from copy import copy
+        
         # self = self.clone(S.eigenstates @ new @ S.eigenstates.dagger())
 
-        self.eigenvalues = newB.eigenvalues
-        self.eigenstates = S.eigenstates @ newB.eigenstates # @ S.eigenstates.dagger()
-        self.nearly_diag = S.eigenstates @ newB.nearly_diag @ S.eigenstates.dagger()
+        self.eigenvalues = to_diag.eigenvalues
+        self.eigenstates = S.eigenstates @ to_diag.eigenstates # @ S.eigenstates.dagger()
+        self.nearly_diag = S.eigenstates @ to_diag.nearly_diag @ S.eigenstates.dagger()
+
+        if test:
+            print("\teigensolution test:",self.test_eigensolution().norm())
         
         return copy(self.eigenvalues),copy(self.eigenstates)
 

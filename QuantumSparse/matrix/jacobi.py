@@ -1,10 +1,10 @@
 import numpy as np
 from copy import copy
-import numba
+from QuantumSparse.tools.optimize import jit
 from QuantumSparse import matrix
 from typing import Union
 
-@numba.jit
+@jit
 def maxoff(x:matrix)->Union[float,int,int]:
     y = x.off_diagonal().tocoo()
     if len(y.data) == 0:
@@ -16,23 +16,23 @@ def maxoff(x:matrix)->Union[float,int,int]:
     maxcol = y.col[k]
     return maxval, maxrow, maxcol
 
-@numba.jit
+@jit
 def calculate_t(aii:float, ajj:float, aij:float)->float:
     numerator = 2 * abs(aij) * np.sign(aii - ajj)
     denominator = abs(aii - ajj) + np.sqrt( abs(aii - ajj)**2 + 4 * abs(aij)**2 )
     return numerator / denominator
 
-@numba.jit
+@jit
 def calculate_cos_phi(t:float)->float:
     cos_phi = 1 / np.sqrt(1 + t**2)
     return cos_phi
 
-@numba.jit
+@jit
 def calculate_sin_phi(t:float)->float:
     sin_phi = t / np.sqrt(1 + t**2)
     return sin_phi
 
-@numba.jit
+@jit
 def Givens_rotation(A:matrix, i:int, j:int)->matrix:
     # Get the elements at positions (i, j) and (j, i)
     aii = A[i, i]
@@ -60,7 +60,7 @@ def Givens_rotation(A:matrix, i:int, j:int)->matrix:
     out = G + id - rm
     return out
 
-@numba.jit
+@jit
 def rotateHermitian(M:matrix, P:matrix, k:int, l:int)->Union[matrix,matrix]:
 
     G = Givens_rotation(M,k,l)
@@ -73,13 +73,13 @@ def rotateHermitian(M:matrix, P:matrix, k:int, l:int)->Union[matrix,matrix]:
     Pnew = P @ G
     return Mnew, Pnew
 
-@numba.jit
+@jit
 def offRMSE(M):
     N = M.shape[0]*(M.shape[0]-1) # number of elements
     data = M.off_diagonal().data
     return np.sqrt(np.sum(np.square(np.absolute(data)))/N)
     
-# @numba.jit
+# @jit
 def jacobi(M:matrix,tol:float=1.0e-3,max_iter:int=-1)->Union[np.ndarray,matrix,matrix]:
     a = copy(M) if M.nearly_diag is None else copy(M.nearly_diag)
     n = len(a)

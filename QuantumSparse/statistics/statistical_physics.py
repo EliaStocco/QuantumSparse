@@ -2,29 +2,28 @@
 import numpy as np
 from ..constants.constants import kB,g,_NA,_eV,muB
 from QuantumSparse.tools.quantum_mechanics import expectation_value
-from QuantumSparse import operator
-import numba
+from QuantumSparse.tools.optimize import jit
 
-@numba.jit
+@jit
 def T2beta(T):
     return 1.0/(kB*T)
 
-@numba.jit
+@jit
 def partition_function(E,beta):
     return np.exp(-np.tensordot(beta,E-min(E),axes=0)).sum(axis=1)
 
-@numba.jit
+@jit
 def classical_thermal_average_value(T:np.ndarray,E:np.ndarray,Obs:np.ndarray):
     beta = T2beta(T)
     Z = partition_function(E,beta)
     return (np.exp(-np.tensordot(beta,E-min(E),axes=0))*Obs).sum(axis=1)/Z
 
-@numba.jit
+@jit
 def quantum_thermal_average_value(T,E,Op,Psi):
     Obs = expectation_value(Op,Psi)
     return classical_thermal_average_value(T,E,Obs)
 
-@numba.jit
+@jit
 def correlation_function(T,E,OpAs,OpBs,Psi):
     # REWRITE THIS FUNCTION EXPLOITING quantum_mechanics.standard_deviation
     NT = len(T)    
@@ -52,13 +51,13 @@ def correlation_function(T,E,OpAs,OpBs,Psi):
     
     return Chi
 
-@numba.jit
+@jit
 def susceptibility(T,E,OpAs,OpBs,Psi):
     beta  = 1.0/(kB*T)
     Chi = correlation_function(T,E,OpAs,OpBs,Psi) 
     return beta * Chi * _NA * _eV * 1E3  
 
-@numba.jit
+@jit
 def Curie_constant(spin_values,gfactors=None):
     N = len(spin_values)
     if gfactors is None :
