@@ -83,20 +83,42 @@ class operator(matrix):
 
     def diagonalize_with_symmetry(self,S,**argv):
 
-        w,ii = unique_with_tolerance(S.eigenvalues)
+        w,labels = unique_with_tolerance(S.eigenvalues)
         # ( abs(w[ii] - S.eigenvalues) > 1e-8 ).sum()
 
         # np.linalg.norm((S.eigenstates.dagger() @ S @ S.eigenstates ).diagonal() - S.eigenvalues ) = 1e-14
         # (S.eigenstates.dagger() @ S @ S.eigenstates ).off_diagonal().norm() = 1e-14
-
-        new = S.eigenstates.dagger() @ self @ S.eigenstates
+        
+        new = self.clone(S.eigenstates.dagger() @ self @ S.eigenstates)
         # new.is_hermitean() = True
 
-        import matplotlib.pyplot as plt
-        plt.imshow(np.absolute(S.todense())>0.5,cmap="tab10")
-        plt.show()
+        # little dirty trick
+        a,b = new.count_blocks()
+        def new_count_blocks(self,inplace=True):
+            self.blocks = labels
+            self.n_blocks = len(np.unique(labels))
+            return self.n_blocks, self.blocks
+        import types
+        new.count_blocks  = types.MethodType(new_count_blocks, new)
 
-        return self.diagonalize(**argv)
+        new.count_blocks()
+        newB = new.divide_into_block(labels)
+        test = (new - newB).norm()
+
+        # import matplotlib.pyplot as plt
+        # plt.imshow(np.absolute(S.todense())>0.5,cmap="tab10")
+        # plt.show()
+
+        w,f = newB.diagonalize(restart=True,**argv)
+
+        from copy import copy
+        # self = self.clone(S.eigenstates @ new @ S.eigenstates.dagger())
+
+        self.eigenvalues = newB.eigenvalues
+        self.eigenstates = S.eigenstates @ newB.eigenstates # @ S.eigenstates.dagger()
+        self.nearly_diag = S.eigenstates @ newB.nearly_diag @ S.eigenstates.dagger()
+        
+        return copy(self.eigenvalues),copy(self.eigenstates)
 
 
 

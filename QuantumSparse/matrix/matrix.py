@@ -289,6 +289,26 @@ class matrix(csr_matrix):
             
         return submatrix
     
+    def divide_into_block(self:T,labels:np.ndarray,sort=True):
+
+        submatrices = np.full((self.n_blocks,self.n_blocks),None,dtype=object)
+        indeces = np.arange(self.shape[0])
+        permutation = np.arange(self.shape[0])
+
+        k = 0
+        for n in numba.prange(self.n_blocks):
+            mask = (labels == n)
+            permutation[k:k+len(indeces[mask])] = indeces[mask]
+            k += len(indeces[mask])
+            # create a submatrix from one block
+            submatrices[n,n] = self.mask2submatrix(mask)
+        
+        out = self.clone(bmat(submatrices))
+        if sort:
+            reverse_permutation = np.argsort(permutation)
+            out = out[reverse_permutation][:, reverse_permutation]
+        return out
+    
     # @numba.jit
     def diagonalize_each_block(self:T,labels:np.ndarray,method:str,original:bool,tol:float,max_iter:int)->Union[np.ndarray,T]:
         
@@ -306,6 +326,8 @@ class matrix(csr_matrix):
             permutation = np.arange(self.shape[0])
             k = 0
             print("\tStarting diagonalization")
+        else:
+            raise ValueError("some error occurred")
 
         for n in numba.prange(self.n_blocks):
             if original : print("\t\tdiagonalizing block n. {:d}".format(n))
@@ -392,3 +414,6 @@ class matrix(csr_matrix):
         self.nearly_diag = copy(N) if N is not None else None
         
         return w,f,N
+    
+    def test_eigensolution(self)->float:
+        return self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues)
