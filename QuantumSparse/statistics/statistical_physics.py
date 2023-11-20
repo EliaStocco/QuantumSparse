@@ -59,13 +59,13 @@ def susceptibility(T,E,OpAs,OpBs,Psi):
     return beta * Chi * _NA * _eV * 1E3  
 
 @numba.jit
-def Curie_constant(SpinValues,gfactors=None):
-    N = len(SpinValues)
+def Curie_constant(spin_values,gfactors=None):
+    N = len(spin_values)
     if gfactors is None :
         gfactors = np.full(N,g)
     CW = np.zeros(N)
     for i in range(N):
-        chi = gfactors[i]**2*muB**2*SpinValues[i]*(SpinValues[i]+1)/(3.*kB)
+        chi = gfactors[i]**2*muB**2*spin_values[i]*(spin_values[i]+1)/(3.*kB)
         CW[i] = _NA * _eV * 1E3  * chi 
     return CW.sum()
    

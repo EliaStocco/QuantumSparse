@@ -8,9 +8,9 @@ def main():
    
     S     = 1./2
     NSpin = 4
-    SpinValues = np.full(NSpin,S)
+    spin_values = np.full(NSpin,S)
 
-    spins = spin_operators(SpinValues)
+    spins = spin_operators(spin_values)
 
     H = Heisenberg(spins=spins)
     print(H.shape)

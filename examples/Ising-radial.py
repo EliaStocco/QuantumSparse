@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 
 S     = 2
 NSpin = 4
-SpinValues = np.full(NSpin,S)
+spin_values = np.full(NSpin,S)
 
 
-Sx,Sy,Sz = qs.compute_spin_operators(SpinValues)
+Sx,Sy,Sz = qs.compute_spin_operators(spin_values)
 
 # Hamiltonian 
 H =  Sy[0]@Sx[1] - Sx[1]@Sy[2] + Sy[2]@Sx[3] - Sx[3]@Sy[0] 
@@ -26,7 +26,7 @@ E0 = E0-min(E0)
 
 
 
-Sx,Sy,Sz = qs.compute_spin_operators(SpinValues)
+Sx,Sy,Sz = qs.compute_spin_operators(spin_values)
 EulerAngles = np.asarray([[0,0,0],\
                [0,0,-90],\
                [0,0,180],\

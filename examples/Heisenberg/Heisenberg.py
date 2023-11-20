@@ -1,16 +1,18 @@
-import glob
-import os
 import numpy as np
-import pandas as pd
-from QuantumSparse.operator import operator
 from QuantumSparse.spin.spin_operators import spin_operators
-from QuantumSparse.spin.functions import magnetic_moments, rotate_spins
-from QuantumSparse.spin.interactions import Heisenberg, DM, anisotropy, rhombicity, Ising
+from QuantumSparse.spin.interactions import Heisenberg
+from QuantumSparse.spin.shift import shift
 
-NSpin = 2
+NSpin = 4
 S = 0.5
-SpinValues = np.full(NSpin,S)
-spins = spin_operators(SpinValues)
+spin_values = np.full(NSpin,S)
+spins = spin_operators(spin_values)
+
+D = shift(spins)
+
+D.diagonalize(method="dense")
+
+
 
 totS2 = spins.compute_total_S2()
 S2 = spins.compute_S2()

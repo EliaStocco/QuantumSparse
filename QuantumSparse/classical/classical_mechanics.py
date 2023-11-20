@@ -28,14 +28,14 @@ def get_angles_symbols(NSpin,opts=None):
     phi   = [sympy.symbols('\\phi_%d'   % i) for i in range(1,NSpin+1)] # [0,2pi)
     return theta,phi
 
-def get_spin_symbols_angles_dependent(theta,phi,SpinValues,opts=None):
+def get_spin_symbols_angles_dependent(theta,phi,spin_values,opts=None):
     opts = prepare_opts(opts)
     print("\n\t\"get_spin_symbols_angles_dependent\" function",file=opts["print"])
-    NSpin = len(SpinValues)
+    NSpin = len(spin_values)
     Sx,Sy,Sz =  [np.zeros(NSpin,dtype=object)]*3
     print("\n\t\tcomputing cartesian spins through \"spherical_coordinates\" function",file=opts["print"])
     for i in range(NSpin):
-        Sx[i],Sy[i],Sz[i] = spherical_coordinates(SpinValues[i],theta[i],phi[i],cos=sympy.cos,sin=sympy.sin)
+        Sx[i],Sy[i],Sz[i] = spherical_coordinates(spin_values[i],theta[i],phi[i],cos=sympy.cos,sin=sympy.sin)
     return list(Sx),list(Sy),list(Sz)
 
 def gradient(f, v): #https://stackoverflow.com/questions/60164477/define-gradient-and-hessian-function-in-python/60165226#60165226

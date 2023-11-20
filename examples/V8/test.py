@@ -12,8 +12,8 @@ from QuantumSparse.spin.interactions import Heisenberg, DM, anisotropy, rhombici
 #print("\tbuilding spin operators ... ",end="")
 S     = 1
 NSpin = 8
-SpinValues = np.full(NSpin,S)
-spins = spin_operators(SpinValues)
+spin_values = np.full(NSpin,S)
+spins = spin_operators(spin_values)
 
 totS2 = operator.load("output/S2.npz")#spins.compute_total_S2()
 print("\tS2 blocks: {:d}".format(totS2.count_blocks(False)))       

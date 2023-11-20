@@ -14,10 +14,10 @@ so = qs.spin_operators(S=1,N=4)
 
 S     = 1
 NSpin = 4
-SpinValues = np.full(NSpin,S)
+spin_values = np.full(NSpin,S)
 
 
-Sx,Sy,Sz = qs.compute_spin_operators(SpinValues)
+Sx,Sy,Sz = qs.compute_spin_operators(spin_values)
 
 # Hamiltonian 
 H =  (Sx[0]@Sx[1]+Sy[0]@Sy[1]) + (Sy[1]@Sy[2]+Sx[1]@Sx[2]) +\
@@ -26,7 +26,7 @@ E0,Psi = qs.diagonalize_Hamiltonian(H,NLanczos=20,tol=1E-8,MaxDim=100)
 
 
 
-Sx,Sy,Sz = qs.compute_spin_operators(SpinValues)
+Sx,Sy,Sz = qs.compute_spin_operators(spin_values)
 EulerAngles = np.asarray([[0,0,0],\
                [0,0,-90],\
                [0,0,180],\

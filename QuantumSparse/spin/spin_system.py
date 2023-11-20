@@ -27,7 +27,7 @@ class spin_system(spin_operators,system):
     
    
     def nsites(self):
-        N = len(self.SpinValues)
+        N = len(self.spin_values)
         return N
     
    

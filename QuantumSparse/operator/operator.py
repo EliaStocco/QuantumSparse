@@ -2,6 +2,8 @@
 import numpy as np
 import pickle
 from QuantumSparse.matrix import matrix
+from typing import TypeVar
+T = TypeVar('T') 
 
 class operator(matrix):
    
@@ -9,7 +11,7 @@ class operator(matrix):
         super().__init__(*argc,**argv)
         pass
 
-    def save(self,file):
+    def save(self:T,file):
         with open(file, 'wb') as f:
             pickle.dump(self, f)
         
@@ -43,11 +45,6 @@ class operator(matrix):
             for i,dim in zip(range(N),dimensions):
                 iden[i] = matrix.identity(dim,dtype=int)  
             return iden
-       
-    @staticmethod
-    def commutator(A,B):
-        C = A @ B - B @ A 
-        return C
     
     @staticmethod
     def anticommutator(A,B):
@@ -73,14 +70,37 @@ class operator(matrix):
             self.eigenstates = None
             self.nearly_diag = None
 
-        if not self.is_hermitean():
-            raise ValueError("'operator' is not hermitean")
+        # if not self.is_hermitean():
+        #     raise ValueError("'operator' is not hermitean")
         
-        w,f,_ = super().diagonalize(method=method,original=True,tol=tol,max_iter=max_iter)
+        w,f,_ = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
         return w,f
         # self.eigenvalues = w
         # self.eigenstates = f
         # self.nearly_diag = N
 
         # return self.eigenvalues, self.eigenstates
-    
+
+    def diagonalize_with_symmetry(self,S,**argv):
+
+        w,ii = unique_with_tolerance(S.eigenvalues)
+        # ( abs(w[ii] - S.eigenvalues) > 1e-8 ).sum()
+
+        # np.linalg.norm((S.eigenstates.dagger() @ S @ S.eigenstates ).diagonal() - S.eigenvalues ) = 1e-14
+        # (S.eigenstates.dagger() @ S @ S.eigenstates ).off_diagonal().norm() = 1e-14
+
+        new = S.eigenstates.dagger() @ self @ S.eigenstates
+        # new.is_hermitean() = True
+
+        import matplotlib.pyplot as plt
+        plt.imshow(np.absolute(S.todense())>0.5,cmap="tab10")
+        plt.show()
+
+        return self.diagonalize(**argv)
+
+
+
+def unique_with_tolerance(arr, tol=1e-8):
+    rounded_arr = np.round(arr, decimals=int(-np.log10(tol)))
+    unique_rounded,index = np.unique(rounded_arr,return_inverse=True)
+    return unique_rounded, index

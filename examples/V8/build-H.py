@@ -12,12 +12,12 @@ import argparse
 
 # Define and parse command-line arguments
 parser = argparse.ArgumentParser(description="Your script description here")
-parser.add_argument("--restart", type=bool, default=False, help="Set to True if restarting from a previous run.")
+parser.add_argument("--restart", type=bool, default=True, help="Set to True if restarting from a previous run.")
 parser.add_argument("--NSpin", type=int, default=8, help="Number of spins.")
 parser.add_argument("--S", type=float, default=1., help="Value of S.")
 parser.add_argument("--datafolder", type=str, default="data", help="Path to the data folder.")
 parser.add_argument("--output_folder", type=str, default="output", help="Path to the output folder.")
-parser.add_argument("--name", type=str, default="Hamiltonian", help="Base name for files.")
+parser.add_argument("--name", type=str, default="V8", help="Base name for files.")
 parser.add_argument("--tol", type=float, default=1e-6, help="tolerance")
 parser.add_argument("--diagtol", type=float, default=1., help="initial diagonalization tolerance")
 parser.add_argument("--increment", type=float, default=3.0, help="initial diagonalization tolerance")
@@ -56,14 +56,14 @@ def getfile(folder):
         print(f"The '{folder}' folder does not exist.")
         return None
     
-def buildH(S,NSpin,folder,name):
+def buildH(S,NSpin,folder,name)->operator:
 
     # build spin operators
     #print("\tbuilding spin operators ... ",end="")
     # S     = 1
     # NSpin = 8
-    SpinValues = np.full(NSpin,S)
-    spins = spin_operators(SpinValues)
+    spin_values = np.full(NSpin,S)
+    spins = spin_operators(spin_values)
 
     totS2 = spins.compute_total_S2()
     S2 = spins.compute_S2()
@@ -78,8 +78,9 @@ def buildH(S,NSpin,folder,name):
     print("done")
 
     print("\trotating spins ... ",end="")           
-    St,Sr,Sz= rotate_spins(spins=spins,EulerAngles=EulerAngles)
-    # St,Sr,Sz = spins.Sx,spins.Sy,spins.Sz
+    # St,Sr,Sz= rotate_spins(spins=spins,EulerAngles=EulerAngles)
+    # spins.Sx,spins.Sy,spins.Sz = St,Sr,Sz
+    St,Sr,Sz = spins.Sx,spins.Sy,spins.Sz
     print("done")
 
     # load coupling constants
@@ -92,26 +93,26 @@ def buildH(S,NSpin,folder,name):
     print("\tHilbert space dimension: {:d}".format(dim))   
     print("\tbuilding the Hamiltonian: ")           
 
-    H = operator((dim,dim))
-    H += Heisenberg(Sx=St,Sy=Sr,Sz=Sz,couplings=[couplings["Jt"],couplings["Jr"],couplings["Jz"]])
-    print("\t\t'Heisenberg 1nn': {:d} blocks".format(H.count_blocks(False)))     
+    # H = operator((dim,dim))
+    H = Heisenberg(Sx=St,Sy=Sr,Sz=Sz,couplings=[couplings["Jt"],couplings["Jr"],couplings["Jz"]])
+    print("\t\t'Heisenberg 1nn': {:d} blocks".format(H.count_blocks()[0]))     
 
     H += DM(Sx=St,Sy=Sr,Sz=Sz,couplings=[couplings["dt"],couplings["dr"],couplings["dz"]])
-    print("\t\t            'DM': {:d} blocks".format(H.count_blocks(False)))      
+    print("\t\t            'DM': {:d} blocks".format(H.count_blocks()[0]))      
 
     H += anisotropy(Sz=Sz,couplings=couplings["D"])
-    print("\t\t    'anisotropy': {:d} blocks".format(H.count_blocks(False)))       
+    print("\t\t    'anisotropy': {:d} blocks".format(H.count_blocks()[0]))       
 
     H += rhombicity(Sx=St,Sy=Sr,couplings=couplings["E"])
-    print("\t\t    'rhombicity': {:d} blocks".format(H.count_blocks(False)))       
+    print("\t\t    'rhombicity': {:d} blocks".format(H.count_blocks()[0]))       
 
     H += Heisenberg(Sx=St,Sy=Sr,Sz=Sz,nn=2,couplings=[couplings["Jt2"],couplings["Jr2"],couplings["Jz2"]])
-    print("\t\t'Heisenberg 2nn': {:d} blocks".format(H.count_blocks(False)))       
+    print("\t\t'Heisenberg 2nn': {:d} blocks".format(H.count_blocks()[0]))       
 
     # H  = H * 1E-3 # data are in meV, we build the Hamiltonian in eV
     print("done")
 
-    return H
+    return H, spins
    
 folder = args.output_folder
 file = getfile(folder)
@@ -120,10 +121,18 @@ if file is None or args.restart:
     NSpin = args.NSpin 
     datafolder = args.datafolder
     name = args.name
-    H = buildH(S,NSpin,datafolder,name)
+    H, spins = buildH(S,NSpin,datafolder,name)
 else :
     H = operator.load(file)
 
+from QuantumSparse.spin.shift import shift
+D = shift(spins)
+D.diagonalize(method="dense")
+
+H.diagonalize_with_symmetry(S=D)
+
+# H.visualize(file="V8.png")
+# D.visualize(file="D.png")
 # Create an empty DataFrame
 data = pd.DataFrame(columns=["step", "test", "file","diagtol"])
 

@@ -10,14 +10,14 @@ from QuantumSparse.spin.functions import magnetic_moments, rotate_spins
 #
 # S     = 1.
 # NSpin = 8
-# SpinValues = np.full(NSpin,S)
+# spin_values = np.full(NSpin,S)
         
 #
-# Sx,Sy,Sz = spin_operators(SpinValues)
+# Sx,Sy,Sz = spin_operators(spin_values)
 S     = 1.
 NSpin = 8
-SpinValues = np.full(NSpin,S)
-spins = spin_operators(SpinValues)
+spin_values = np.full(NSpin,S)
+spins = spin_operators(spin_values)
 
 #
 

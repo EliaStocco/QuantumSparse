@@ -1,13 +1,7 @@
 # the core of QuantumSparse code: a module defining spin operators via Kronecker (tensor) product
 import numpy as np
-from scipy import sparse
-#from .identity import compute_identity_operator
-#from .Sxy import compute_Sxy_operators
-#from .Szpm import compute_Szpm_operators
 from ..operator.operator import operator
 from ..tools.functions import prepare_opts
-from ..tools.functional import output
-# from ..matrix import diags, kron
 
 
 class spin_operators():
@@ -34,32 +28,56 @@ class spin_operators():
         # print("\n\tconstructor of \"SpinSystem\" class")     
         opts = prepare_opts(opts)
         if spin_values is not None:
-            self.SpinValues = spin_values
+            self.spin_values = spin_values
         else :
-            self.SpinValues = np.full(N,S)
+            self.spin_values = np.full(N,S)
+
+        self.degeneracies = (2*self.spin_values+1).astype(int)
      
-        check = [ not (i%1) for i in self.SpinValues*2 ]
+        check = [ not (i%1) for i in self.spin_values*2 ]
         if not np.all(check):
-            print("\n\terror: not all spin values are integer or semi-integer: ",self.SpinValues)
+            print("\n\terror: not all spin values are integer or semi-integer: ",self.spin_values)
             raise() 
             
-        Sx,Sy,Sz = self.compute_spin_operators(self.SpinValues,opts)
+        Sx,Sy,Sz,Sp,Sm = self.compute_spin_operators(self.spin_values,opts)
         self.Sx = Sx
         self.Sy = Sy
         self.Sz = Sz  
-        
-        
-        # return Sx,Sy,Sz
-        
+        self.Sp = Sp 
+        self.Sm = Sm 
+
+        self.basis = self.compute_basis()
+
+    def compute_basis(self):
+
+        from itertools import product
+        import pandas as pd
+
+        Nsites = np.arange(len(self.Sz))
+        index = np.arange(int(self.Sz[0].shape[0]))
+        basis = pd.DataFrame(columns=Nsites,index=index)
+        m = [None]*len(Nsites)
+        for n in Nsites:
+            m[n] = np.linspace(self.spin_values[n],-self.spin_values[n],self.degeneracies[n]) #[ j for j in range(-self.spin_values[n],self.spin_values[n]+1) ]
+
+        tmp = list(product(*m))
+
+        #k = 0
+        for i in range(len(tmp)):
+            for n in Nsites:
+                basis.at[i,n] = tmp[i][n]
+                #k += 1
+
+        return basis
 
    
     @staticmethod
     # @output(operator)
-    def compute_spin_operators(SpinValues,opts=None):
+    def compute_spin_operators(spin_values,opts=None):
         """
         Parameters
         ----------
-        SpinValues : numpy.array
+        spin_values : numpy.array
             numpy.array containing the spin values for each site: 
             they can be integer of semi-integer
         opts : dict, optional
@@ -82,39 +100,39 @@ class spin_operators():
         """
         
         opts = prepare_opts(opts)
-        SpinValues = np.asarray(SpinValues)    
+        spin_values = np.asarray(spin_values)    
         from_list_to_str = lambda x :  '[ '+ ' '.join([ "{:d} ,".format(int(i)) if i.is_integer() 
                                                         else "{:f} ,".format(i) 
                                                         for i in x ])[0:-1]+' ]'
             
         print("\n\tcomputing the spin operators")
         print("\t\tinput parameters:")
-        NSpin        = len(SpinValues)     
+        NSpin        = len(spin_values)     
         print("\t\t{:>20s} : {:<60d}".format("N spins",NSpin))
-        print("\t\t{:>20s} : {:<60s}".format("spin values",from_list_to_str(SpinValues)))
-        dimensions = spin_operators.dimensions(SpinValues)#(2*SpinValues+1).astype(int)
+        print("\t\t{:>20s} : {:<60s}".format("spin values",from_list_to_str(spin_values)))
+        dimensions = spin_operators.dimensions(spin_values)#(2*spin_values+1).astype(int)
         print("\t\t{:>20s} : {:<60s}".format("dimensions",from_list_to_str(dimensions)))
        
         # print("\t\tallocating single Sz,S+,S- operators (on the single-spin Hilbert space) ... ",end="")
-        sz,sp,sm = spin_operators.compute_Szpm_operators(SpinValues)
+        sz,sp,sm = spin_operators.single_Szpm(spin_values)
         # print("done")    
         
         # print("\t\tallocating the Sx,Sy,Sz operators (on the system Hilbert space) ... ",end="")  
-        Sx,Sy,Sz = spin_operators.compute_Sxy_operators(dimensions,sz,sp,sm)
+        Sx,Sy,Sz,Sp,Sm = spin_operators.system_Sxypm_operators(dimensions,sz,sp,sm)
         # print("done")    
 
-        # for n in range(len(SpinValues)):
+        # for n in range(len(spin_values)):
         #     Sx[n],Sy[n],Sz[n] = operator(Sx[n]), operator(Sy[n]), operator(Sz[n])
                
-        return Sx,Sy,Sz 
+        return Sx,Sy,Sz,Sp,Sm
     
    
     @staticmethod
-    def dimensions(SpinValues):
+    def dimensions(spin_values):
         """
         Parameters
         ----------
-        SpinValues : numpy.array
+        spin_values : numpy.array
             numpy.array containing the spin values for each site: 
                 they can be integer of semi-integer
 
@@ -123,7 +141,7 @@ class spin_operators():
         deg : numpy.array
             array of int representing the Hilbert space dimension for each site
         """
-        deg = (2*SpinValues+1).astype(int) 
+        deg = (2*spin_values+1).astype(int) 
         return deg
     
    
@@ -247,11 +265,11 @@ class spin_operators():
    
     @staticmethod
     # @output(operator)
-    def compute_Szpm_operators(SpinValues):
+    def single_Szpm(spin_values):
         """
         Parameters
         ----------
-        SpinValues : numpy.array
+        spin_values : numpy.array
             numpy.array containing the spin values for each site: they can be integer of semi-integer
 
         Returns
@@ -266,13 +284,13 @@ class spin_operators():
             array of lowering Sz operators for each site,
             acting on the local (only one site) Hilbert space
         """
-        NSpin = len(SpinValues)
+        NSpin = len(spin_values)
         Sz = np.zeros(NSpin,dtype=object) # s z
         Sp = np.zeros(NSpin,dtype=object) # s plus
         Sm = np.zeros(NSpin,dtype=object) # s minus
-        dimensions = spin_operators.dimensions(SpinValues)  
+        dimensions = spin_operators.dimensions(spin_values)  
         
-        for i,s,deg in zip(range(NSpin),SpinValues,dimensions):
+        for i,s,deg in zip(range(NSpin),spin_values,dimensions):
             
             # print("\t\t",i+1,"/",NSpin,end="\r")
             
@@ -289,7 +307,7 @@ class spin_operators():
    
     @staticmethod
     # @output(operator)
-    def compute_Sxy_operators(dimensions,sz,sp,sm):
+    def system_Sxypm_operators(dimensions,sz,sp,sm):
         """
         Parameters
         ----------
@@ -340,7 +358,13 @@ class spin_operators():
             Sx[i] = spin_operators.compute_sx(Sp[i],Sm[i])
             Sy[i] = spin_operators.compute_sy(Sp[i],Sm[i])
             
-        return Sx,Sy,Sz             
+        return Sx,Sy,Sz,Sp,Sm       
+
+    def empty(self):
+        return self.Sx[0].empty()    
+    
+    def identity(self):
+        return self.Sx[0].identity(len(self.Sx[0]))
         
     
         # for i in range(NSpin):

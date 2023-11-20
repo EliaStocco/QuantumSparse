@@ -19,9 +19,9 @@ def diagonalize(H,NLanczos=NLanczos,tol=tol,MaxDim=MaxDim):
 
 S     = 1./2.
 NSpin = 8
-SpinValues = np.full(NSpin,S)
+spin_values = np.full(NSpin,S)
 
-Sx,Sy,Sz = qs.compute_spin_operators(SpinValues)
+Sx,Sy,Sz = qs.compute_spin_operators(spin_values)
 Mx,My,Mz = qs.magnetic_moment_operator(Sx,Sy,Sz)
 
 # Hamiltonian [eV]
