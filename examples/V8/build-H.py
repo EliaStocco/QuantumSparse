@@ -13,7 +13,7 @@ import argparse
 # Define and parse command-line arguments
 parser = argparse.ArgumentParser(description="Your script description here")
 parser.add_argument("--restart", type=bool, default=True, help="Set to True if restarting from a previous run.")
-parser.add_argument("--NSpin", type=int, default=8, help="Number of spins.")
+parser.add_argument("--NSpin", type=int, default=4, help="Number of spins.")
 parser.add_argument("--S", type=float, default=1., help="Value of S.")
 parser.add_argument("--datafolder", type=str, default="data", help="Path to the data folder.")
 parser.add_argument("--output_folder", type=str, default="output", help="Path to the output folder.")
@@ -126,10 +126,18 @@ else :
     H = operator.load(file)
 
 from QuantumSparse.spin.shift import shift
+from QuantumSparse.spin.flip import flip
 D = shift(spins)
-D.diagonalize(method="dense")
+D.diagonalize(method="jacobi")
 
-H.diagonalize_with_symmetry(S=D,tol=1e-4)
+F = flip(spins)
+F.diagonalize(method="jacobi")
+
+# Sz = spins.Sz.sum()
+# Sz.diagonalize(method="jacobi")
+
+H.diagonalize_with_symmetry(S=[D,F],tol=1e-4)
+H.diagonalize_with_symmetry(S=[D,F],tol=1e-5)
 
 # H.visualize(file="V8.png")
 # D.visualize(file="D.png")
