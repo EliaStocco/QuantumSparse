@@ -110,10 +110,16 @@ class matrix(csr_matrix):
             
         return self.is_adjacency
 
+    def diagonalized(self)->bool:
+        return self.eigenvalues is not None and self.eigenstates  is not None
+
     @staticmethod
-    def commutator(A,B):
-        C = A @ B - B @ A 
-        return C
+    def anticommutator(A:T,B:T)->T:
+        return A @ B + B @ A 
+    
+    @staticmethod
+    def commutator(A:T,B:T)->T:
+        return A @ B - B @ A 
     
     def commute(self,A,tol=1e-6)->bool:
         return matrix.commutator(self,A).norm() < tol
@@ -218,7 +224,9 @@ class matrix(csr_matrix):
         string += "{:>12s}: {}\n".format('# all', str(self.count("all")))
         string += "{:>12s}: {}\n".format('#  on', str(self.count("diag")))
         string += "{:>12s}: {}\n".format('# off', str(self.count("off")))
-        string += "{:>12s}: {:6f}\n".format('norm', self.norm())
+        string += "{:>12s}: {:6f}\n".format('norm (all)', self.norm())
+        string += "{:>12s}: {:6f}\n".format('norm  (on)', self.as_diagonal().norm())
+        string += "{:>12s}: {:6f}\n".format('norm (off)', self.off_diagonal().norm())
         string += "{:>12s}: {}\n".format('unitary', str(self.is_unitary()))
         string += "{:>12s}: {}\n".format('hermitean', str(self.is_hermitean()))
         string += "{:>12s}: {}\n".format('symmetric', str(self.is_symmetric()))
@@ -237,7 +245,6 @@ class matrix(csr_matrix):
         diagonal_elements = super().diagonal()
         return type(self).diags(diagonals=diagonal_elements)
     
-
     def off_diagonal(self)->T:
         diagonal_elements = super().diagonal() # self.diagonal()
         diagonal_matrix = type(self).diags(diagonals=diagonal_elements)
@@ -289,7 +296,7 @@ class matrix(csr_matrix):
             
         return submatrix
     
-    def divide_into_block(self:T,labels:np.ndarray,sort=True):
+    def divide_into_block(self:T,labels:np.ndarray,sort=True)->T:
 
         submatrices = np.full((self.n_blocks,self.n_blocks),None,dtype=object)
         indeces = np.arange(self.shape[0])
@@ -309,7 +316,7 @@ class matrix(csr_matrix):
             out = out[reverse_permutation][:, reverse_permutation]
         return out
     
-    @jit
+    # #@jit
     def diagonalize_each_block(self:T,labels:np.ndarray,method:str,original:bool,tol:float,max_iter:int)->Union[np.ndarray,T]:
         
         # we need to specify all the parameters if we want to speed it up with 'numba.jit'
@@ -358,7 +365,7 @@ class matrix(csr_matrix):
         # type(self)(bmat(submatrices))
         return eigenvalues, eigenstates, nearly_diagonal
     
-
+ 
     def eigensolver(self,method="jacobi",original=True,tol:float=1.0e-3,max_iter:int=-1):
 
         # if matrix.module is sparse :
@@ -394,12 +401,14 @@ class matrix(csr_matrix):
                     w,f,N = jacobi(self,tol=tol,max_iter=max_iter)
                 case "dense":
                     M = np.asarray(self.todense())
+                    N = self.empty()
                     if self.is_hermitean():
                         w,f = eigh(M)
                     else :
                         w,f = eig(M)
-                    N = self.empty()
+                    N = N.astype(w.dtype)
                     N.setdiag(w)
+                    pass
                 case _:
                     raise ImplErr
         

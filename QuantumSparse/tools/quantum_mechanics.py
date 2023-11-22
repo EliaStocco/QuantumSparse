@@ -2,7 +2,7 @@ import numpy as np
 from QuantumSparse.tools.optimize import jit
 from QuantumSparse import operator
 
-@jit
+#@jit
 def expectation_value(Op:operator,Psi:operator)->np.ndarray:
     braket = Psi.dagger() @ Op @ Psi
     return braket.real
@@ -16,7 +16,7 @@ def expectation_value(Op:operator,Psi:operator)->np.ndarray:
 #     Vc = V.conjugate(True)
 #     return ((Op @ V).multiply(Vc)).toarray().real.sum(axis=0)
 
-@jit
+#@jit
 def standard_deviation(Op:operator,Psi:operator,mean:np.ndarray=None)->np.ndarray:
     if mean is None :
         mean = expectation_value(Op,Psi)

@@ -47,22 +47,18 @@ class operator(matrix):
                 iden[i] = matrix.identity(dim,dtype=int)  
             return iden
     
-    @staticmethod
-    def anticommutator(A,B):
-        C = A @ B + B @ A 
-        return C
     
-    def eigen(self):
-        return {"eigenvalues":self.eigenvalues,"eigenstates":self.eigenstates}
+    # def eigen(self):
+    #     return {"eigenvalues":self.eigenvalues,"eigenstates":self.eigenstates}
     
-    def test_diagonalization(self,tol=1e-6,return_norm=False):
-        """Test the accuracy of the eigen-ecomposition"""
-        test = self @ self.eigenstates - self.eigenstates @ self.diags(diagonals=self.eigenvalues,shape=self.shape)
-        norm = test.norm()
-        if return_norm:
-            return norm < tol, norm
-        else :
-            return norm < tol
+    # def test_diagonalization(self,tol=1e-6,return_norm=False):
+    #     """Test the accuracy of the eigen-ecomposition"""
+    #     test = self @ self.eigenstates - self.eigenstates @ self.diags(diagonals=self.eigenvalues,shape=self.shape)
+    #     norm = test.norm()
+    #     if return_norm:
+    #         return norm < tol, norm
+    #     else :
+    #         return norm < tol
 
     def diagonalize(self,method="jacobi",restart=False,tol:float=1.0e-3,max_iter:int=-1,test=True):
 
@@ -84,19 +80,52 @@ class operator(matrix):
 
         # return self.eigenvalues, self.eigenstates
 
+    def change_basis(self,S,direction="forward"):
+
+        if not S.diagonalized():
+            raise ValueError("The operator 'S' should have already been diagonalized.")
+        
+        if direction == "forward":
+            out = self.clone(S.eigenstates.dagger() @ self @ S.eigenstates)
+            if self.diagonalized():
+                out.eigenvalues = copy(self.eigenvalues)
+                out.eigenstates = S.eigenstates.dagger() @ self.eigenstates
+                out.nearly_diag = S.eigenstates.dagger() @ self.nearly_diag @ S.eigenstates
+        
+        elif direction == "backward":
+            out = self.clone(S.eigenstates @ self @ S.eigenstates.dagger())
+            if self.diagonalized():
+                out.eigenvalues = copy(self.eigenvalues)
+                out.eigenstates = S.eigenstates @ self.eigenstates
+                out.nearly_diag = S.eigenstates @ self.nearly_diag @ S.eigenstates.dagger() 
+
+        else:
+            raise ValueError("'direction' can be only 'forward' or 'backward'")
+        
+        return out
+
+
     def diagonalize_with_symmetry(self,S,use_block_form=False,test=True,**argv):
 
-        w,labels = unique_with_tolerance(S.eigenvalues)
-        # ( abs(w[ii] - S.eigenvalues) > 1e-8 ).sum()
-
-        # np.linalg.norm((S.eigenstates.dagger() @ S @ S.eigenstates ).diagonal() - S.eigenvalues ) = 1e-14
-        # (S.eigenstates.dagger() @ S @ S.eigenstates ).off_diagonal().norm() = 1e-14
+        if type(S) is not list:
+            return self.diagonalize_with_symmetry([S],use_block_form,test,**argv)
+        if len(S) == 0 :
+            return self.diagonalize(**argv)
         
-        new = self.clone(S.eigenstates.dagger() @ self @ S.eigenstates)
-        # new.is_hermitean() = True
+        sym = S[0]
+
+        if not self.commute(sym):
+            raise ValueError('Ypu provided a symmetry operator which does not commute with the operator that you want to diagonalize.')
+
+        # I should define a 'symmetry' operator
+        w,labels = unique_with_tolerance(sym.eigenvalues)
+        
+        # new = self.clone(sym.eigenstates.dagger() @ self @ sym.eigenstates)
+        new = self.change_basis(sym,direction="forward")
+        for n in range(1,len(S)):
+            S[n] = S[n].change_basis(sym,direction="forward")
 
         # little dirty trick
-        # a,b = new.count_blocks()
         def new_count_blocks(self,inplace=True):
             self.blocks = labels
             self.n_blocks = len(np.unique(labels))
@@ -104,25 +133,29 @@ class operator(matrix):
         import types
         new.count_blocks  = types.MethodType(new_count_blocks, new)
 
-        # new.count_blocks()
         if use_block_form:
             to_diag = new.divide_into_block(labels)
         else:
             to_diag = new
-        # test = (new - newB).norm()
 
-        # import matplotlib.pyplot as plt
-        # plt.imshow(np.absolute(S.todense())>0.5,cmap="tab10")
-        # plt.show()
+        if len(S) == 1 :
+            to_diag.diagonalize(test=False,**argv)
+        else:
+            raise ValueError("not implemented yet")
+            to_diag.diagonalize(test=False,**argv)
+            # to_diag.change_basis(sym,direction="backward")
+            for n in range(1,len(S)):
+                S[n] = S[n].change_basis(to_diag,direction="forward")
 
-        w,f = to_diag.diagonalize(restart=True,test=False,**argv)
+            # raise ValueError("not implemented yet")
+            # I should diagonalize the matrix at first, and then call diagonalize_with_symmetry
+            # to_diag.diagonalize_with_symmetry(S[1:],use_block_form,test,**argv)
 
-        
-        # self = self.clone(S.eigenstates @ new @ S.eigenstates.dagger())
+        to_diag = to_diag.change_basis(sym,direction="backward")
 
         self.eigenvalues = to_diag.eigenvalues
-        self.eigenstates = S.eigenstates @ to_diag.eigenstates # @ S.eigenstates.dagger()
-        self.nearly_diag = S.eigenstates @ to_diag.nearly_diag @ S.eigenstates.dagger()
+        self.eigenstates = to_diag.eigenstates # @ to_diag.eigenstates
+        self.nearly_diag = to_diag.nearly_diag # @ to_diag.nearly_diag @ S.eigenstates.dagger()
 
         if test:
             print("\teigensolution test:",self.test_eigensolution().norm())

@@ -1,4 +1,4 @@
-use_jit=True
+use_jit=False
 def jit(*args, **kwargs):
     def decorator(func):
         if use_jit:
