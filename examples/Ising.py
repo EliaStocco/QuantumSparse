@@ -9,6 +9,8 @@ from QuantumSparse.spin import Ising
 # - DM
 # - anisotropy
 # - rhombicity
+# - BiQuadraticIsing
+# - BiQuadraticHeisenberg
 
 S     = 2
 NSpin = 4

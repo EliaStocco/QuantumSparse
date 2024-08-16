@@ -1,43 +1,21 @@
-# the most adopted interactions in Spin Hamiltonians
+"""The most adopted interactions in Spin Hamiltonians"""
+
 import numpy as np
-from .functions import extract_Sxyz
 from ..operator import Operator
-# from ..tools.functions import magnetic_moment_operator
-
-# __all__ = [ #"Row_by_Col_mult",\
-#             "Ising",\
-#             "Heisenberg",\
-#             "DM",\
-#             "anisotropy",\
-#             "rhombicity",\
-#             "Zeeman"]
-
-# def extract_Sxyz(func):
-#     def wrapper(spins,*argc,**argv):
-#         if spins is not None:
-#             Sx,Sy,Sz = spins.Sx, spins.Sy, spins.Sz
-#             return func(Sx=Sx,Sy=Sy,Sz=Sz,spins=None,*argc,**argv)
-#         else :
-#             return func(spins=None,*argc,**argv)
-#     return wrapper
-
     
+def Ising(S:np.ndarray,couplings=1.0,nn=1,opts=None)->Operator:
+    """
+    This function generates the Ising interaction Hamiltonian.
 
-# def Row_by_Col_mult(A,B,opts=None):
-#     """
-#     Row by Columns multiplication
-#     """
-#     if opts is None :
-#         opts = {}
-#     if "sympy" in opts and opts["sympy"] == True :
-#         opts["function"] = lambda a,b : a*b
-#     elif "function" not in opts:
-#         opts["function"] = lambda a,b : a@b
-        
-#     return opts["function"](A,B)
-        
+    Parameters:
+    S (np.ndarray): The spin operators.
+    couplings (float or np.ndarray): The coupling strengths. Default is 1.0.
+    nn (int): The number of nearest neighbors. Default is 1.
+    opts (dict): Optional parameters. Default is None.
 
-def Ising(S,couplings=1.0,nn=1,opts=None)->Operator:
+    Returns:
+    Operator: The Ising interaction Hamiltonian.
+    """
     H = 0
     N = len(S)
     index_I = np.arange(0,N)
@@ -53,7 +31,21 @@ def Ising(S,couplings=1.0,nn=1,opts=None)->Operator:
         
     return H
 
-def Heisenberg(Sx=None,Sy=None,Sz=None,couplings=1.0,nn=1,opts=None)->Operator:
+def Heisenberg(Sx:np.ndarray=None,Sy:np.ndarray=None,Sz:np.ndarray=None,couplings=1.0,nn=1,opts=None)->Operator:
+    """
+    This function generates the Heisenberg interaction Hamiltonian.
+    
+    Parameters:
+    Sx (np.ndarray): The x-component of the spin operators. Default is None.
+    Sy (np.ndarray): The y-component of the spin operators. Default is None.
+    Sz (np.ndarray): The z-component of the spin operators. Default is None.
+    couplings (float or np.ndarray): The coupling constants. Default is 1.0.
+    nn (int): The number of nearest neighbors. Default is 1.
+    opts (dict): Optional parameters. Default is None.
+    
+    Returns:
+    Operator: The Heisenberg interaction Hamiltonian.
+    """
     N = len(Sx)
     Js = np.asarray(couplings)
     if len(Js.shape) != 2 : 
@@ -64,7 +56,21 @@ def Heisenberg(Sx=None,Sy=None,Sz=None,couplings=1.0,nn=1,opts=None)->Operator:
            Ising(Sz,Js[:,2],nn,opts=opts)
 
 
-def DM(Sx=None,Sy=None,Sz=None,couplings=1.0,nn=1,opts=None)->Operator:
+def DM(Sx:np.ndarray=None,Sy:np.ndarray=None,Sz:np.ndarray=None,couplings=1.0,nn=1,opts=None)->Operator:
+    """
+    This function generates the Dzyaloshinskii-Moriya (DM) interaction Hamiltonian.
+    
+    Parameters:
+    Sx (np.ndarray): The x-component of the spin operators. Default is None.
+    Sy (np.ndarray): The y-component of the spin operators. Default is None.
+    Sz (np.ndarray): The z-component of the spin operators. Default is None.
+    couplings (float or np.ndarray): The coupling strengths. Default is 1.0.
+    nn (int): The number of nearest neighbors. Default is 1.
+    opts (dict): Optional parameters. Default is None.
+    
+    Returns:
+    Operator: The DM interaction Hamiltonian.
+    """
     H = 0
     N = len(Sx)
     index_I = np.arange(0,N)
@@ -85,14 +91,84 @@ def DM(Sx=None,Sy=None,Sz=None,couplings=1.0,nn=1,opts=None)->Operator:
         
     return H
 
-def anisotropy(Sz,couplings,opts=None)->Operator:
+def anisotropy(Sz:np.ndarray,couplings,opts=None)->Operator:
+    """
+    This function calculates the anisotropy term in a spin Hamiltonian.
+
+    Parameters:
+    Sz (np.ndarray): The z-component of the spin operator.
+    couplings: The coupling strength of the anisotropy term.
+    opts (dict): Optional parameters. Defaults to None.
+
+    Returns:
+    Operator: The anisotropy term in the spin Hamiltonian.
+    """
     return Ising(Sz,couplings,nn=0,opts=opts)
 
-def rhombicity(Sx,Sy,couplings,opts=None)->Operator:
+def rhombicity(Sx:np.ndarray,Sy:np.ndarray,couplings,opts=None)->Operator:
+    """
+    This function calculates the rhombicity term in a spin Hamiltonian.
+    
+    Parameters:
+    Sx (np.ndarray): The x-component of the spin operator.
+    Sy (np.ndarray): The y-component of the spin operator.
+    couplings: The coupling strength of the rhombicity term.
+    opts (dict): Optional parameters.
+    
+    Returns:
+    Operator: The rhombicity term in the spin Hamiltonian.
+    """
     return Ising(Sx,couplings,nn=0,opts=opts) - Ising(Sy,couplings,nn=0,opts=opts)
 
+def BiQuadraticIsing(S:np.ndarray,couplings=1.0,nn=1,opts=None)->Operator:
+    """
+    This function generates the biquadratic Ising interaction Hamiltonian.
 
-# def Zeeman(Sx,Sy,Sz,B,opts=None):
-#     B = np.asarray(B)
-#     Mx,My,Mz = magnetic_moment_operator(Sx,Sy,Sz,opts)    
-#     return - ( Mx*B[0] + My*B[1] + Mz*B[2] )
+    Parameters:
+    S (np.ndarray): The spin operators.
+    couplings (float or np.ndarray): The coupling strengths. Default is 1.0.
+    nn (int): The number of nearest neighbors. Default is 1.
+    opts (dict): Optional parameters. Default is None.
+
+    Returns:
+    Operator: The biquadratic Ising interaction Hamiltonian.
+    """
+    H = 0
+    N = len(S)
+    index_I = np.arange(0,N)
+    index_J = np.asarray([ j+nn if j+nn < N else j+nn-N for j in index_I ])
+    if not hasattr(couplings,'__len__') :
+        Js = np.full(N,couplings)
+    else :
+        Js = couplings
+        
+    for i,j,J in zip(index_I,index_J,Js):
+        #H +=J * Row_by_Col_mult(Ops[i],Ops[j],opts=opts)
+        tmp = S[i] @ S[j]
+        H = H + J * ( tmp @ tmp ) # biquadratic
+        
+    return H
+
+def BiQuadraticHeisenberg(Sx:np.ndarray=None,Sy:np.ndarray=None,Sz:np.ndarray=None,couplings=1.0,nn=1,opts=None)->Operator:
+    """
+    This function generates the biquadratic Heisenberg interaction Hamiltonian.
+
+    Parameters:
+    Sx (np.ndarray): The x-component of the spin operators. Default is None.
+    Sy (np.ndarray): The y-component of the spin operators. Default is None.
+    Sz (np.ndarray): The z-component of the spin operators. Default is None.
+    couplings (float or np.ndarray): The coupling strengths. Default is 1.0.
+    nn (int): The number of nearest neighbors. Default is 1.
+    opts (dict): Optional parameters. Default is None.
+
+    Returns:
+    Operator: The biquadratic Heisenberg interaction Hamiltonian.
+    """
+    N = len(Sx)
+    Js = np.asarray(couplings)
+    if len(Js.shape) != 2 : 
+        Js = np.full((N,3),couplings)
+    
+    return BiQuadraticIsing(Sx,Js[:,0],nn,opts=opts) +\
+           BiQuadraticIsing(Sy,Js[:,1],nn,opts=opts) +\
+           BiQuadraticIsing(Sz,Js[:,2],nn,opts=opts)

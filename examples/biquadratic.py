@@ -1,7 +1,7 @@
 import numpy as np
 from QuantumSparse.spin import SpinOperators
 from QuantumSparse.operator import Operator
-from QuantumSparse.spin import Heisenberg
+from QuantumSparse.spin import BiQuadraticIsing, BiQuadraticHeisenberg
 
 # In QuantumSparse/spin/interactions.py you can find:
 # - Ising
@@ -22,20 +22,9 @@ SpinOp = SpinOperators(spin_values)
 Sx,Sy,Sz = SpinOp.Sx,SpinOp.Sy,SpinOp.Sz
 
 # Ising Hamiltonian along the z-axis
-H = Heisenberg(Sx=Sx,Sy=Sy,Sz=Sz) 
+H = BiQuadraticHeisenberg(Sx=Sx,Sy=Sy,Sz=Sz) 
 print("\tH.shape = ",H.shape)
 
-# Let's build the Heisenberg Hamiltonian from scratch
-x = Sx[0]@Sx[1] + Sx[1]@Sx[2] + Sx[2]@Sx[3] + Sx[3]@Sx[0] # Ising interaction along x
-y = Sy[0]@Sy[1] + Sy[1]@Sy[2] + Sy[2]@Sy[3] + Sy[3]@Sy[0] # Ising interaction along y
-z = Sz[0]@Sz[1] + Sz[1]@Sz[2] + Sz[2]@Sz[3] + Sz[3]@Sz[0] # Ising interaction along z
-Htest = Operator(x+y+z) # And this is the Heisenberg Hamiltonian
-
-assert np.allclose(H.todense(),Htest.todense()), "The Hamiltonians should be the same"
-
-# Just for static typing reason ... 
-print("\ttype(H):",type(H))
-H = Operator(H)
 # Let's have a look at the Hamiltonian
 repr(H) # better than print(H)
 
