@@ -1,6 +1,6 @@
 from QuantumSparse.spin.spin_operators import spin_operators
 import numpy as np
-from QuantumSparse import operator
+from QuantumSparse.operator import Operator
 from QuantumSparse.spin.interactions import Heisenberg, Ising
 from scipy import sparse
 

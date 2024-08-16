@@ -1,12 +1,12 @@
 import glob
 import os
+import json
 import numpy as np
 import pandas as pd
-from functions import get_couplings
-from QuantumSparse.operator import operator
-from QuantumSparse.spin.spin_operators import spin_operators
-from QuantumSparse.spin.functions import magnetic_moments, rotate_spins
-from QuantumSparse.spin.interactions import Heisenberg, DM, anisotropy, rhombicity, Ising
+from QuantumSparse.operator import Operator
+from QuantumSparse.spin import SpinOperators
+# from QuantumSparse.spin.functions import magnetic_moments, rotate_spins
+from QuantumSparse.spin.interactions import Heisenberg, DM, anisotropy, rhombicity# , Ising
 
 import argparse
 
@@ -22,6 +22,27 @@ parser.add_argument("--tol", type=float, default=1e-6, help="tolerance")
 parser.add_argument("--diagtol", type=float, default=1., help="initial diagonalization tolerance")
 parser.add_argument("--increment", type=float, default=3.0, help="initial diagonalization tolerance")
 args = parser.parse_args()
+
+def get_couplings(S,folder,prefix):
+    #global S
+    J  = json.load(open("{:s}/{:s}.J.json".format(folder,prefix),"r"))
+    DM = json.load(open("{:s}/{:s}.DM.json".format(folder,prefix),"r"))
+    J2 = json.load(open("{:s}/{:s}.collinear.json".format(folder,prefix),"r"))
+    factor = (S**2)/S*(S-0.5)
+    #nn2 = 1#J2["J2"]/J2["J1"]
+    
+    couplings = {"Jt":J['tangential']['popt']['J'],\
+                 "Jr":J['radial']    ['popt']['J'],\
+                 "Jz":J['collinear'] ['popt']['J'],\
+                 "Jt2":J2["J2"],\
+                 "Jr2":J2["J2"],\
+                 "Jz2":J2["J2"],\
+                 "dt":DM['popt'][0],\
+                 "dr":DM['popt'][1],\
+                 "dz":DM['popt'][2],\
+                 "D" :factor*J['collinear'] ['popt']['D'],\
+                 "E" :factor*J['E-value']}
+    return couplings
 
 def getfile(folder):
     # Check if the output folder exists
@@ -56,14 +77,14 @@ def getfile(folder):
         print(f"The '{folder}' folder does not exist.")
         return None
     
-def buildH(S,NSpin,folder,name)->operator:
+def buildH(S,NSpin,folder,name)->Operator:
 
     # build spin operators
     #print("\tbuilding spin operators ... ",end="")
     # S     = 1
     # NSpin = 8
     spin_values = np.full(NSpin,S)
-    spins = spin_operators(spin_values)
+    spins = SpinOperators(spin_values)
 
     totS2 = spins.compute_total_S2()
     S2 = spins.compute_S2()
@@ -123,7 +144,7 @@ if file is None or args.restart:
     name = args.name
     H, spins = buildH(S,NSpin,datafolder,name)
 else :
-    H = operator.load(file)
+    H = Operator.load(file)
 
 from QuantumSparse.spin.shift import shift
 from QuantumSparse.spin.flip import flip
@@ -136,8 +157,9 @@ F.diagonalize(method="jacobi")
 # Sz = spins.Sz.sum()
 # Sz.diagonalize(method="jacobi")
 
-H.diagonalize_with_symmetry(S=[D,F],tol=1e-4)
-H.diagonalize_with_symmetry(S=[D,F],tol=1e-5)
+H.diagonalize(tol=1e-4)
+# H.diagonalize_with_symmetry(S=[D,F],tol=1e-4)
+# H.diagonalize_with_symmetry(S=[D,F],tol=1e-5)
 
 # H.visualize(file="V8.png")
 # D.visualize(file="D.png")

@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 from functions import get_couplings
-from QuantumSparse.operator import operator
+from QuantumSparse.operator import Operator
 from QuantumSparse.spin.spin_operators import spin_operators
 from QuantumSparse.spin.functions import magnetic_moments, rotate_spins
 from QuantumSparse.spin.interactions import Heisenberg, DM, anisotropy, rhombicity, Ising
@@ -15,13 +15,13 @@ NSpin = 8
 spin_values = np.full(NSpin,S)
 spins = spin_operators(spin_values)
 
-totS2 = operator.load("output/S2.npz")#spins.compute_total_S2()
+totS2 = Operator.load("output/S2.npz")#spins.compute_total_S2()
 print("\tS2 blocks: {:d}".format(totS2.count_blocks(False)))       
 
 H = Heisenberg(Sx=spins.Sx,Sy=spins.Sy,Sz=spins.Sz)
 print("\tHeisenberg blocks: {:d}".format(H.count_blocks(False)))   
 
-print(operator.commutator(totS2,H).norm()) # 1e-13
+print(Operator.commutator(totS2,H).norm()) # 1e-13
 
 import numpy as np
 

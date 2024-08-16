@@ -1,1 +1,1 @@
-from .operator import Operator
+from ._operator import Operator

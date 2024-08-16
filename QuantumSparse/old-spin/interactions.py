@@ -4,13 +4,13 @@ from .functions import extract_Sxyz
 from ..operator import Operator
 # from ..tools.functions import magnetic_moment_operator
 
-# __all__ = [ #"Row_by_Col_mult",\
-#             "Ising",\
-#             "Heisenberg",\
-#             "DM",\
-#             "anisotropy",\
-#             "rhombicity",\
-#             "Zeeman"]
+__all__ = [ #"Row_by_Col_mult",\
+            "Ising",\
+            "Heisenberg",\
+            "DM",\
+            "anisotropy",\
+            "rhombicity",\
+            "Zeeman"]
 
 # def extract_Sxyz(func):
 #     def wrapper(spins,*argc,**argv):

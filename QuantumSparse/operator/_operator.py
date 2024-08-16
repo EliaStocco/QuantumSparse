@@ -20,7 +20,7 @@ class Operator(Matrix):
     def load(cls,file):
         with open(file, 'rb') as f:
             obj = pickle.load(f)
-        return obj
+        return cls(obj)
 
     
     @staticmethod
