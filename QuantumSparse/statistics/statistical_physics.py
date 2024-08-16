@@ -1,6 +1,6 @@
 # some function recalling statistical physics results
 import numpy as np
-from ..constants.constants import kB,g,_NA,_eV,muB
+from QuantumSparse.constants import kB,g,_NA,_eV,muB
 from QuantumSparse.tools.quantum_mechanics import expectation_value
 from QuantumSparse.tools.optimize import jit
 

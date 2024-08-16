@@ -2,11 +2,11 @@
 import numpy as np
 import pickle
 from copy import copy
-from QuantumSparse.matrix import matrix
+from QuantumSparse.matrix import Matrix
 from typing import TypeVar
 T = TypeVar('T') 
 
-class operator(matrix):
+class Operator(Matrix):
    
     def __init__(self,*argc,**argv):
         super().__init__(*argc,**argv)
@@ -38,13 +38,13 @@ class operator(matrix):
             acting on the local (only one site) Hilbert space
         """
         if not hasattr(dimensions, '__len__'):
-            iden = operator.identity([dimensions])[0]
+            iden = Operator.identity([dimensions])[0]
             return iden
         else :            
             N = len(dimensions)
             iden = np.zeros(N,dtype=object)
             for i,dim in zip(range(N),dimensions):
-                iden[i] = matrix.identity(dim,dtype=int)  
+                iden[i] = Matrix.identity(dim,dtype=int)  
             return iden
     
     

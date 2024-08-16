@@ -1,4 +1,4 @@
-from QuantumSparse.operator import operator
+from QuantumSparse.operator import Operator
 import numpy as np
 
 def mapping(N, i):
@@ -9,7 +9,7 @@ def mapping(N, i):
         # N is odd
         return i if i == 0 else N - i - 1
 
-def flip(ops:operator)->operator:
+def flip(ops:Operator)->Operator:
 
     basis = np.asarray(ops.basis)
     D = ops.empty()

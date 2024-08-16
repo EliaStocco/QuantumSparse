@@ -1,11 +1,10 @@
 # "spin_system" class
 import numpy as np
-from .spin_operators import spin_operators 
-from ..constants.constants import muB,g
-from ..system.system import system
+from QuantumSparse.constants import muB,g
+from QuantumSparse.system import System
+from .spin_operators import SpinOperators
 
-
-class spin_system(spin_operators,system):
+class SpinSystem(SpinOperators,System):
     
    
     def __init__(self,N=1,S=0.5,spin_values=None,classical=False,opts=None,*args,**kwargs):
@@ -48,7 +47,7 @@ class spin_system(spin_operators,system):
     def add_Ising(self,couplings=1.0,nn=1,opts=None):
         opts = {} if opts is None else opts
         opts["sympy"] = True if self.classical else False
-        self.Hamiltonian += spin_system.Ising(self.Sz,couplings,nn,opts)
+        self.Hamiltonian += SpinSystem.Ising(self.Sz,couplings,nn,opts)
         return 
     
     @staticmethod
@@ -62,14 +61,14 @@ class spin_system(spin_operators,system):
         else :
             Js = couplings            
         for i,j,J in zip(index_I,index_J,Js):
-            H +=J * spin_system.Row_by_Col_mult(Sz[i],Sz[j],opts=opts)            
+            H +=J * SpinSystem.Row_by_Col_mult(Sz[i],Sz[j],opts=opts)            
         return H
     
    
     def add_Heisenberg(self,couplings=1.0,nn=1,opts=None):
         opts = {} if opts is None else opts
         opts["sympy"] = True if self.classical else False
-        self.Hamiltonian += spin_system.Heisenberg(self.Sx,self.Sy,self.Sz,couplings,nn,opts)
+        self.Hamiltonian += SpinSystem.Heisenberg(self.Sx,self.Sy,self.Sz,couplings,nn,opts)
         return
     
     @staticmethod
@@ -78,16 +77,16 @@ class spin_system(spin_operators,system):
         Js = np.asarray(couplings)
         if len(Js.shape) != 2 : 
             Js = np.full((N,3),couplings)            
-        H = spin_system.Ising(Sx,Js[:,0],nn,opts=opts) +\
-            spin_system.Ising(Sy,Js[:,1],nn,opts=opts) +\
-            spin_system.Ising(Sz,Js[:,2],nn,opts=opts)            
+        H = SpinSystem.Ising(Sx,Js[:,0],nn,opts=opts) +\
+            SpinSystem.Ising(Sy,Js[:,1],nn,opts=opts) +\
+            SpinSystem.Ising(Sz,Js[:,2],nn,opts=opts)            
         return H 
     
    
     def add_DM(self,couplings=1.0,nn=1,opts=None):
         opts = {} if opts is None else opts
         opts["sympy"] = True if self.classical else False
-        self.Hamiltonian += spin_system.DM(self.Sx,self.Sy,self.Sz,couplings,nn,opts)
+        self.Hamiltonian += SpinSystem.DM(self.Sx,self.Sy,self.Sz,couplings,nn,opts)
         return
     
     @staticmethod
@@ -99,7 +98,7 @@ class spin_system(spin_operators,system):
         Js = np.asarray(couplings)
         if len(Js.shape) != 2 : 
             Js = np.full((N,3),couplings)            
-        RbC = lambda a,b : spin_system.Row_by_Col_mult(a,b,opts=opts)            
+        RbC = lambda a,b : SpinSystem.Row_by_Col_mult(a,b,opts=opts)            
         for i,j,J in zip(index_I,index_J,Js):
             H += J[0] * ( RbC(Sy[i],Sz[j]) - RbC(Sz[i],Sy[j])) 
             H += J[1] * ( RbC(Sz[i],Sx[j]) - RbC(Sx[i],Sz[j]))
@@ -110,38 +109,38 @@ class spin_system(spin_operators,system):
     def add_anisotropy(self,couplings,opts=None):
         opts = {} if opts is None else opts
         opts["sympy"] = True if self.classical else False
-        self.Hamiltonian += spin_system.anisotropy(self.Sz,couplings,opts)
+        self.Hamiltonian += SpinSystem.anisotropy(self.Sz,couplings,opts)
         return
     
     @staticmethod
     def anisotropy(Sz,couplings,opts=None):
-        H = spin_system.Ising(Sz,couplings,nn=0,opts=opts)
+        H = SpinSystem.Ising(Sz,couplings,nn=0,opts=opts)
         return H
     
    
     def add_rhombicity(self,couplings,opts=None):
         opts = {} if opts is None else opts
         opts["sympy"] = True if self.classical else False
-        self.Hamiltonian += spin_system.anisotropy(self.Sx,self.Sy,couplings,opts)
+        self.Hamiltonian += SpinSystem.anisotropy(self.Sx,self.Sy,couplings,opts)
         return
     
     @staticmethod
     def rhombicity(Sx,Sy,couplings,opts=None):
-        H = spin_system.Ising(Sx,couplings,nn=0,opts=opts) - \
-            spin_system.Ising(Sy,couplings,nn=0,opts=opts)
+        H = SpinSystem.Ising(Sx,couplings,nn=0,opts=opts) - \
+            SpinSystem.Ising(Sy,couplings,nn=0,opts=opts)
         return H
     
    
     def add_Zeeman(self,B,opts=None):
         opts = {} if opts is None else opts
         opts["sympy"] = True if self.classical else False
-        self.Hamiltonian += spin_system.Zeeman(self.Sx,self.Sy,self.Sz,B,opts)
+        self.Hamiltonian += SpinSystem.Zeeman(self.Sx,self.Sy,self.Sz,B,opts)
         return
     
     @staticmethod
     def Zeeman(Sx,Sy,Sz,B,opts=None):
         B = np.asarray(B)
-        Mx,My,Mz = spin_system.magnetic_moment_operator(Sx,Sy,Sz,opts)   
+        Mx,My,Mz = SpinSystem.magnetic_moment_operator(Sx,Sy,Sz,opts)   
         H = - ( Mx*B[0] + My*B[1] + Mz*B[2] )
         return H 
     
@@ -165,7 +164,7 @@ class spin_system(spin_operators,system):
         E0 = None
         for n,B in enumerate(Barr):
             print(n+1,"/",NN)
-            HB = self.Hamiltonian + spin_system.Zeeman(self.Sx,self.Sy,self.Sz,B)
+            HB = self.Hamiltonian + SpinSystem.Zeeman(self.Sx,self.Sy,self.Sz,B)
             E,Psi = self.diagonalize(HB,NLanczos=NLanczos,tol=tol,MaxDim=MaxDim,opts=opts)
             if n == 0 :
                 E0 = min(E)

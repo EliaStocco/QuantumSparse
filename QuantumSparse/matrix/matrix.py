@@ -28,7 +28,7 @@ NoJacobi = 8
     
 
 # class matrix(metaclass=get_class)
-class matrix(csr_matrix):
+class Matrix(csr_matrix):
     """class to handle matrices in different form, i.e. dense, sparse, with 'numpy', 'scipy', or 'torch'"""
 
     module = sparse
@@ -53,14 +53,14 @@ class matrix(csr_matrix):
         
 
     def save(self,file):
-        if matrix.module is sparse :
+        if Matrix.module is sparse :
             sparse.save_npz(file,self)
         else :
             raise ImplErr
     
     @staticmethod
     def load(file):
-        if matrix.module is sparse :
+        if Matrix.module is sparse :
             return sparse.load_npz(file)
         else :
             raise ImplErr
@@ -68,37 +68,37 @@ class matrix(csr_matrix):
     @classmethod
     def diags(cls,*argc,**argv):
         """diagonal matrix"""
-        return cls(matrix.module.diags(*argc,**argv))
+        return cls(Matrix.module.diags(*argc,**argv))
 
     @classmethod
     def kron(cls,*argc,**argv):
         """kronecker product"""
-        return cls(matrix.module.kron(*argc,**argv))
+        return cls(Matrix.module.kron(*argc,**argv))
 
     @classmethod
     def identity(cls,*argc,**argv):
         """identity operator"""
-        return cls(matrix.module.identity(*argc,**argv))
+        return cls(Matrix.module.identity(*argc,**argv))
     
     def dagger(self)->T:
         return self.clone(self.conjugate().transpose()) #type(self)(self.conjugate().transpose())
 
     def is_symmetric(self,**argv)->bool:
-        if matrix.module is sparse :
+        if Matrix.module is sparse :
             tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
             return (self - self.transpose()).norm() < tolerance
         else :
             raise ImplErr
         
     def is_hermitean(self,**argv)->bool:
-        if matrix.module is sparse :
+        if Matrix.module is sparse :
             tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
             return (self - self.dagger()).norm() < tolerance
         else :
             raise ImplErr
         
     def is_unitary(self,**argv)->bool:
-        if matrix.module is sparse :
+        if Matrix.module is sparse :
             tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
             return (self @ self.dagger() - self.identity(len(self)) ).norm() < tolerance
         else :
@@ -122,17 +122,17 @@ class matrix(csr_matrix):
         return A @ B - B @ A 
     
     def commute(self,A,tol=1e-6)->bool:
-        return matrix.commutator(self,A).norm() < tol
+        return Matrix.commutator(self,A).norm() < tol
 
     # @staticmethod 
     def norm(self)->float:
-        if matrix.module is sparse :
+        if Matrix.module is sparse :
             return sparse.linalg.norm(self)
         else :
             raise ImplErr
 
     def adjacency(self)->T:
-        if matrix.module is sparse :
+        if Matrix.module is sparse :
             data    = self.data
             indices = self.indices
             indptr  = self.indptr
@@ -149,7 +149,7 @@ class matrix(csr_matrix):
             raise ImplErr
     
     def sparsity(self)->float:
-        if matrix.module is sparse :
+        if Matrix.module is sparse :
             rows, cols = self.nonzero()
             shape = self.shape
             return float(len(rows)) / float(shape[0]*shape[1])
@@ -267,14 +267,14 @@ class matrix(csr_matrix):
         tmp = np.full((N,N),None,dtype=object)
         for n in range(N):
             tmp[n,n] = blocks[n]
-        if matrix.module is sparse : 
+        if Matrix.module is sparse : 
             return cls(sparse.bmat(tmp))
         else :
             raise ValueError("error")
 
     def count_blocks(self,inplace=True):
         adjacency = self.adjacency()
-        if matrix.module is sparse : 
+        if Matrix.module is sparse : 
             n_components, labels = connected_components(adjacency,directed=False,return_labels=True)
             if inplace:
                 self.blocks = labels
@@ -356,7 +356,7 @@ class matrix(csr_matrix):
             eigenstates[n] = f
         
         eigenvalues = np.concatenate(eigenvalues)
-        eigenstates = matrix.from_blocks(eigenstates)
+        eigenstates = Matrix.from_blocks(eigenstates)
 
         reverse_permutation = np.argsort(permutation)
         eigenvalues = eigenvalues[reverse_permutation]
@@ -368,7 +368,7 @@ class matrix(csr_matrix):
  
     def eigensolver(self,method="jacobi",original=True,tol:float=1.0e-3,max_iter:int=-1):
 
-        # if matrix.module is sparse :
+        # if Matrix.module is sparse :
 
         #############################
         # |-------------------------|

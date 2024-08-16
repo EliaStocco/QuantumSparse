@@ -1,9 +1,9 @@
 # "fermionic_system" class
 from .fermionic_operators import fermionic_operators
-from ..system.system import system
+from ..system._system import system
 
 
-class fermionic_system(fermionic_operators,system):
+class FermionicSystem(FermionicOperators,system):
     
    
     def __init__(self,N=1,deg_names=["spin"],deg_keys=[["up","dw"]],opts=None,**kwargs):

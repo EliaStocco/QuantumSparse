@@ -1,10 +1,10 @@
 # the core of QuantumSparse code: a module defining spin operators via Kronecker (tensor) product
 import numpy as np
-from ..operator.operator import operator
-from ..tools.functions import prepare_opts
+from QuantumSparse.operator import operator
+from QuantumSparse.tools.functions import prepare_opts
 
 
-class spin_operators():
+class SpinOperators():
     
     def __init__(self,spin_values=None,N=1,S=0.5,opts=None,**argv):
         """
@@ -110,15 +110,15 @@ class spin_operators():
         NSpin        = len(spin_values)     
         print("\t\t{:>20s} : {:<60d}".format("N spins",NSpin))
         print("\t\t{:>20s} : {:<60s}".format("spin values",from_list_to_str(spin_values)))
-        dimensions = spin_operators.dimensions(spin_values)#(2*spin_values+1).astype(int)
+        dimensions = SpinOperators.dimensions(spin_values)#(2*spin_values+1).astype(int)
         print("\t\t{:>20s} : {:<60s}".format("dimensions",from_list_to_str(dimensions)))
        
         # print("\t\tallocating single Sz,S+,S- operators (on the single-spin Hilbert space) ... ",end="")
-        sz,sp,sm = spin_operators.single_Szpm(spin_values)
+        sz,sp,sm = SpinOperators.single_Szpm(spin_values)
         # print("done")    
         
         # print("\t\tallocating the Sx,Sy,Sz operators (on the system Hilbert space) ... ",end="")  
-        Sx,Sy,Sz,Sp,Sm = spin_operators.system_Sxypm_operators(dimensions,sz,sp,sm)
+        Sx,Sy,Sz,Sp,Sm = SpinOperators.system_Sxypm_operators(dimensions,sz,sp,sm)
         # print("done")    
 
         # for n in range(len(spin_values)):
@@ -288,7 +288,7 @@ class spin_operators():
         Sz = np.zeros(NSpin,dtype=object) # s z
         Sp = np.zeros(NSpin,dtype=object) # s plus
         Sm = np.zeros(NSpin,dtype=object) # s minus
-        dimensions = spin_operators.dimensions(spin_values)  
+        dimensions = SpinOperators.dimensions(spin_values)  
         
         for i,s,deg in zip(range(NSpin),spin_values,dimensions):
             
@@ -355,8 +355,8 @@ class spin_operators():
                     out[i] = operator.kron(out[i],Ops[j]) 
                     
         for i in range(NSpin):
-            Sx[i] = spin_operators.compute_sx(Sp[i],Sm[i])
-            Sy[i] = spin_operators.compute_sy(Sp[i],Sm[i])
+            Sx[i] = SpinOperators.compute_sx(Sp[i],Sm[i])
+            Sy[i] = SpinOperators.compute_sy(Sp[i],Sm[i])
             
         return Sx,Sy,Sz,Sp,Sm       
 

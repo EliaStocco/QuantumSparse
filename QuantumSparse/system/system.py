@@ -3,7 +3,7 @@ from ..tools.functions import prepare_opts
 from scipy import sparse
 import numpy as np
 
-class system(object):
+class System(object):
     
    
     def __init__(self,H=0,*args,**kwargs):

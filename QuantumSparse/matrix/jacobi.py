@@ -1,11 +1,11 @@
 import numpy as np
 from copy import copy
 from QuantumSparse.tools.optimize import jit
-from QuantumSparse import matrix
+from QuantumSparse.matrix import Matrix
 from typing import Union
 
 #@jit
-def maxoff(x:matrix)->Union[float,int,int]:
+def maxoff(x:Matrix)->Union[float,int,int]:
     y = x.off_diagonal().tocoo()
     if len(y.data) == 0:
         return None, None, None
@@ -33,7 +33,7 @@ def calculate_sin_phi(t:float)->float:
     return sin_phi
 
 #@jit
-def Givens_rotation(A:matrix, i:int, j:int)->matrix:
+def Givens_rotation(A:Matrix, i:int, j:int)->Matrix:
     # Get the elements at positions (i, j) and (j, i)
     aii = A[i, i]
     aij = A[i, j]
@@ -48,7 +48,7 @@ def Givens_rotation(A:matrix, i:int, j:int)->matrix:
     sinphi = np.sin(phi)
     alpha = np.angle(aij)
 
-    # Create the Givens rotation matrix (2x2)
+    # Create the Givens rotation Matrix (2x2)
     # Define the data (entries), row indices, and column indices
     data = np.array([                    cosphi, -np.exp(1.0j*alpha)*sinphi,
                      np.exp(-1.0j*alpha)*sinphi,                     cosphi])  # The non-zero values
@@ -61,12 +61,12 @@ def Givens_rotation(A:matrix, i:int, j:int)->matrix:
     return out
 
 #@jit
-def rotateHermitian(M:matrix, P:matrix, k:int, l:int)->Union[matrix,matrix]:
+def rotateHermitian(M:Matrix, P:Matrix, k:int, l:int)->Union[Matrix,Matrix]:
 
     G = Givens_rotation(M,k,l)
 
     if not G.is_unitary():
-        raise ValueError("Givens matrix is not unitary")
+        raise ValueError("Givens Matrix is not unitary")
     
     Gdag = G.dagger()
     Mnew = Gdag @ M @ G
@@ -80,11 +80,11 @@ def offRMSE(M):
     return np.sqrt(np.sum(np.square(np.absolute(data)))/N)
     
 # #@jit
-def jacobi(M:matrix,tol:float=1.0e-3,max_iter:int=-1)->Union[np.ndarray,matrix,matrix]:
+def jacobi(M:Matrix,tol:float=1.0e-3,max_iter:int=-1)->Union[np.ndarray,Matrix,Matrix]:
     a = copy(M) if M.nearly_diag is None else copy(M.nearly_diag)
     n = len(a)
     max_iter = 5 * (n**2) if max_iter < 0 else max_iter  # Set limit on number of rotations
-    # p = type(a)(a.shape,dtype=a.dtype)# np.eye(n, dtype=complex)  # Initialize transformation matrix
+    # p = type(a)(a.shape,dtype=a.dtype)# np.eye(n, dtype=complex)  # Initialize transformation Matrix
     p = a.identity((len(a))) if M.eigenstates is None else copy(M.eigenstates)
 
     aMax, k, l = maxoff(a)

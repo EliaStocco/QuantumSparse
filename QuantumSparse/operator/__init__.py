@@ -1,1 +1,1 @@
-from QuantumSparse.operator.operator import operator
+from .operator import Operator

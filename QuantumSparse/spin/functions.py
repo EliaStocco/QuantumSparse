@@ -1,4 +1,4 @@
-from ..constants.constants import muB,g
+from QuantumSparse.constants import muB,g
 import numpy as np
 
 def extract_Sxyz(func):
