@@ -2,19 +2,25 @@
 import numpy as np
 from QuantumSparse.operator import Operator
 from QuantumSparse.tools.functions import prepare_opts
-from typing import Tuple
+from typing import Tuple, Union, Any, TypeVar
 import pandas as pd
 
-class SpinOperators():
+T = TypeVar('T', bound='SpinOperators')
 
-    # Sx:np.ndarray[Operator]
-    # Sy:np.ndarray[Operator]
-    # Sz:np.ndarray[Operator]
-    # Sp:np.ndarray[Operator]
-    # Sm:np.ndarray[Operator]
-    # basis:pd.DataFrame
-    
-    def __init__(self,spin_values=None,N=1,S=0.5,opts=None,**argv):
+class SpinOperators:
+    """
+    Class to represent a spin system with operators Sx, Sy, Sz, Sp and Sm.
+    """
+
+    spin_values:np.ndarray
+    Sx:np.ndarray[Operator] 
+    Sy:np.ndarray[Operator] 
+    Sz:np.ndarray[Operator] 
+    Sp:np.ndarray[Operator]  
+    Sm:np.ndarray[Operator]  
+    basis:pd.DataFrame
+
+    def __init__(self:T,spin_values:np.ndarray=None,N:int=1,S:Union[int,float]=0.5,opts:Any=None,**argv):
         """
         Parameters
         ----------
@@ -48,15 +54,23 @@ class SpinOperators():
             raise() 
             
         Sx,Sy,Sz,Sp,Sm = self.compute_spin_operators(self.spin_values,opts)
-        self.Sx = Sx
-        self.Sy = Sy
-        self.Sz = Sz  
-        self.Sp = Sp 
-        self.Sm = Sm 
+        self.Sx:np.ndarray[Operator] = Sx
+        self.Sy:np.ndarray[Operator] = Sy
+        self.Sz:np.ndarray[Operator] = Sz  
+        self.Sp:np.ndarray[Operator] = Sp 
+        self.Sm:np.ndarray[Operator] = Sm 
 
-        self.basis = self.compute_basis()
+        self.basis:pd.DataFrame = self.compute_basis()
 
-    def compute_basis(self):
+    def compute_basis(self)->pd.DataFrame:
+        """
+        Compute the basis of the Hilbert space of the spin system.
+        
+        Returns
+        -------
+        basis : pd.DataFrame
+            DataFrame with the basis of the Hilbert space of the spin system.
+        """
 
         from itertools import product
         
@@ -155,7 +169,7 @@ class SpinOperators():
    
     # @staticmethod
     # @output(operator)
-    def compute_S2(self,opts=None)->Operator:
+    def compute_S2(self:T,opts=None)->Operator:
         """        
         Parameters
         ----------
@@ -185,7 +199,7 @@ class SpinOperators():
    
     # @staticmethod
     # @output(operator)
-    def compute_total_S2(self,opts=None)->Operator:
+    def compute_total_S2(self:T,opts=None)->Operator:
         """        
         Parameters
         ----------
@@ -374,46 +388,3 @@ class SpinOperators():
     def identity(self):
         return self.Sx[0].identity(len(self.Sx[0]))
         
-    
-        # for i in range(NSpin):
-    
-        #     print("\t",i+1,"/",NSpin,end="\r")
-            
-        #     if i!=0: #i!=0
-        #         mz = iden[0].copy() # matrix z
-        #         mp = iden[0].copy() # matrix plus
-        #         mm = iden[0].copy() # matrix minus
-                
-        #         for j in range(1,i):
-        #             mz = sparse.kron(mz,iden[j])
-        #             mp = sparse.kron(mp,iden[j])
-        #             mm = sparse.kron(mm,iden[j])
-                    
-        #         mz = sparse.kron(mz,sz[i])
-        #         mp = sparse.kron(mp,sp[i])
-        #         mm = sparse.kron(mm,sm[i])
-                
-        #         for j in range(i+1,NSpin):
-        #             mz = sparse.kron(mz,iden[j])
-        #             mp = sparse.kron(mp,iden[j])
-        #             mm = sparse.kron(mm,iden[j])
-                
-        #     else : #i==0    
-            
-        #         mz = sz[0].copy()
-        #         mp = sp[0].copy()
-        #         mm = sm[0].copy()      
-                
-        #         for j in range(1,NSpin):
-        #             mz = sparse.kron(mz,iden[j])
-        #             mp = sparse.kron(mp,iden[j])
-        #             mm = sparse.kron(mm,iden[j])
-        #     #
-        #     mx = spin_operators.compute_sx(mp,mm)
-        #     my = spin_operators.compute_sy(mp,mm)   
-    
-        #     Sz[i] = mz.copy()       
-        #     Sx[i] = mx.copy()
-        #     Sy[i] = my.copy()
-        
-        return Sx,Sy,Sz

@@ -1,23 +1,68 @@
 # "operator" class
+
 import numpy as np
 import pickle
 from copy import copy
 from QuantumSparse.matrix import Matrix
-from typing import TypeVar
-T = TypeVar('T') 
+from typing import TypeVar, Union, List, Type
+
+T = TypeVar('T', bound='Operator')  # type of the class itself
+
 
 class Operator(Matrix):
-   
-    def __init__(self,*argc,**argv):
-        super().__init__(*argc,**argv)
+    """
+    This class is a subclass of QuantumSparse.matrix.Matrix and is used to represent a general operator.
+    """
+
+    def __init__(self: T, *argc, **argv) -> None:
+        """
+        Initialize the Operator object.
+
+        Parameters
+        ----------
+        argc : tuple
+            Positional arguments passed to the constructor.
+        argv : dict
+            Keyword arguments passed to the constructor.
+
+        Returns
+        -------
+        None
+        """
+        super().__init__(*argc, **argv)
         pass
 
-    def save(self:T,file):
+    def save(self: T, file: str) -> None:
+        """
+        Save the Operator object to a file.
+
+        Parameters
+        ----------
+        file : str
+            The file path to save the object.
+
+        Returns
+        -------
+        None
+        """
         with open(file, 'wb') as f:
             pickle.dump(self, f)
-        
+
     @classmethod
-    def load(cls,file):
+    def load(cls: Type[T], file: str) -> T:
+        """
+        Load an Operator object from a file.
+
+        Parameters
+        ----------
+        file : str
+            The file path to load the object.
+
+        Returns
+        -------
+        T
+            The loaded Operator object.
+        """
         with open(file, 'rb') as f:
             obj = pickle.load(f)
         return cls(obj)
@@ -47,20 +92,30 @@ class Operator(Matrix):
                 iden[i] = Matrix.identity(dim,dtype=int)  
             return iden
     
-    
-    # def eigen(self):
-    #     return {"eigenvalues":self.eigenvalues,"eigenstates":self.eigenstates}
-    
-    # def test_diagonalization(self,tol=1e-6,return_norm=False):
-    #     """Test the accuracy of the eigen-ecomposition"""
-    #     test = self @ self.eigenstates - self.eigenstates @ self.diags(diagonals=self.eigenvalues,shape=self.shape)
-    #     norm = test.norm()
-    #     if return_norm:
-    #         return norm < tol, norm
-    #     else :
-    #         return norm < tol
+    def diagonalize(self:T,method="jacobi",restart=False,tol:float=1.0e-3,max_iter:int=-1,test=True):
+        """
+        Diagonalize the operator using the specified method.
 
-    def diagonalize(self,method="jacobi",restart=False,tol:float=1.0e-3,max_iter:int=-1,test=True):
+        Parameters
+        ----------
+        method : str, optional
+            The method used for diagonalization (default is "jacobi").
+        restart : bool, optional
+            Whether to restart the diagonalization process (default is False).
+        tol : float, optional
+            The tolerance for the diagonalization process (default is 1.0e-3).
+        max_iter : int, optional
+            The maximum number of iterations for the diagonalization process (default is -1).
+        test : bool, optional
+            Whether to test the eigensolution (default is True).
+
+        Returns
+        -------
+        w : numpy.ndarray
+            The eigenvalues of the operator.
+        f : numpy.ndarray
+            The eigenstates of the operator.
+        """
 
         if restart :
             self.eigenvalues = None
@@ -80,7 +135,22 @@ class Operator(Matrix):
 
         # return self.eigenvalues, self.eigenstates
 
-    def change_basis(self,S,direction="forward"):
+    def change_basis(self:T,S:T,direction="forward"):
+        """
+        Changes the basis of the operator using the given symmetry operator.
+
+        Parameters
+        ----------
+        S : T
+            The symmetry operator used for the basis change.
+        direction : str, optional
+            The direction of the basis change (default is "forward").
+
+        Returns
+        -------
+        out : T
+            The operator in the new basis.
+        """
 
         if not S.diagonalized():
             raise ValueError("The operator 'S' should have already been diagonalized.")
@@ -105,7 +175,27 @@ class Operator(Matrix):
         return out
 
 
-    def diagonalize_with_symmetry(self,S,use_block_form=False,test=True,**argv):
+    def diagonalize_with_symmetry(self:T,S:Union[List[T],T],use_block_form=False,test=True,**argv):
+        """
+        Diagonalizes the operator using the given symmetry operator(s).
+
+        Parameters
+        ----------
+        S : Union[List[T], T]
+            The symmetry operator(s) used for the diagonalization.
+            If a single operator is provided, it will be wrapped in a list.
+        use_block_form : bool, optional
+            Whether to use the block form of the operator (default is False).
+        test : bool, optional
+            Whether to test the eigensolution (default is True).
+        **argv
+            Additional keyword arguments to be passed to the diagonalization method.
+
+        Returns
+        -------
+        Tuple[T, T]
+            A tuple containing the eigenvalues and eigenstates of the operator.
+        """
 
         if type(S) is not list:
             return self.diagonalize_with_symmetry([S],use_block_form,test,**argv)
@@ -121,12 +211,12 @@ class Operator(Matrix):
         w,labels = unique_with_tolerance(sym.eigenvalues)
         
         # new = self.clone(sym.eigenstates.dagger() @ self @ sym.eigenstates)
-        new = self.change_basis(sym,direction="forward")
+        new:T = self.change_basis(sym,direction="forward")
         for n in range(1,len(S)):
             S[n] = S[n].change_basis(sym,direction="forward")
 
         # little dirty trick
-        def new_count_blocks(self,inplace=True):
+        def new_count_blocks(self:T,inplace=True)->T:
             self.blocks = labels
             self.n_blocks = len(np.unique(labels))
             return self.n_blocks, self.blocks
@@ -165,6 +255,16 @@ class Operator(Matrix):
 
 
 def unique_with_tolerance(arr, tol=1e-8):
+    """
+    Returns the unique elements of an array within a specified tolerance.
+
+    Parameters:
+    arr (array_like): The input array.
+    tol (float, optional): The tolerance for uniqueness. Defaults to 1e-8.
+
+    Returns:
+    tuple: A tuple containing the unique elements and their indices.
+    """
     rounded_arr = np.round(arr, decimals=int(-np.log10(tol)))
     unique_rounded,index = np.unique(rounded_arr,return_inverse=True)
     return unique_rounded, index

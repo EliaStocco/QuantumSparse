@@ -8,7 +8,8 @@ from scipy.sparse import bmat
 import numpy as np
 from QuantumSparse.tools.optimize import jit
 from QuantumSparse.errors import ImplErr
-from typing import TypeVar, Union
+from typing import TypeVar, Union, Type
+
 T = TypeVar('T') 
 dtype = csr_matrix
 NoJacobi = 8
@@ -20,39 +21,70 @@ NoJacobi = 8
 #             attrs["module"] = sparse
 #         else :
 #             raise ImplErr
-        
+#        
 #         bases = bases + (dtype,)
-
+#
 #         # Create the class using the modified attributes
 #         return super().__new__(cls, name, bases, attrs)
     
 
 # class matrix(metaclass=get_class)
 class Matrix(csr_matrix):
-    """class to handle matrices in different form, i.e. dense, sparse, with 'numpy', 'scipy', or 'torch'"""
-
+    """
+    Class to handle matrices in different form, i.e. dense, sparse, with 'numpy', 'scipy', or 'torch'
+    """
+    
     module = sparse
 
     def __init__(self,*argc,**argv):
+        """
+        Initializes a Matrix object.
+
+        Parameters
+        ----------
+        *argc : variable number of positional arguments
+            Positional arguments to be passed to the parent class.
+        **argv : variable number of keyword arguments
+            Keyword arguments to be passed to the parent class.
+
+        Returns
+        -------
+        None
+            Initializes the Matrix object and sets its attributes.
+        """
         # https://realpython.com/python-super/
         super().__init__(*argc,**argv)
 
-        self.blocks = None
-        self.n_blocks = None
-        self.eigenvalues = None
-        self.eigenstates = None
-        self.nearly_diag = None
-        self.is_adjacency = None
+        self.blocks:Union[None,list] = None
+        self.n_blocks:Union[None,int] = None
+        self.eigenvalues:Union[None,np.ndarray] = None
+        self.eigenstates:Union[None,np.ndarray] = None
+        self.nearly_diag:Union[None,bool] = None
+        self.is_adjacency:Union[None,bool] = None
         # if is_adjacency:
         #     self.is_adjacency = True
         # else:
         #     self.is_adjacency = self.det_is_adjacency()
     
-    def clone(self,*argc,**argv)->T:
+    def clone(self:T,*argc,**argv)->T:
+        """Clone a matrix
+
+        Returns
+        ----------
+        Matrix
+            A new instance of the same matrix
+        """
         return type(self)(*argc,**argv)
         
 
     def save(self,file):
+        """Save a matrix in a file
+
+        Parameters
+        ----------
+        file : str
+            The name of the file to save the matrix
+        """
         if Matrix.module is sparse :
             sparse.save_npz(file,self)
         else :
@@ -60,6 +92,15 @@ class Matrix(csr_matrix):
     
     @staticmethod
     def load(file):
+        """
+        Load a matrix from a file.
+
+        Parameters:
+            file (str): The name of the file to load the matrix from.
+
+        Returns:
+            The loaded matrix if the module is 'sparse', otherwise raises ImplErr.
+        """
         if Matrix.module is sparse :
             return sparse.load_npz(file)
         else :
@@ -67,23 +108,80 @@ class Matrix(csr_matrix):
 
     @classmethod
     def diags(cls,*argc,**argv):
-        """diagonal matrix"""
+        """
+        Creates a diagonal matrix using the module's diags function.
+
+        Parameters
+        ----------
+        *argc : variable number of positional arguments
+            Positional arguments to be passed to the module's diags function.
+        **argv : variable number of keyword arguments
+            Keyword arguments to be passed to the module's diags function.
+
+        Returns
+        -------
+        Matrix
+            A new Matrix instance representing the diagonal matrix.
+        """
         return cls(Matrix.module.diags(*argc,**argv))
 
     @classmethod
     def kron(cls,*argc,**argv):
-        """kronecker product"""
+        """
+        Create a new Matrix instance by taking the Kronecker product of the given matrices.
+
+        Parameters:
+            *argc (Matrix or array-like): The matrices to take the Kronecker product of.
+            **argv (dict): Additional keyword arguments to pass to the Kronecker product function.
+
+        Returns:
+            Matrix: A new Matrix instance representing the Kronecker product of the given matrices.
+        """
         return cls(Matrix.module.kron(*argc,**argv))
 
     @classmethod
     def identity(cls,*argc,**argv):
-        """identity operator"""
+        """
+        Creates an identity matrix using the module's identity function.
+
+        Parameters
+        ----------
+        *argc : variable number of positional arguments
+            Positional arguments to be passed to the module's identity function.
+        **argv : variable number of keyword arguments
+            Keyword arguments to be passed to the module's identity function.
+
+        Returns
+        -------
+        Matrix
+            A new Matrix instance representing the identity matrix.
+        """
         return cls(Matrix.module.identity(*argc,**argv))
     
     def dagger(self)->T:
+        """
+        Returns the Hermitian conjugate (or adjoint) of the matrix.
+
+        The Hermitian conjugate of a matrix is obtained by taking the transpose of the matrix and then taking the complex conjugate of each entry.
+
+        Returns
+        -------
+        T
+            The Hermitian conjugate of the matrix.
+        """
         return self.clone(self.conjugate().transpose()) #type(self)(self.conjugate().transpose())
 
     def is_symmetric(self,**argv)->bool:
+        """
+        Checks if the matrix is symmetric.
+
+        Parameters:
+            **argv (dict): Additional keyword arguments.
+                tolerance (float): The tolerance for checking symmetry.
+
+        Returns:
+            bool: True if the matrix is symmetric, False otherwise.
+        """
         if Matrix.module is sparse :
             tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
             return (self - self.transpose()).norm() < tolerance
@@ -91,6 +189,16 @@ class Matrix(csr_matrix):
             raise ImplErr
         
     def is_hermitean(self,**argv)->bool:
+        """
+        Checks if the matrix is Hermitian.
+
+        Parameters:
+            **argv (dict): Additional keyword arguments.
+                tolerance (float): The tolerance for checking Hermiticity.
+
+        Returns:
+            bool: True if the matrix is Hermitian, False otherwise.
+        """
         if Matrix.module is sparse :
             tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
             return (self - self.dagger()).norm() < tolerance
@@ -98,6 +206,21 @@ class Matrix(csr_matrix):
             raise ImplErr
         
     def is_unitary(self,**argv)->bool:
+        """
+        Checks if the matrix is unitary.
+
+        A unitary matrix is a square matrix whose columns and rows are orthonormal vectors.
+
+        Parameters:
+            **argv (dict): Additional keyword arguments.
+                tolerance (float): The tolerance for checking unitarity.
+
+        Returns:
+            bool: True if the matrix is unitary, False otherwise.
+
+        Raises:
+            ImplErr: If the matrix module is not sparse.
+        """
         if Matrix.module is sparse :
             tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
             return (self @ self.dagger() - self.identity(len(self)) ).norm() < tolerance
@@ -105,33 +228,103 @@ class Matrix(csr_matrix):
             raise ImplErr
         
     def det_is_adjacency(self):
+        """
+        Checks if the matrix is an adjacency matrix.
+
+        Returns:
+            bool: True if the matrix is an adjacency matrix, False otherwise.
+        """
         if self.is_adjacency is None:
             self.is_adjacency = self == self.adjacency()
             
         return self.is_adjacency
 
     def diagonalized(self)->bool:
+        """
+        Check if the matrix is diagonalized.
+
+        Returns:
+            bool: True if the matrix is diagonalized, False otherwise.
+        """
         return self.eigenvalues is not None and self.eigenstates  is not None
 
     @staticmethod
     def anticommutator(A:T,B:T)->T:
+        """
+        Computes the anticommutator of two matrices A and B.
+
+        Args:
+            A (T): The first matrix.
+            B (T): The second matrix.
+
+        Returns:
+            T: The anticommutator of A and B.
+        """
         return A @ B + B @ A 
     
     @staticmethod
     def commutator(A:T,B:T)->T:
+        """
+        Computes the commutator of two matrices A and B.
+
+        The commutator is defined as the difference between the matrix product AB and BA.
+
+        Parameters:
+            A (T): The first matrix.
+            B (T): The second matrix.
+
+        Returns:
+            T: The commutator of A and B.
+        """
         return A @ B - B @ A 
     
     def commute(self,A,tol=1e-6)->bool:
+        """
+        Checks if the matrix is commutative with another matrix A within a given tolerance.
+
+        Args:
+            A (Matrix): The matrix to check commutativity with.
+            tol (float, optional): The tolerance for commutativity. Defaults to 1e-6.
+
+        Returns:
+            bool: True if the matrix is commutative with A within the given tolerance, False otherwise.
+        """
         return Matrix.commutator(self,A).norm() < tol
 
     # @staticmethod 
     def norm(self)->float:
+        """
+        Computes the Euclidean norm (magnitude) of the matrix.
+
+        Parameters:
+            self (Matrix): The matrix to compute the norm of.
+
+        Returns:
+            float: The Euclidean norm of the matrix.
+
+        Raises:
+            ImplErr: If the matrix module is not sparse.
+        """
         if Matrix.module is sparse :
             return sparse.linalg.norm(self)
         else :
             raise ImplErr
 
     def adjacency(self)->T:
+        """
+        Computes the adjacency matrix of the given matrix.
+
+        The adjacency matrix is a binary matrix where the entry at row i and column j is 1 if there is an edge between vertices i and j, and 0 otherwise.
+
+        Parameters:
+            self (Matrix): The matrix to compute the adjacency matrix of.
+
+        Returns:
+            T: The adjacency matrix of the given matrix.
+
+        Raises:
+            ImplErr: If the matrix module is not sparse.
+        """
         if Matrix.module is sparse :
             data    = self.data
             indices = self.indices
@@ -149,6 +342,20 @@ class Matrix(csr_matrix):
             raise ImplErr
     
     def sparsity(self)->float:
+        """
+        Computes the sparsity of the given matrix.
+
+        The sparsity of a matrix is the ratio of the number of non-zero elements to the total number of elements in the matrix.
+
+        Parameters:
+            self (Matrix): The matrix to compute the sparsity of.
+
+        Returns:
+            float: The sparsity of the given matrix.
+
+        Raises:
+            ImplErr: If the matrix module is not sparse.
+        """
         if Matrix.module is sparse :
             rows, cols = self.nonzero()
             shape = self.shape
@@ -160,6 +367,18 @@ class Matrix(csr_matrix):
         # return float(matrix.norm(v)) / float(len(v))
 
     def visualize(self,adjacency=True,tab='tab10',cb=True,file=None)->None:
+        """
+        Visualizes a matrix using matplotlib.
+
+        Parameters:
+            adjacency (bool): Whether to visualize the adjacency matrix. Defaults to True.
+            tab (str): The colormap to use. Defaults to 'tab10'.
+            cb (bool): Whether to count blocks before visualizing. Defaults to True.
+            file (str): The file to save the visualization to. If None, the visualization will be displayed. Defaults to None.
+
+        Returns:
+            None
+        """
         if adjacency:
             return self.adjacency().visualize(False)
         
@@ -218,6 +437,10 @@ class Matrix(csr_matrix):
         return
 
     def __repr__(self):
+        """
+        Returns a string representation of the matrix object, including its type, shape, 
+        sparsity, number of elements, norms, and symmetry properties.
+        """
         string  = "{:>12s}: {}\n".format('type', str(self.data.dtype))
         string += "{:>12s}: {}\n".format('shape', str(self.shape))
         string += "{:>12s}: {:6f}\n".format('sparsity', self.sparsity())
@@ -233,24 +456,63 @@ class Matrix(csr_matrix):
         return string
     
     def __len__(self)->int:
+        """
+        Returns the length of the matrix.
+
+        Returns:
+            int: The length of the matrix.
+
+        Raises:
+            ValueError: If the matrix is not square.
+        """
         M,N = self.shape
         if M != N :
             raise ValueError("matrix is not square: __len__ is not well defined")
         return M
     
     def empty(self)->T:
+        """
+        Creates an empty matrix of the same shape and with the same dtype as the original matrix.
+        
+        Returns:
+            T: A new Matrix instance representing an empty matrix.
+        """
         return self.clone(self.shape,dtype=self.dtype) # type(self)(self.shape,dtype=self.dtype)
     
     def as_diagonal(self)->T:
+        """
+        Creates a diagonal matrix from the diagonal elements of the original matrix.
+        
+        Returns:
+            T: A new Matrix instance representing a diagonal matrix.
+        """
         diagonal_elements = super().diagonal()
         return type(self).diags(diagonals=diagonal_elements)
     
     def off_diagonal(self)->T:
+        """
+        Creates an off-diagonal matrix from the non-diagonal elements of the original matrix.
+        
+        Returns:
+            T: A new Matrix instance representing an off-diagonal matrix.
+        """
         diagonal_elements = super().diagonal() # self.diagonal()
         diagonal_matrix = type(self).diags(diagonals=diagonal_elements)
         return self - diagonal_matrix
     
     def count(self,what="all")->int:
+        """
+        Counts the number of elements of the matrix, either all, diagonal or off-diagonal elements.
+        
+        Parameters:
+            what (str): The type of elements to be counted. Default is "all".
+        
+        Returns:
+            int: The number of elements of the specified type.
+        
+        Raises:
+            ValueError: If 'what' is not one of "all", "diag", or "off".
+        """
         if what == "all":
             a = self.adjacency()
             return len(a.data)
@@ -263,6 +525,15 @@ class Matrix(csr_matrix):
         
     @classmethod
     def from_blocks(cls,blocks):
+        """
+        Creates a matrix from a list of blocks.
+        
+        Parameters:
+            blocks (list): A list of blocks.
+        
+        Returns:
+            T: A new Matrix instance representing the matrix created from the blocks.
+        """
         N = len(blocks)
         tmp = np.full((N,N),None,dtype=object)
         for n in range(N):
@@ -272,63 +543,104 @@ class Matrix(csr_matrix):
         else :
             raise ValueError("error")
 
-    def count_blocks(self,inplace=True):
+    def count_blocks(self, inplace=True):
+        """
+        Counts the number of blocks in the matrix.
+
+        Parameters:
+            inplace (bool): If True, updates the blocks and n_blocks attributes of the matrix. Default is True.
+
+        Returns:
+            tuple: A tuple containing the number of connected components and the labels of the connected components.
+
+        Raises:
+            ImplErr: If the matrix module is not sparse.
+        """
         adjacency = self.adjacency()
-        if Matrix.module is sparse : 
-            n_components, labels = connected_components(adjacency,directed=False,return_labels=True)
+        if Matrix.module is sparse:
+            n_components, labels = connected_components(adjacency, directed=False, return_labels=True)
             if inplace:
                 self.blocks = labels
                 self.n_blocks = len(np.unique(labels))
             return n_components, labels
-        else :
+        else:
             raise ImplErr
 
-    def mask2submatrix(self,mask)->T:
-        submatrix = self[mask][:, mask] #
+    def mask2submatrix(self, mask) -> T:
+        """
+        Creates a submatrix from the mask.
+
+        Parameters:
+            mask (array-like): A boolean mask indicating the rows and columns to include in the submatrix.
+
+        Returns:
+            T: A new matrix instance representing the submatrix.
+        """
+        submatrix = self[mask][:, mask]  #
 
         # this is needed to restart from a previous calculation
-        if self.eigenvalues is not None :
+        if self.eigenvalues is not None:
             submatrix.eigenvalues = self.eigenvalues[mask]
-        if self.eigenstates is not None :
+        if self.eigenstates is not None:
             submatrix.eigenstates = self.eigenstates[mask][:, mask]
-        if self.nearly_diag is not None :
+        if self.nearly_diag is not None:
             submatrix.nearly_diag = self.nearly_diag[mask][:, mask]
-            
-        return submatrix
-    
-    def divide_into_block(self:T,labels:np.ndarray,sort=True)->T:
 
-        submatrices = np.full((self.n_blocks,self.n_blocks),None,dtype=object)
+        return submatrix
+
+    def divide_into_block(self: T, labels: np.ndarray, sort=True) -> T:
+        """
+        Divides the matrix into blocks.
+
+        Parameters:
+            labels (array-like): An array of labels indicating the block each element belongs to.
+            sort (bool): If True, sorts the matrix according to the labels. Default is True.
+
+        Returns:
+            T: A new matrix instance representing the matrix divided into blocks.
+        """
+        submatrices = np.full((self.n_blocks, self.n_blocks), None, dtype=object)
         indeces = np.arange(self.shape[0])
         permutation = np.arange(self.shape[0])
 
         k = 0
         for n in range(self.n_blocks):
             mask = (labels == n)
-            permutation[k:k+len(indeces[mask])] = indeces[mask]
+            permutation[k:k + len(indeces[mask])] = indeces[mask]
             k += len(indeces[mask])
             # create a submatrix from one block
-            submatrices[n,n] = self.mask2submatrix(mask)
-        
+            submatrices[n, n] = self.mask2submatrix(mask)
+
         out = self.clone(bmat(submatrices))
         if sort:
             reverse_permutation = np.argsort(permutation)
             out = out[reverse_permutation][:, reverse_permutation]
         return out
-    
+
     # #@jit
-    def diagonalize_each_block(self:T,labels:np.ndarray,method:str,original:bool,tol:float,max_iter:int)->Union[np.ndarray,T]:
-        
-        # we need to specify all the parameters if we want to speed it up with 'numba.jit'
+    def diagonalize_each_block(self: T, labels: np.ndarray, method: str, original: bool, tol: float,
+                               max_iter: int) -> Union[np.ndarray, T]:
+        """
+        Diagonalizes each block of the matrix.
 
-        # if not original :
-        #     raise ValueError("some error occurred")
-        
-        submatrices = np.full((self.n_blocks,self.n_blocks),None,dtype=object)
-        eigenvalues = np.full(self.n_blocks,None,dtype=object)
-        eigenstates = np.full(self.n_blocks,None,dtype=object)
+        Parameters:
+            labels (array-like): An array of labels indicating the block each element belongs to.
+            method (str): The method to use for diagonalization. Default is "jacobi".
+            original (bool): If True, prints the block being diagonalized. Default is True.
+            tol (float): The tolerance for convergence. Default is 1e-3.
+            max_iter (int): The maximum number of iterations. If -1, there is no maximum. Default is -1.
 
-        if original :
+        Returns:
+            tuple: A tuple containing the eigenvalues, eigenstates, and nearly diagonal matrix.
+
+        Raises:
+            ValueError: If original is False.
+        """
+        submatrices = np.full((self.n_blocks, self.n_blocks), None, dtype=object)
+        eigenvalues = np.full(self.n_blocks, None, dtype=object)
+        eigenstates = np.full(self.n_blocks, None, dtype=object)
+
+        if original:
             indeces = np.arange(self.shape[0])
             permutation = np.arange(self.shape[0])
             k = 0
@@ -337,24 +649,22 @@ class Matrix(csr_matrix):
             raise ValueError("some error occurred")
 
         for n in range(self.n_blocks):
-            if original : print("\t\tdiagonalizing block n. {:d}".format(n))
+            if original:
+                print(f"\t\tdiagonalizing block n. {n}")
 
             mask = (labels == n)
-            permutation[k:k+len(indeces[mask])] = indeces[mask]
+            permutation[k:k + len(indeces[mask])] = indeces[mask]
             k += len(indeces[mask])
-            
+
             # create a submatrix from one block
             submatrix = self.mask2submatrix(mask)
 
             # diagonalize the block
-            v,f,M = submatrix.eigensolver(  original=False,
-                                            method=method,
-                                            tol=tol,
-                                            max_iter=max_iter)
-            submatrices[n,n] = M
+            v, f, M = submatrix.eigensolver(original=False, method=method, tol=tol, max_iter=max_iter)
+            submatrices[n, n] = M
             eigenvalues[n] = v
             eigenstates[n] = f
-        
+
         eigenvalues = np.concatenate(eigenvalues)
         eigenstates = Matrix.from_blocks(eigenstates)
 
@@ -364,10 +674,31 @@ class Matrix(csr_matrix):
         nearly_diagonal = self.clone(bmat(submatrices))[reverse_permutation][:, reverse_permutation]
         # type(self)(bmat(submatrices))
         return eigenvalues, eigenstates, nearly_diagonal
-    
  
     def eigensolver(self,method="jacobi",original=True,tol:float=1.0e-3,max_iter:int=-1):
+        """
+        Diagonalize the matrix using the specified method.
 
+        Parameters
+        ----------
+        method : str, optional
+            The method used for diagonalization (default is "jacobi").
+        original : bool, optional
+            If True, the block being diagonalized is printed (default is True).
+        tol : float, optional
+            The tolerance for the diagonalization process (default is 1.0e-3).
+        max_iter : int, optional
+            The maximum number of iterations for the diagonalization process (default is -1).
+
+        Returns
+        -------
+        w : numpy.ndarray
+            The eigenvalues of the matrix.
+        f : numpy.ndarray
+            The eigenstates of the matrix.
+        N : Matrix
+            The nearly diagonal matrix.
+        """
         # if Matrix.module is sparse :
 
         #############################
@@ -425,4 +756,12 @@ class Matrix(csr_matrix):
         return w,f,N
     
     def test_eigensolution(self)->float:
+        """
+        Test the eigensolution and return the norm of the error.
+
+        Returns
+        -------
+        norm : float
+            The norm of the error.
+        """
         return self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues)
