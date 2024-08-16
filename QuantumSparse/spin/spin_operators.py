@@ -2,9 +2,17 @@
 import numpy as np
 from QuantumSparse.operator import Operator
 from QuantumSparse.tools.functions import prepare_opts
-
+from typing import Tuple
+import pandas as pd
 
 class SpinOperators():
+
+    # Sx:np.ndarray[Operator]
+    # Sy:np.ndarray[Operator]
+    # Sz:np.ndarray[Operator]
+    # Sp:np.ndarray[Operator]
+    # Sm:np.ndarray[Operator]
+    # basis:pd.DataFrame
     
     def __init__(self,spin_values=None,N=1,S=0.5,opts=None,**argv):
         """
@@ -51,7 +59,7 @@ class SpinOperators():
     def compute_basis(self):
 
         from itertools import product
-        import pandas as pd
+        
 
         Nsites = np.arange(len(self.Sz))
         index = np.arange(int(self.Sz[0].shape[0]))
@@ -73,7 +81,7 @@ class SpinOperators():
    
     @staticmethod
     # @output(operator)
-    def compute_spin_operators(spin_values,opts=None):
+    def compute_spin_operators(spin_values,opts=None)->Tuple[Operator,Operator,Operator,Operator,Operator]:
         """
         Parameters
         ----------
@@ -128,7 +136,7 @@ class SpinOperators():
     
    
     @staticmethod
-    def dimensions(spin_values):
+    def dimensions(spin_values)->int:
         """
         Parameters
         ----------
@@ -147,7 +155,7 @@ class SpinOperators():
    
     # @staticmethod
     # @output(operator)
-    def compute_S2(self,opts=None):
+    def compute_S2(self,opts=None)->Operator:
         """        
         Parameters
         ----------
@@ -207,7 +215,7 @@ class SpinOperators():
             
    
     @staticmethod
-    def from_S2_to_S(S2):
+    def from_S2_to_S(S2)->float:
         """
         Parameters
         ----------
@@ -225,7 +233,7 @@ class SpinOperators():
    
     @staticmethod
     # @output(operator)
-    def compute_sx(p,m):
+    def compute_sx(p:Operator,m:Operator)->Operator:
         """
         Parameters
         ----------
@@ -245,7 +253,7 @@ class SpinOperators():
    
     @staticmethod
     # @output(operator)
-    def compute_sy(p,m):
+    def compute_sy(p:Operator,m:Operator)->Operator:
         """
         Parameters
         ----------
@@ -265,7 +273,7 @@ class SpinOperators():
    
     @staticmethod
     # @output(operator)
-    def single_Szpm(spin_values):
+    def single_Szpm(spin_values:np.ndarray)->Tuple[Operator,Operator,Operator]:
         """
         Parameters
         ----------
@@ -307,7 +315,7 @@ class SpinOperators():
    
     @staticmethod
     # @output(operator)
-    def system_Sxypm_operators(dimensions,sz,sp,sm):
+    def system_Sxypm_operators(dimensions,sz,sp,sm)->Tuple[Operator,Operator,Operator,Operator,Operator]:
         """
         Parameters
         ----------
