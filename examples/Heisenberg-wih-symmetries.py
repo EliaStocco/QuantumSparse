@@ -2,7 +2,7 @@ import numpy as np
 from QuantumSparse.spin import SpinOperators, from_S2_to_S
 from QuantumSparse.operator import Operator
 from QuantumSparse.operator import Symmetry, roots_of_unity
-from QuantumSparse.spin import Heisenberg
+from QuantumSparse.spin import Heisenberg, anisotropy
 from QuantumSparse.spin.shift import shift
 import pytest
 
@@ -16,7 +16,7 @@ import pytest
 # - BiQuadraticHeisenberg
 
 @pytest.mark.parametrize("S,NSpin", [(2,4),(3,3),(5,2)])
-def test_Ising_symmetries(S=1,NSpin=8):
+def test_Heisenberg_symmetries(S=1,NSpin=8,use_symmetries=True):
     
     spin_values = np.full(NSpin,S)
 
@@ -26,24 +26,30 @@ def test_Ising_symmetries(S=1,NSpin=8):
     Sx,Sy,Sz = SpinOp.Sx,SpinOp.Sy,SpinOp.Sz
     
     #-----------------#
-    D:Symmetry = shift(SpinOp)
-    print(repr(D))
-    nblocks, _ = D.count_blocks()
-    print("\tnblocks:",nblocks)
-    D.diagonalize(method="dense") # 'dense' i smuch better than 'jacobi'
-    # D.eigenvalues.sort()
-    # print(D.eigenvalues)
-    l,N = D.energy_levels()
-    # print(len(l))
-    assert len(l) == NSpin, "wrong number of energy levels"
-    ru = np.sort(roots_of_unity(len(spin_values)))
-    l  = np.sort(l)    
-    assert np.allclose(l,ru), "The eigenvalues should be the roots of the unity."
+    if use_symmetries:
+        D:Symmetry = shift(SpinOp)
+        print(repr(D))
+        nblocks, _ = D.count_blocks()
+        print("\tnblocks:",nblocks)
+        D.diagonalize(method="dense") # 'dense' is smuch better than 'jacobi'
+        # D.eigenvalues.sort()
+        # print(D.eigenvalues)
+        l,N = D.energy_levels()
+        # print(len(l))
+        assert len(l) == NSpin, "wrong number of energy levels"
+        ru = np.sort(roots_of_unity(len(spin_values)))
+        l  = np.sort(l)    
+        assert np.allclose(l,ru), "The eigenvalues should be the roots of the unity."
     
 
     #-----------------#
-    # Heisenberg Hamiltonian along the z-axis
-    H = Heisenberg(Sx,Sy,Sz) 
+    # Heisenberg Hamiltonian
+    # as soon as you break some trivial symmetry (which is "visible" in the orinal basis)
+    # diagonalizing with symmetries becomes more efficient
+    # even considering the time spent to diagonalize the symmetry operator
+    # (which can be done once, save to file the results, and load them again the next time).
+    
+    H = Heisenberg(Sx,Sy,Sz,couplings=[1,2,3]) # + anisotropy(Sz)
     print(repr(H))
     
     nblocks, _ = H.count_blocks()
@@ -59,7 +65,10 @@ def test_Ising_symmetries(S=1,NSpin=8):
     assert H is not Hold, "the variables should be independent"
     
     #-----------------#
-    E,Psi = H.diagonalize_with_symmetry(S=[D])
+    if use_symmetries:
+        E,Psi = H.diagonalize_with_symmetry(S=[D])
+    else:
+        E,Psi = H.diagonalize()
     test = H.test_eigensolution().norm()
     print("\ttest: ", test)
     
@@ -80,6 +89,35 @@ def test_Ising_symmetries(S=1,NSpin=8):
     
     #-----------------#
     H.save("Heisenberg.pickle")
+    
+import contextlib
+import sys
+import os
+@contextlib.contextmanager
+def suppress_output(suppress=True):
+    if suppress:
+        with open(os.devnull, "w") as fnull:
+            sys.stdout.flush()  # Flush the current stdout
+            sys.stdout = fnull
+            try:
+                yield
+            finally:
+                sys.stdout = sys.__stdout__  # Restore the original stdout
+    else:
+        yield
 
 if __name__ == "__main__":
-    test_Ising_symmetries()
+    
+    import time
+    SUPPRESS = True
+    start_time = time.time()
+    with suppress_output(SUPPRESS):
+        test_Heisenberg_symmetries(use_symmetries=True)
+    end_time = time.time()
+    print("\n\nElapsed time:", end_time - start_time, "seconds")
+    
+    start_time = time.time()
+    with suppress_output(SUPPRESS):
+        test_Heisenberg_symmetries(use_symmetries=False)
+    end_time = time.time()
+    print("\n\nElapsed time:", end_time - start_time, "seconds")

@@ -91,7 +91,7 @@ def DM(Sx:np.ndarray=None,Sy:np.ndarray=None,Sz:np.ndarray=None,couplings=1.0,nn
         
     return H
 
-def anisotropy(Sz:np.ndarray,couplings,opts=None)->Operator:
+def anisotropy(Sz:np.ndarray,couplings=1,opts=None)->Operator:
     """
     This function calculates the anisotropy term in a spin Hamiltonian.
 
