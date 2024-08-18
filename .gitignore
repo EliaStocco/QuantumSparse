@@ -1,11 +1,10 @@
 QuantumSparse.egg-info/
 .vscode/
-*.pyc
 *.npz
-# *.pickle
+*.pickle
 
-# # Ignore __pycache__ directories
-# __pycache__/
+# Ignore __pycache__ directories
+__pycache__/
 
-# # Ignore all .pyc files
-# *.pyc
+# Ignore all .pyc files
+*.pyc
