@@ -227,24 +227,6 @@ class SpinOperators:
         S2 = SxTot@SxTot +   SyTot@SyTot +  SzTot@SzTot
         return S2
             
-   
-    @staticmethod
-    def from_S2_to_S(S2)->float:
-        """
-        Parameters
-        ----------
-        S2 : float
-            eigenvalue the S2 operator
-
-        Returns
-        -------
-        S : float
-            spin value (integer of semi-integer value) such that S(S+1) = S2
-        """
-        S = (-1 + np.sqrt(1+ 4*S2))/2.0
-        return S
-
-   
     @staticmethod
     # @output(operator)
     def compute_sx(p:Operator,m:Operator)->Operator:
@@ -387,4 +369,6 @@ class SpinOperators:
     
     def identity(self):
         return self.Sx[0].identity(len(self.Sx[0]))
-        
+
+
+   

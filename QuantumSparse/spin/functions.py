@@ -46,3 +46,18 @@ def rotate_spins(Sx=None,Sy=None,Sz=None,spins=None,EulerAngles=None):
         temp = R @ v
         SxR[n],SyR[n], SzR[n] = temp[0,0],temp[0,1],  temp[0,2]
     return SxR,SyR,SzR
+
+def from_S2_to_S(S2)->float:
+    """
+    Parameters
+    ----------
+    S2 : float
+        eigenvalue the S2 operator
+
+    Returns
+    -------
+    S : float
+        spin value (integer of semi-integer value) such that S(S+1) = S2
+    """
+    S = (-1 + np.sqrt(1+ 4*S2))/2.0
+    return S

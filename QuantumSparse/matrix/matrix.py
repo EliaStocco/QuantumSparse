@@ -1,18 +1,25 @@
-from scipy.linalg import eigh, eig
+from scipy.linalg import eigh, eig, null_space
 from scipy import sparse
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 # from scipy.sparse import issparse, diags, hstack
-from copy import copy
+from copy import copy, deepcopy
 from scipy.sparse import bmat
 import numpy as np
 from QuantumSparse.tools.optimize import jit
 from QuantumSparse.errors import ImplErr
 from typing import TypeVar, Union, Type
-
-T = TypeVar('T') 
+    
+T = TypeVar('T',bound="Matrix") 
 dtype = csr_matrix
 NoJacobi = 8
+
+USE_COPY = True
+def my_copy(x):
+    if USE_COPY:
+        return copy(x)
+    else:
+        return x
 
 # class get_class(type):
 #     def __new__(cls, name, bases, attrs):
@@ -36,7 +43,7 @@ class Matrix(csr_matrix):
     
     module = sparse
 
-    def __init__(self,*argc,**argv):
+    def __init__(self:T,*argc,**argv):
         """
         Initializes a Matrix object.
 
@@ -75,9 +82,19 @@ class Matrix(csr_matrix):
             A new instance of the same matrix
         """
         return type(self)(*argc,**argv)
-        
+    
+    def copy(self:T)->T:
+        """
+        Creates a deep copy of the current Matrix object.
 
-    def save(self,file):
+        Returns
+        -------
+        Matrix
+            A deep copy of the current Matrix object.
+        """
+        return deepcopy(self)
+
+    def save(self:T,file):
         """Save a matrix in a file
 
         Parameters
@@ -158,7 +175,7 @@ class Matrix(csr_matrix):
         """
         return cls(Matrix.module.identity(*argc,**argv))
     
-    def dagger(self)->T:
+    def dagger(self:T)->T:
         """
         Returns the Hermitian conjugate (or adjoint) of the matrix.
 
@@ -171,7 +188,7 @@ class Matrix(csr_matrix):
         """
         return self.clone(self.conjugate().transpose()) #type(self)(self.conjugate().transpose())
 
-    def is_symmetric(self,**argv)->bool:
+    def is_symmetric(self:T,**argv)->bool:
         """
         Checks if the matrix is symmetric.
 
@@ -188,7 +205,7 @@ class Matrix(csr_matrix):
         else :
             raise ImplErr
         
-    def is_hermitean(self,**argv)->bool:
+    def is_hermitean(self:T,**argv)->bool:
         """
         Checks if the matrix is Hermitian.
 
@@ -205,7 +222,7 @@ class Matrix(csr_matrix):
         else :
             raise ImplErr
         
-    def is_unitary(self,**argv)->bool:
+    def is_unitary(self:T,**argv)->bool:
         """
         Checks if the matrix is unitary.
 
@@ -227,7 +244,7 @@ class Matrix(csr_matrix):
         else :
             raise ImplErr
         
-    def det_is_adjacency(self):
+    def det_is_adjacency(self:T):
         """
         Checks if the matrix is an adjacency matrix.
 
@@ -239,7 +256,7 @@ class Matrix(csr_matrix):
             
         return self.is_adjacency
 
-    def diagonalized(self)->bool:
+    def diagonalized(self:T)->bool:
         """
         Check if the matrix is diagonalized.
 
@@ -278,7 +295,7 @@ class Matrix(csr_matrix):
         """
         return A @ B - B @ A 
     
-    def commute(self,A,tol=1e-6)->bool:
+    def commute(self:T,A,tol=1e-6)->bool:
         """
         Checks if the matrix is commutative with another matrix A within a given tolerance.
 
@@ -292,7 +309,7 @@ class Matrix(csr_matrix):
         return Matrix.commutator(self,A).norm() < tol
 
     # @staticmethod 
-    def norm(self)->float:
+    def norm(self:T)->float:
         """
         Computes the Euclidean norm (magnitude) of the matrix.
 
@@ -310,7 +327,7 @@ class Matrix(csr_matrix):
         else :
             raise ImplErr
 
-    def adjacency(self)->T:
+    def adjacency(self:T)->T:
         """
         Computes the adjacency matrix of the given matrix.
 
@@ -341,7 +358,7 @@ class Matrix(csr_matrix):
         else :
             raise ImplErr
     
-    def sparsity(self)->float:
+    def sparsity(self:T)->float:
         """
         Computes the sparsity of the given matrix.
 
@@ -366,7 +383,7 @@ class Matrix(csr_matrix):
         # v = adjacency.flatten()
         # return float(matrix.norm(v)) / float(len(v))
 
-    def visualize(self,adjacency=True,tab='tab10',cb=True,file=None)->None:
+    def visualize(self:T,adjacency=True,tab='tab10',cb=True,file=None)->None:
         """
         Visualizes a matrix using matplotlib.
 
@@ -435,8 +452,8 @@ class Matrix(csr_matrix):
         else:
             plt.savefig(file)
         return
-
-    def __repr__(self):
+    
+    def __repr__(self:T)->str:
         """
         Returns a string representation of the matrix object, including its type, shape, 
         sparsity, number of elements, norms, and symmetry properties.
@@ -455,7 +472,7 @@ class Matrix(csr_matrix):
         string += "{:>12s}: {}\n".format('symmetric', str(self.is_symmetric()))
         return string
     
-    def __len__(self)->int:
+    def __len__(self:T)->int:
         """
         Returns the length of the matrix.
 
@@ -470,7 +487,7 @@ class Matrix(csr_matrix):
             raise ValueError("matrix is not square: __len__ is not well defined")
         return M
     
-    def empty(self)->T:
+    def empty(self:T)->T:
         """
         Creates an empty matrix of the same shape and with the same dtype as the original matrix.
         
@@ -479,7 +496,7 @@ class Matrix(csr_matrix):
         """
         return self.clone(self.shape,dtype=self.dtype) # type(self)(self.shape,dtype=self.dtype)
     
-    def as_diagonal(self)->T:
+    def as_diagonal(self:T)->T:
         """
         Creates a diagonal matrix from the diagonal elements of the original matrix.
         
@@ -489,7 +506,7 @@ class Matrix(csr_matrix):
         diagonal_elements = super().diagonal()
         return type(self).diags(diagonals=diagonal_elements)
     
-    def off_diagonal(self)->T:
+    def off_diagonal(self:T)->T:
         """
         Creates an off-diagonal matrix from the non-diagonal elements of the original matrix.
         
@@ -500,7 +517,7 @@ class Matrix(csr_matrix):
         diagonal_matrix = type(self).diags(diagonals=diagonal_elements)
         return self - diagonal_matrix
     
-    def count(self,what="all")->int:
+    def count(self:T,what="all")->int:
         """
         Counts the number of elements of the matrix, either all, diagonal or off-diagonal elements.
         
@@ -543,7 +560,7 @@ class Matrix(csr_matrix):
         else :
             raise ValueError("error")
 
-    def count_blocks(self, inplace=True):
+    def count_blocks(self:T, inplace=True):
         """
         Counts the number of blocks in the matrix.
 
@@ -566,7 +583,7 @@ class Matrix(csr_matrix):
         else:
             raise ImplErr
 
-    def mask2submatrix(self, mask) -> T:
+    def mask2submatrix(self:T, mask) -> T:
         """
         Creates a submatrix from the mask.
 
@@ -675,7 +692,7 @@ class Matrix(csr_matrix):
         # type(self)(bmat(submatrices))
         return eigenvalues, eigenstates, nearly_diagonal
  
-    def eigensolver(self,method="jacobi",original=True,tol:float=1.0e-3,max_iter:int=-1):
+    def eigensolver(self:T,method="jacobi",original=True,tol:float=1.0e-3,max_iter:int=-1):
         """
         Diagonalize the matrix using the specified method.
 
@@ -749,13 +766,13 @@ class Matrix(csr_matrix):
         else :
             raise ValueError("error: n. of block should be >= 1")
         
-        self.eigenvalues = copy(w)
-        self.eigenstates = copy(f)
-        self.nearly_diag = copy(N) if N is not None else None
+        self.eigenvalues = my_copy(w)
+        self.eigenstates = my_copy(f)
+        self.nearly_diag = my_copy(N) if N is not None else None
         
         return w,f,N
     
-    def test_eigensolution(self)->float:
+    def test_eigensolution(self:T)->T:
         """
         Test the eigensolution and return the norm of the error.
 
@@ -765,3 +782,55 @@ class Matrix(csr_matrix):
             The norm of the error.
         """
         return self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues)
+
+    # def kernel(self:T)->T:
+    #     # dense = self.todense()
+    #     # N = null_space(dense)
+    #     # N = Q.tocsr()[:,r:]
+    #     N = mumps_nullspace(self)
+    #     return N
+    
+# import numpy as np
+# import kwant.linalg.mumps as mumps
+# import scipy.linalg as la
+
+# def mumps_nullspace(a):
+#     a = sparse.coo_matrix(a, dtype=complex)
+#     a.eliminate_zeros()
+
+#     dtype, row, col, data = mumps._make_assembled_from_coo(a, overwrite_a=True)
+
+#     mumps_instance = getattr(mumps._mumps, dtype+"mumps")(True)
+
+#     n = a.shape[0]
+#     row = row
+#     col = col
+#     data = data
+
+#     mumps_instance.set_assembled_matrix(a.shape[0], row, col, data)
+#     ordering='auto'
+#     mumps_instance.icntl[7] = mumps.orderings[ordering]
+#     mumps_instance.job = 1
+#     mumps_instance.call()
+
+#     # Find null pivots
+#     mumps_instance.icntl[24] = 1
+#     mumps_instance.job = 2
+#     mumps_instance.call()
+
+#     # Get the size of the null space
+#     n_null = mumps_instance.infog[28]
+#     if n_null == 0:
+#         return np.empty((a.shape[1], 0))
+#     # Initialize matrix for null space basis
+#     nullspace = np.zeros((a.shape[1], n_null), dtype=complex, order='F')
+#     # Set RHS
+#     mumps_instance.set_dense_rhs(nullspace)
+#     mumps_instance.job = 3
+#     # Return all null space basis vectors, overwriting RHS
+#     mumps_instance.icntl[25] = -1
+#     mumps_instance.call()
+#     # Orthonormalize
+#     nullspace, _ = la.qr(nullspace, mode='economic')
+
+#     return nullspace

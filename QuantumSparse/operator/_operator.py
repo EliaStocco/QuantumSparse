@@ -30,8 +30,14 @@ class Operator(Matrix):
         None
         """
         super().__init__(*argc, **argv)
+        self.name = None
         pass
 
+    def __repr__(self: T) -> str:
+        string = "{:>12s}: {}\n".format('name', str(self.name))
+        string += super().__repr__()
+        return string
+        
     def save(self: T, file: str) -> None:
         """
         Save the Operator object to a file.
@@ -69,7 +75,7 @@ class Operator(Matrix):
 
     
     @staticmethod
-    def identity(dimensions):
+    def identity(dimensions)->T:
         """
         Parameters
         ----------
@@ -92,7 +98,7 @@ class Operator(Matrix):
                 iden[i] = Matrix.identity(dim,dtype=int)  
             return iden
     
-    def diagonalize(self:T,method="jacobi",restart=False,tol:float=1.0e-3,max_iter:int=-1,test=True):
+    def diagonalize(self:T,method="dense",restart=False,tol:float=1.0e-3,max_iter:int=-1,test=True):
         """
         Diagonalize the operator using the specified method.
 
@@ -175,7 +181,7 @@ class Operator(Matrix):
         return out
 
 
-    def diagonalize_with_symmetry(self:T,S:Union[List[T],T],use_block_form=False,test=True,**argv):
+    def diagonalize_with_symmetry(self:T,S:Union[List[T],T],use_block_form=True,test=True,**argv):
         """
         Diagonalizes the operator using the given symmetry operator(s).
 
@@ -206,6 +212,9 @@ class Operator(Matrix):
 
         if not self.commute(sym):
             raise ValueError('Ypu provided a symmetry operator which does not commute with the operator that you want to diagonalize.')
+        
+        if sym.eigenvalues is None:
+            raise ValueError("The symmetry operator 'S' should have already been diagonalized.")
 
         # I should define a 'symmetry' operator
         w,labels = unique_with_tolerance(sym.eigenvalues)
@@ -224,6 +233,7 @@ class Operator(Matrix):
         new.count_blocks  = types.MethodType(new_count_blocks, new)
 
         if use_block_form:
+            new.count_blocks(inplace=True)
             to_diag = new.divide_into_block(labels)
         else:
             to_diag = new
@@ -251,6 +261,15 @@ class Operator(Matrix):
             print("\teigensolution test:",self.test_eigensolution().norm())
         
         return copy(self.eigenvalues),copy(self.eigenstates)
+    
+    def energy_levels(self,tol=1e-8):
+        
+        if self.eigenvalues is None:
+            raise ValueError("The operator has not been diagonalized yet.")
+        
+        w,index = unique_with_tolerance(self.eigenvalues,tol)
+
+        return w,np.asarray([ (index==a).sum() for a in range(len(w)) ])
 
 
 

@@ -13,8 +13,8 @@ import argparse
 # Define and parse command-line arguments
 parser = argparse.ArgumentParser(description="Your script description here")
 parser.add_argument("--restart", type=bool, default=True, help="Set to True if restarting from a previous run.")
-parser.add_argument("--NSpin", type=int, default=4, help="Number of spins.")
-parser.add_argument("--S", type=float, default=1., help="Value of S.")
+parser.add_argument("--NSpin", type=int, default=8, help="Number of spins.")
+parser.add_argument("--S", type=float, default=3./2, help="Value of S.")
 parser.add_argument("--datafolder", type=str, default="data", help="Path to the data folder.")
 parser.add_argument("--output_folder", type=str, default="output", help="Path to the output folder.")
 parser.add_argument("--name", type=str, default="V8", help="Base name for files.")
@@ -149,51 +149,57 @@ else :
 from QuantumSparse.spin.shift import shift
 from QuantumSparse.spin.flip import flip
 D = shift(spins)
-D.diagonalize(method="jacobi")
+D.diagonalize(method="dense",test=False)
+D.save("shift.pickle")
 
-F = flip(spins)
-F.diagonalize(method="jacobi")
+# F = flip(spins)
+# F.diagonalize(method="dense",test=False)
+# F.save("flip.pickle")
 
 # Sz = spins.Sz.sum()
 # Sz.diagonalize(method="jacobi")
 
-H.diagonalize(tol=1e-4)
-# H.diagonalize_with_symmetry(S=[D,F],tol=1e-4)
-# H.diagonalize_with_symmetry(S=[D,F],tol=1e-5)
+w,f = H.diagonalize_with_symmetry(S=[D],method="dense")
 
-# H.visualize(file="V8.png")
-# D.visualize(file="D.png")
-# Create an empty DataFrame
-data = pd.DataFrame(columns=["step", "test", "file","diagtol"])
+print(H.test_eigensolution().norm())
 
-if not os.path.exists(folder): 
-    os.mkdir(folder)
+# # H.diagonalize(tol=1e-4)
+# # H.diagonalize_with_symmetry(S=[D,F],tol=1e-4)
+# # H.diagonalize_with_symmetry(S=[D,F],tol=1e-5)
 
-k = 0
-test = np.inf
-tol = args.tol
-diagtol = args.diagtol
-while test > tol :
+# # H.visualize(file="V8.png")
+# # D.visualize(file="D.png")
+# # Create an empty DataFrame
+# data = pd.DataFrame(columns=["step", "test", "file","diagtol"])
 
-    print("\tDiagonalizing: step {:d} with tolerance {:.6e}".format(k,tol))
+# if not os.path.exists(folder): 
+#     os.mkdir(folder)
 
-    # diagonalize
-    w,f = H.diagonalize(method="jacobi",tol=diagtol)
+# k = 0
+# test = np.inf
+# tol = args.tol
+# diagtol = args.diagtol
+# while test > tol :
 
-    # test diagonalization
-    _,test = H.test_diagonalization(tol=tol,return_norm=True)
+#     print("\tDiagonalizing: step {:d} with tolerance {:.6e}".format(k,tol))
 
-    # save to file
-    file = os.path.normpath("{:s}/Hamiltonian.step={:d}.npz".format(folder,k+1))
-    print("\tsaving results to file '{:s}'".format(file))
-    H.save(file)
+#     # diagonalize
+#     w,f = H.diagonalize(method="jacobi",tol=diagtol)
 
-    data = data.append({"step": k + 1, "test": test, "file": file,"diagtol":diagtol}, ignore_index=True)
-    data.to_csv("{:s}/report.csv".format(folder),index=False)
+#     # test diagonalization
+#     _,test = H.test_diagonalization(tol=tol,return_norm=True)
 
-    # update parameters
-    k += 1
-    diagtol /= 10.
+#     # save to file
+#     file = os.path.normpath("{:s}/Hamiltonian.step={:d}.npz".format(folder,k+1))
+#     print("\tsaving results to file '{:s}'".format(file))
+#     H.save(file)
 
-print("\n\tJob done :)\n")
+#     data = data.append({"step": k + 1, "test": test, "file": file,"diagtol":diagtol}, ignore_index=True)
+#     data.to_csv("{:s}/report.csv".format(folder),index=False)
+
+#     # update parameters
+#     k += 1
+#     diagtol /= 10.
+
+# print("\n\tJob done :)\n")
 

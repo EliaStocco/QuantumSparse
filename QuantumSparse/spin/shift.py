@@ -1,13 +1,28 @@
-from QuantumSparse.operator import Operator
+from QuantumSparse.operator import Operator, Symmetry
+from QuantumSparse.spin import SpinOperators
 import numpy as np
 
-def shift(ops:Operator)->Operator:
+def shift(ops:SpinOperators)->Operator:
+    """
+    Compute the shift/translation operator for a spin system.
+
+    Parameters
+    ----------
+    ops : SpinOperators
+        The operator whose basis is to be shifted.
+
+    Returns
+    -------
+    Operator
+        The shift/translation operator for the spin system.
+    """
 
     basis = np.asarray(ops.basis)
     D = ops.empty()
     left = None
-
+    N = len(basis)
     for c,right in enumerate(basis):
+        print("\t\t{:d}/{:d}".format(c+1,N),end="\r")
         if left is None:
             left = right.copy()
         left[0]  = right[-1]
@@ -15,6 +30,9 @@ def shift(ops:Operator)->Operator:
         # = np.concatenate((right[-1].reshape((1)), right[:-1]))
         r = np.where(np.all(basis == left, axis=1))
         D[r,c] = 1
+    #levels = np.arange(0,len(ops.spin_values))/len(ops.spin_values)
+    D = Symmetry(D)
+    # D.levels2eigenstates(levels)
     return D
 
     D = ops.empty()
