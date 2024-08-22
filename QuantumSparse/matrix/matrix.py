@@ -741,24 +741,23 @@ class Matrix(csr_matrix):
         if self.n_blocks == 1 :
             if self.shape[0] < NoJacobi:
                 method = "dense"
-            match method:
-                case "jacobi":
-                    if not self.is_hermitean():
-                        raise ValueError("'matrix' object is not hermitean and then it can not be diagonalized with the Jacobi method")
-                    from QuantumSparse.matrix.jacobi import jacobi
-                    w,f,N = jacobi(self,tol=tol,max_iter=max_iter)
-                case "dense":
-                    M = np.asarray(self.todense())
-                    N = self.empty()
-                    if self.is_hermitean():
-                        w,f = eigh(M)
-                    else :
-                        w,f = eig(M)
-                    N = N.astype(w.dtype)
-                    N.setdiag(w)
-                    pass
-                case _:
-                    raise ImplErr
+            if method == "jacobi":
+                if not self.is_hermitean():
+                    raise ValueError("'matrix' object is not hermitean and then it can not be diagonalized with the Jacobi method")
+                from QuantumSparse.matrix.jacobi import jacobi
+                w,f,N = jacobi(self,tol=tol,max_iter=max_iter)
+            elif method == "dense":
+                M = np.asarray(self.todense())
+                N = self.empty()
+                if self.is_hermitean():
+                    w,f = eigh(M)
+                else :
+                    w,f = eig(M)
+                N = N.astype(w.dtype)
+                N.setdiag(w)
+                pass
+            else :
+                raise ImplErr
         
         elif self.n_blocks > 1:
             w,f,N = self.diagonalize_each_block(labels=labels,original=True,method=method,tol=tol,max_iter=max_iter)
@@ -782,6 +781,21 @@ class Matrix(csr_matrix):
             The norm of the error.
         """
         return self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues)
+    
+    def sort(self:T,inplace=False)->T:
+        
+        out = self.copy()
+        index = np.argsort(self.eigenvalues)
+        out.eigenvalues = self.eigenvalues[index]
+        out.eigenstates = self.eigenstates[index][:, index]
+        out.nearly_diag = self.nearly_diag[index][:, index]
+        out = self[index][:, index]
+        if inplace:
+            self = out
+        return out
+        
+        
+    
 
     # def kernel(self:T)->T:
     #     # dense = self.todense()
