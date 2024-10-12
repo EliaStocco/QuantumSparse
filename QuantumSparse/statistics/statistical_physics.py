@@ -73,8 +73,7 @@ def quantum_thermal_average_value(T: np.ndarray,E: np.ndarray,Op:Operator,Psi:Ma
     Obs = expectation_value(Op,Psi)
     return classical_thermal_average_value(T,E,Obs)
 
-
-def correlation_function(T: np.ndarray,E: np.ndarray,OpAs: Operator,OpBs: Operator,Psi:Matrix)->np.ndarray:
+def correlation_function(T: np.ndarray, E: np.ndarray, OpA: Operator, Psi: Matrix, OpB: Operator=None) -> np.ndarray:
     """
     Calculates the correlation function of a system.
 
@@ -84,10 +83,10 @@ def correlation_function(T: np.ndarray,E: np.ndarray,OpAs: Operator,OpBs: Operat
         The temperature array.
     E : np.ndarray
         The energy array.
-    OpAs : Operator
-        The first set of operators.
-    OpBs : Operator
-        The second set of operators.
+    OpA : Operator
+        The first operator.
+    OpB : Operator
+        The second operator.
     Psi : Matrix
         The wave function of the system.
 
@@ -96,34 +95,76 @@ def correlation_function(T: np.ndarray,E: np.ndarray,OpAs: Operator,OpBs: Operat
     np.ndarray
         The correlation function of the system.
     """
-    # REWRITE THIS FUNCTION EXPLOITING quantum_mechanics.standard_deviation
-    NT = len(T)    
-    meanA =  np.zeros((len(OpAs),NT))       
-    for n,Op in enumerate(OpAs):
-        meanA[n] = quantum_thermal_average_value(T,E,Op,Psi)
-    #    
-    meanB =  np.zeros((len(OpBs),NT))
-    for n,Op in enumerate(OpBs):
-        meanB[n] = quantum_thermal_average_value(T,E,Op,Psi)             
-    #
-    square =  np.zeros((len(OpAs),len(OpBs),NT))
-    for n1,OpA in enumerate(OpAs):
-        for n2,OpB in enumerate(OpBs):        
-            if n2 < n1 :
-                square[n1,n2] =  square[n2,n1]
-                continue
-            
-            square[n1,n2] = quantum_thermal_average_value(T,E,OpA@OpB,Psi)           
-    #
-    Chi =  np.zeros((3,3,NT))    
-    for n1,OpA in enumerate(OpAs):
-        for n2,OpB in enumerate(OpBs):            
-            Chi[n1,n2] = (square[n1,n2] - meanA[n1]*meanB[n2])
+    # Calculate the number of temperature points
+    NT = len(T)
     
+    # Compute the thermal averages for the operators
+    meanA = quantum_thermal_average_value(T, E, OpA, Psi)
+    if OpB is not None:
+        meanB = quantum_thermal_average_value(T, E, OpB, Psi)
+        OpAB = OpA @ OpB
+    else:
+        meanB = meanA
+        OpAB = OpA @ OpA
+    
+    # Calculate the correlation function
+    square = quantum_thermal_average_value(T, E, OpAB, Psi)
+    
+    # Initialize the Chi array to hold the correlation result
+    Chi = square - meanA * meanA
     return Chi
 
 
-def susceptibility(T: np.ndarray,H:Operator,OpAs:Operator,OpBs:Operator)->np.ndarray:
+# def correlation_function(T: np.ndarray,E: np.ndarray,OpAs: Operator,OpBs: Operator,Psi:Matrix)->np.ndarray:
+#     """
+#     Calculates the correlation function of a system.
+
+#     Parameters
+#     ----------
+#     T : np.ndarray
+#         The temperature array.
+#     E : np.ndarray
+#         The energy array.
+#     OpAs : Operator
+#         The first set of operators.
+#     OpBs : Operator
+#         The second set of operators.
+#     Psi : Matrix
+#         The wave function of the system.
+
+#     Returns
+#     -------
+#     np.ndarray
+#         The correlation function of the system.
+#     """
+#     # REWRITE THIS FUNCTION EXPLOITING quantum_mechanics.standard_deviation
+#     NT = len(T)    
+#     meanA =  np.zeros((len(OpAs),NT))       
+#     for n,Op in enumerate(OpAs):
+#         meanA[n] = quantum_thermal_average_value(T,E,Op,Psi)
+#     #    
+#     meanB =  np.zeros((len(OpBs),NT))
+#     for n,Op in enumerate(OpBs):
+#         meanB[n] = quantum_thermal_average_value(T,E,Op,Psi)             
+#     #
+#     square =  np.zeros((len(OpAs),len(OpBs),NT))
+#     for n1,OpA in enumerate(OpAs):
+#         for n2,OpB in enumerate(OpBs):        
+#             if n2 < n1 :
+#                 square[n1,n2] =  square[n2,n1]
+#                 continue
+            
+#             square[n1,n2] = quantum_thermal_average_value(T,E,OpA@OpB,Psi)           
+#     #
+#     Chi =  np.zeros((3,3,NT))    
+#     for n1,OpA in enumerate(OpAs):
+#         for n2,OpB in enumerate(OpBs):            
+#             Chi[n1,n2] = (square[n1,n2] - meanA[n1]*meanB[n2])
+    
+#     return Chi
+
+
+def susceptibility(T: np.ndarray,H:Operator,OpAs:Operator,OpBs:Operator=None)->np.ndarray:
     """
     Calculates the magnetic susceptibility of a system.
 
@@ -144,7 +185,7 @@ def susceptibility(T: np.ndarray,H:Operator,OpAs:Operator,OpBs:Operator)->np.nda
         The magnetic susceptibility of the system.
     """
     beta  = 1.0/(kB*T)
-    Chi = correlation_function(T,H.eigenvalues,OpAs,OpBs,H.eigenstates) 
+    Chi = correlation_function(T,H.eigenvalues-np.min(H.eigenvalues),OpAs,H.eigenstates,OpBs) 
     return beta * Chi * _NA * _eV * 1E3  
 
 
