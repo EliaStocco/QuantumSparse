@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 from copy import copy
 from QuantumSparse.matrix import Matrix
-from typing import TypeVar, Union, List, Type
+from typing import TypeVar, Union, List
 
 T = TypeVar('T', bound='Operator')  # type of the class itself
 
@@ -137,12 +137,21 @@ class Operator(Matrix):
         if test:
             eigtest = self.test_eigensolution()
             print("\teigensolution test:",eigtest.norm())
+        # self.eigenvalues = np.asarray(self.eigenvalues)
+        # self.eigenstates = np.asarray(self.eigenstates)
+        
+        self.eigenstates.n_blocks = self.n_blocks
+        self.eigenstates.blocks = self.blocks
+        
+        # print(f)
         return w,f
         # self.eigenvalues = w
         # self.eigenstates = f
         # self.nearly_diag = N
 
         # return self.eigenvalues, self.eigenstates
+        
+        
 
     def change_basis(self:T,S:T,direction="forward"):
         """
@@ -273,6 +282,50 @@ class Operator(Matrix):
         w,index = unique_with_tolerance(self.eigenvalues,tol)
 
         return w,np.asarray([ (index==a).sum() for a in range(len(w)) ])
+    
+    def band_diagram(self:T,sym:T):
+        
+        if not self.diagonalized():
+            raise ValueError("The operator has not been diagonalized yet.")
+        
+        if not self.commute(sym):
+            raise ValueError('Ypu provided a symmetry operator which does not commute with the operator that you want to diagonalize.')
+        
+        if sym.eigenvalues is None:
+            raise ValueError("The symmetry operator 'S' should have already been diagonalized.")
+        
+        new:T = self.change_basis(sym,direction="forward")
+
+        w,labels = unique_with_tolerance(sym.eigenvalues)
+        # little dirty trick
+        def new_count_blocks(self:T,inplace=True)->T:
+            self.blocks = labels
+            self.n_blocks = len(np.unique(labels))
+            return self.n_blocks, self.blocks
+        import types
+        new.count_blocks  = types.MethodType(new_count_blocks, new)
+        new.count_blocks(inplace=True)
+        
+        # divide_into_block
+        
+        # submatrices = np.full((self.n_blocks, self.n_blocks), None, dtype=object)
+        submatrices = [None]*new.n_blocks
+        indeces = np.arange(new.shape[0])
+        permutation = np.arange(new.shape[0])
+
+        k = 0
+        for n in range(new.n_blocks):
+            mask = (labels == n)
+            permutation[k:k + len(indeces[mask])] = indeces[mask]
+            k += len(indeces[mask])
+            # create a submatrix from one block
+            # submatrices[n,n] = self.mask2submatrix(mask)
+            submatrices[n] = new.mask2submatrix(mask)
+        
+        assert len(submatrices) == len(w), "coding error"
+
+        return w, submatrices
+        
 
 
 

@@ -2,29 +2,100 @@
 import numpy as np
 from QuantumSparse.constants import kB,g,_NA,_eV,muB
 from QuantumSparse.tools.quantum_mechanics import expectation_value
-from QuantumSparse.tools.optimize import jit
+from QuantumSparse.operator import Operator
+from QuantumSparse.matrix import Matrix
 
-#@jit
-def T2beta(T):
+
+def T2beta(T:np.ndarray)->np.ndarray:
+    """
+    Calculates the inverse temperature array from a given temperature array.
+
+    Parameters:
+        T (np.ndarray): The temperature array.
+
+    Returns:
+        np.ndarray: The inverse temperature array.
+    """
     return 1.0/(kB*T)
 
-#@jit
-def partition_function(E,beta):
+
+def partition_function(E: np.ndarray,beta:np.ndarray)->np.ndarray:
+    """
+    Calculates the partition function of a system.
+
+    Parameters:
+        E (np.ndarray): The energy array.
+        beta (np.ndarray): The inverse temperature array.
+
+    Returns:
+        np.ndarray: The partition function of the system.
+    """
     return np.exp(-np.tensordot(beta,E-min(E),axes=0)).sum(axis=1)
 
-#@jit
-def classical_thermal_average_value(T:np.ndarray,E:np.ndarray,Obs:np.ndarray):
+
+def classical_thermal_average_value(T:np.ndarray,E:np.ndarray,Obs:np.ndarray)->np.ndarray:
+    """
+    Calculate the classical thermal average value of an observable in a system.
+
+    Parameters:
+        T (np.ndarray): The temperature array.
+        E (np.ndarray): The energy array.
+        Obs (np.ndarray): The observable array.
+
+    Returns:
+        np.ndarray: The classical thermal average value of the observable.
+    """
     beta = T2beta(T)
     Z = partition_function(E,beta)
     return (np.exp(-np.tensordot(beta,E-min(E),axes=0))*Obs).sum(axis=1)/Z
 
-#@jit
-def quantum_thermal_average_value(T,E,Op,Psi):
+
+def quantum_thermal_average_value(T: np.ndarray,E: np.ndarray,Op:Operator,Psi:Matrix)->np.ndarray:
+    """
+    Calculates the quantum thermal average value of an observable in a system.
+
+    Parameters
+    ----------
+    T : np.ndarray
+        The temperature array.
+    E : np.ndarray
+        The energy array.
+    Op : Operator
+        The operator representing the observable.
+    Psi : Matrix
+        The wave function of the system.
+
+    Returns
+    -------
+    np.ndarray
+        The quantum thermal average value of the observable.
+    """
     Obs = expectation_value(Op,Psi)
     return classical_thermal_average_value(T,E,Obs)
 
-#@jit
-def correlation_function(T,E,OpAs,OpBs,Psi):
+
+def correlation_function(T: np.ndarray,E: np.ndarray,OpAs: Operator,OpBs: Operator,Psi:Matrix)->np.ndarray:
+    """
+    Calculates the correlation function of a system.
+
+    Parameters
+    ----------
+    T : np.ndarray
+        The temperature array.
+    E : np.ndarray
+        The energy array.
+    OpAs : Operator
+        The first set of operators.
+    OpBs : Operator
+        The second set of operators.
+    Psi : Matrix
+        The wave function of the system.
+
+    Returns
+    -------
+    np.ndarray
+        The correlation function of the system.
+    """
     # REWRITE THIS FUNCTION EXPLOITING quantum_mechanics.standard_deviation
     NT = len(T)    
     meanA =  np.zeros((len(OpAs),NT))       
@@ -51,13 +122,32 @@ def correlation_function(T,E,OpAs,OpBs,Psi):
     
     return Chi
 
-#@jit
-def susceptibility(T,E,OpAs,OpBs,Psi):
+
+def susceptibility(T: np.ndarray,H:Operator,OpAs:Operator,OpBs:Operator)->np.ndarray:
+    """
+    Calculates the magnetic susceptibility of a system.
+
+    Parameters
+    ----------
+    T : np.ndarray
+        The temperature array.
+    H : Operator
+        The Hamiltonian operator of the system.
+    OpAs : Operator
+        The first set of operators.
+    OpBs : Operator
+        The second set of operators.
+
+    Returns
+    -------
+    np.ndarray
+        The magnetic susceptibility of the system.
+    """
     beta  = 1.0/(kB*T)
-    Chi = correlation_function(T,E,OpAs,OpBs,Psi) 
+    Chi = correlation_function(T,H.eigenvalues,OpAs,OpBs,H.eigenstates) 
     return beta * Chi * _NA * _eV * 1E3  
 
-#@jit
+
 def Curie_constant(spin_values,gfactors=None):
     N = len(spin_values)
     if gfactors is None :

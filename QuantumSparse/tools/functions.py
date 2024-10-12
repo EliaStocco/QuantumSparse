@@ -1,8 +1,9 @@
 # some functions ...
 import numpy as np
 import bisect
-import functools
 from typing import List
+import sys
+from collections import deque
 
 MAXSIZE = None
 
@@ -50,3 +51,67 @@ def first_larger_than_N(sorted_list:List[int], N:int):
         return index
     else:
         return None  # If no element is larger than N
+    
+def get_deep_size(obj, seen=None):
+    """Recursively find the memory footprint of a Python object, including referenced objects."""
+    if seen is None:
+        seen = set()
+        
+    obj_id = id(obj)
+    
+    if obj_id in seen:
+        return 0  # To avoid counting the same object multiple times
+    
+    # Mark the object as seen
+    seen.add(obj_id)
+    
+    size = sys.getsizeof(obj)
+    
+    if isinstance(obj, dict):
+        size += sum(get_deep_size(k, seen) + get_deep_size(v, seen) for k, v in obj.items())
+    elif isinstance(obj, (list, tuple, set, deque)):
+        size += sum(get_deep_size(item, seen) for item in obj)
+    elif hasattr(obj, '__dict__'):
+        size += get_deep_size(vars(obj), seen)
+    elif hasattr(obj, '__slots__'):
+        size += sum(get_deep_size(getattr(obj, slot), seen) for slot in obj.__slots__ if hasattr(obj, slot))
+    
+    return size
+
+def get_energy_levels(values,N=16):
+    
+    old_values = values.copy()
+    
+    deltaE = np.max(values) - np.min(values)
+    values = (values - np.min(values))/deltaE
+    
+    assert np.min(values) == 0, "coding error"
+    assert np.max(values) == 1, "coding error"
+    
+    # exponents = np.arange(1,N+1)
+    # grid = np.power(base,exponents)
+    
+    Nlist = np.zeros(N,dtype=int)
+    for n in range(N):
+        tmp = np.round(values,n)
+        Nlist[n] = len(np.unique(tmp))
+        
+    # number of energy levels
+    Nel = np.median(Nlist)
+    
+    # choose the rounding
+    n = np.where(Nlist==Nel)[0][0]
+    
+    tmp = np.round(values,n)
+    w,ii,counts = np.unique(tmp,return_inverse=True,return_counts=True)
+    
+    assert w.shape == Nel, "coding error"
+    assert np.allclose(w[ii],values,atol=np.power(0.1,n)), "coding error"
+    
+    u = np.unique(ii)
+    assert u.shape == w.shape, "coding error"
+    assert np.allclose(u,np.arange(len(w))), "coding error"
+    
+    
+    w = w*deltaE + np.min(old_values)
+    return w,counts,ii

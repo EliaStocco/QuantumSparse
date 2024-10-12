@@ -8,10 +8,11 @@ from scipy.sparse import bmat
 import numpy as np
 # from QuantumSparse.tools.optimize import jit
 from QuantumSparse.errors import ImplErr
-from QuantumSparse.tools import first_larger_than_N
+from QuantumSparse.tools import first_larger_than_N, get_deep_size
 from typing import TypeVar, Union, Type, List
 import pickle
 from dataclasses import dataclass, field
+import concurrent.futures
     
 T = TypeVar('T',bound="Matrix") 
 dtype = csr_matrix
@@ -49,7 +50,7 @@ class Matrix(csr_matrix):
     blocks:list
     n_blocks:int
     eigenvalues:np.ndarray 
-    eigenstates:np.ndarray
+    eigenstates:T
     nearly_diag:bool
     is_adjacency:bool
 
@@ -498,12 +499,25 @@ class Matrix(csr_matrix):
             plt.savefig(file)
         return
     
+    def csr_memory_usage(self):
+        """Return the memory usage of the csr_matrix part of the object."""
+        # Accessing the csr_matrix internal components
+        data_mem = self.data.nbytes
+        indices_mem = self.indices.nbytes
+        indptr_mem = self.indptr.nbytes
+        
+        total_mem = data_mem + indices_mem + indptr_mem
+        return total_mem
+    
     def __repr__(self:T)->str:
         """
         Returns a string representation of the matrix object, including its type, shape, 
         sparsity, number of elements, norms, and symmetry properties.
         """
-        string  = "{:>12s}: {}\n".format('type', str(self.data.dtype))
+        
+        string  = "{:>12s}: {} bytes\n".format('memory (csr)', str(get_deep_size(csr_matrix(self))))
+        string += "{:>12s}: {} bytes\n".format('memory (deep)', str(get_deep_size(self)))
+        string += "{:>12s}: {}\n".format('type', str(self.data.dtype))
         string += "{:>12s}: {}\n".format('shape', str(self.shape))
         string += "{:>12s}: {:6f}\n".format('sparsity', self.sparsity())
         string += "{:>12s}: {}\n".format('# all', str(self.count("all")))
@@ -512,9 +526,19 @@ class Matrix(csr_matrix):
         string += "{:>12s}: {:6f}\n".format('norm (all)', self.norm())
         string += "{:>12s}: {:6f}\n".format('norm  (on)', self.as_diagonal().norm())
         string += "{:>12s}: {:6f}\n".format('norm (off)', self.off_diagonal().norm())
-        string += "{:>12s}: {}\n".format('unitary', str(self.is_unitary()))
         string += "{:>12s}: {}\n".format('hermitean', str(self.is_hermitean()))
         string += "{:>12s}: {}\n".format('symmetric', str(self.is_symmetric()))
+        
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(self.is_unitary)
+            timeout_duration = 1
+            try:
+                # Wait for the result with a timeout
+                is_unitary = future.result(timeout=timeout_duration)
+            except concurrent.futures.TimeoutError:
+                is_unitary = "unknown"  # Return the default value if the task times out
+                
+        string += "{:>12s}: {}\n".format('unitary', str(is_unitary))
         
         tmp = str(self.n_blocks) if self.n_blocks is not None else "unknown"
         string += "{:>12s}: {}\n".format('n. blocks', tmp)
@@ -706,6 +730,7 @@ class Matrix(csr_matrix):
             T: A new matrix instance representing the matrix divided into blocks.
         """
         submatrices = np.full((self.n_blocks, self.n_blocks), None, dtype=object)
+        # submatrices = [None]*self.n_blocks
         indeces = np.arange(self.shape[0])
         permutation = np.arange(self.shape[0])
 
@@ -715,9 +740,10 @@ class Matrix(csr_matrix):
             permutation[k:k + len(indeces[mask])] = indeces[mask]
             k += len(indeces[mask])
             # create a submatrix from one block
-            submatrices[n, n] = self.mask2submatrix(mask)
+            submatrices[n,n] = self.mask2submatrix(mask)
 
         out = self.clone(bmat(submatrices))
+        # out = DiagonalBlockMatrix(submatrices)
         if sort:
             reverse_permutation = np.argsort(permutation)
             out = out[reverse_permutation][:, reverse_permutation]
@@ -773,6 +799,7 @@ class Matrix(csr_matrix):
 
         eigenvalues = np.concatenate(eigenvalues)
         eigenstates = Matrix.from_blocks(eigenstates)
+        # eigenstates = DiagonalBlockMatrix(eigenstates)
 
         reverse_permutation = np.argsort(permutation)
         eigenvalues = eigenvalues[reverse_permutation]
@@ -911,8 +938,7 @@ class DiagonalBlockMatrix(Matrix):
         row, col = pos
         iR = first_larger_than_N(self.cumulative_indices[1:],row)
         iC = first_larger_than_N(self.cumulative_indices[1:],col)
-        
-        
+
         if iR is None or iC is None:
             raise IndexError(f"Position ({row}, {col}) is out of bounds in the BlockMatrix")
         elif iR == iC:
@@ -941,6 +967,9 @@ class DiagonalBlockMatrix(Matrix):
                 return
 
         raise IndexError(f"Position ({row}, {col}) is out of bounds in the BlockMatrix")
+    
+    def shape(self):
+        return self.cumulative_indices[-1], self.cumulative_indices[-1]
 
     # def shape(self):
     #     """Return the global shape of the BlockMatrix."""
