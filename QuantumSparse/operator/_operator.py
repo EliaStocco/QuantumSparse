@@ -13,6 +13,8 @@ class Operator(Matrix):
     """
     This class is a subclass of QuantumSparse.matrix.Matrix and is used to represent a general operator.
     """
+    
+    name:str
 
     def __init__(self: T, *argc, **argv) -> None:
         """
@@ -38,40 +40,40 @@ class Operator(Matrix):
         string += super().__repr__()
         return string
         
-    def save(self: T, file: str) -> None:
-        """
-        Save the Operator object to a file.
+    # def save(self: T, file: str) -> None:
+    #     """
+    #     Save the Operator object to a file.
 
-        Parameters
-        ----------
-        file : str
-            The file path to save the object.
+    #     Parameters
+    #     ----------
+    #     file : str
+    #         The file path to save the object.
 
-        Returns
-        -------
-        None
-        """
-        with open(file, 'wb') as f:
-            pickle.dump(self, f)
+    #     Returns
+    #     -------
+    #     None
+    #     """
+    #     with open(file, 'wb') as f:
+    #         pickle.dump(self, f)
 
-    @classmethod
-    def load(cls: Type[T], file: str) -> T:
-        """
-        Load an Operator object from a file.
+    # @classmethod
+    # def load(cls: Type[T], file: str) -> T:
+    #     """
+    #     Load an Operator object from a file.
 
-        Parameters
-        ----------
-        file : str
-            The file path to load the object.
+    #     Parameters
+    #     ----------
+    #     file : str
+    #         The file path to load the object.
 
-        Returns
-        -------
-        T
-            The loaded Operator object.
-        """
-        with open(file, 'rb') as f:
-            obj = pickle.load(f)
-        return cls(obj)
+    #     Returns
+    #     -------
+    #     T
+    #         The loaded Operator object.
+    #     """
+    #     with open(file, 'rb') as f:
+    #         obj = pickle.load(f)
+    #     return cls(obj)
 
     
     @staticmethod
@@ -133,7 +135,8 @@ class Operator(Matrix):
         
         w,f,_ = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
         if test:
-            print("\teigensolution test:",self.test_eigensolution().norm())
+            eigtest = self.test_eigensolution()
+            print("\teigensolution test:",eigtest.norm())
         return w,f
         # self.eigenvalues = w
         # self.eigenstates = f

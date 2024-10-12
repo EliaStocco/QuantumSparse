@@ -16,7 +16,7 @@ import pytest
 # - BiQuadraticHeisenberg
 
 @pytest.mark.parametrize("S,NSpin", [(2,4),(3,3),(5,2)])
-def test_Heisenberg_symmetries(S=1,NSpin=8,use_symmetries=True):
+def test_Heisenberg_symmetries(S=1,NSpin=4,use_symmetries=True):
     
     spin_values = np.full(NSpin,S)
 
@@ -109,7 +109,7 @@ def suppress_output(suppress=True):
 if __name__ == "__main__":
     
     import time
-    SUPPRESS = True
+    SUPPRESS = False
     start_time = time.time()
     with suppress_output(SUPPRESS):
         test_Heisenberg_symmetries(use_symmetries=True)

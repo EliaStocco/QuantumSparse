@@ -4,7 +4,7 @@ import json
 import numpy as np
 import pandas as pd
 from QuantumSparse.operator import Operator
-from QuantumSparse.spin import SpinOperators
+from QuantumSparse.spin import SpinOperators, compute_total_S2
 # from QuantumSparse.spin.functions import magnetic_moments, rotate_spins
 from QuantumSparse.spin.interactions import Heisenberg, DM, anisotropy, rhombicity# , Ising
 
@@ -86,7 +86,7 @@ def buildH(S,NSpin,folder,name)->Operator:
     spin_values = np.full(NSpin,S)
     spins = SpinOperators(spin_values)
 
-    totS2 = spins.compute_total_S2()
+    totS2 = compute_total_S2(spins)
     S2 = spins.compute_S2()
     #print("done")
 

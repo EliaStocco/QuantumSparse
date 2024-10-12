@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from functions import get_couplings
 from QuantumSparse.operator import Operator
-from QuantumSparse.spin.spin_operators import spin_operators
+from QuantumSparse.spin import SpinOperators, compute_total_S2
 from QuantumSparse.spin.functions import magnetic_moments, rotate_spins
 from QuantumSparse.spin.interactions import Heisenberg, DM, anisotropy, rhombicity, Ising
 
@@ -13,9 +13,9 @@ from QuantumSparse.spin.interactions import Heisenberg, DM, anisotropy, rhombici
 S     = 1
 NSpin = 8
 spin_values = np.full(NSpin,S)
-spins = spin_operators(spin_values)
+spins = SpinOperators(spin_values)
 
-totS2 = spins.compute_total_S2()
+totS2 = compute_total_S2(spins)
 
 print("\tn. blocks: {:d}".format(totS2.count_blocks(False))) 
 

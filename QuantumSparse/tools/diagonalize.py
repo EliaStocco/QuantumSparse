@@ -2,7 +2,7 @@
 from scipy import sparse
 from scipy.sparse import linalg
 import numpy as np
-from .functions import prepare_opts
+from ..tools.functions import prepare_opts
 # from .interactions import Zeeman
 
 # to be modified

@@ -1,4 +1,4 @@
-from scipy.linalg import eigh, eig, null_space
+from scipy.linalg import eigh, eig
 from scipy import sparse
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
@@ -6,9 +6,12 @@ from scipy.sparse.csgraph import connected_components
 from copy import copy, deepcopy
 from scipy.sparse import bmat
 import numpy as np
-from QuantumSparse.tools.optimize import jit
+# from QuantumSparse.tools.optimize import jit
 from QuantumSparse.errors import ImplErr
-from typing import TypeVar, Union, Type
+from QuantumSparse.tools import first_larger_than_N
+from typing import TypeVar, Union, Type, List
+import pickle
+from dataclasses import dataclass, field
     
 T = TypeVar('T',bound="Matrix") 
 dtype = csr_matrix
@@ -42,6 +45,13 @@ class Matrix(csr_matrix):
     """
     
     module = sparse
+    
+    blocks:list
+    n_blocks:int
+    eigenvalues:np.ndarray 
+    eigenstates:np.ndarray
+    nearly_diag:bool
+    is_adjacency:bool
 
     def __init__(self:T,*argc,**argv):
         """
@@ -62,12 +72,12 @@ class Matrix(csr_matrix):
         # https://realpython.com/python-super/
         super().__init__(*argc,**argv)
 
-        self.blocks:Union[None,list] = None
-        self.n_blocks:Union[None,int] = None
-        self.eigenvalues:Union[None,np.ndarray] = None
-        self.eigenstates:Union[None,np.ndarray] = None
-        self.nearly_diag:Union[None,bool] = None
-        self.is_adjacency:Union[None,bool] = None
+        self.blocks = None
+        self.n_blocks = None
+        self.eigenvalues = None
+        self.eigenstates = None
+        self.nearly_diag = None
+        self.is_adjacency = None
         # if is_adjacency:
         #     self.is_adjacency = True
         # else:
@@ -94,34 +104,69 @@ class Matrix(csr_matrix):
         """
         return deepcopy(self)
 
-    def save(self:T,file):
-        """Save a matrix in a file
+    # def save(self:T,file):
+    #     """Save a matrix in a file
+
+    #     Parameters
+    #     ----------
+    #     file : str
+    #         The name of the file to save the matrix
+    #     """
+    #     if Matrix.module is sparse :
+    #         sparse.save_npz(file,self)
+    #     else :
+    #         raise ImplErr
+    
+    # @staticmethod
+    # def load(file):
+    #     """
+    #     Load a matrix from a file.
+
+    #     Parameters:
+    #         file (str): The name of the file to load the matrix from.
+
+    #     Returns:
+    #         The loaded matrix if the module is 'sparse', otherwise raises ImplErr.
+    #     """
+    #     if Matrix.module is sparse :
+    #         return sparse.load_npz(file)
+    #     else :
+    #         raise ImplErr
+    
+    def save(self: T, file: str) -> None:
+        """
+        Saves a Matrix object to a file.
 
         Parameters
         ----------
         file : str
-            The name of the file to save the matrix
-        """
-        if Matrix.module is sparse :
-            sparse.save_npz(file,self)
-        else :
-            raise ImplErr
-    
-    @staticmethod
-    def load(file):
-        """
-        Load a matrix from a file.
+            The name of the file to save the matrix to.
 
-        Parameters:
-            file (str): The name of the file to load the matrix from.
-
-        Returns:
-            The loaded matrix if the module is 'sparse', otherwise raises ImplErr.
+        Returns
+        -------
+        None
+            Saves the matrix to the specified file.
         """
-        if Matrix.module is sparse :
-            return sparse.load_npz(file)
-        else :
-            raise ImplErr
+        with open(file, 'wb') as f:
+            pickle.dump(self, f)
+
+    @classmethod
+    def load(cls: Type[T], file: str) -> T:
+        """
+        Loads a Matrix object from a file.
+
+        Parameters
+        ----------
+        file : str
+            The file path to load the object from.
+
+        Returns
+        -------
+        T
+            The loaded Matrix object.
+        """
+        with open(file, 'rb') as f:
+            return pickle.load(f)
 
     @classmethod
     def diags(cls,*argc,**argv):
@@ -470,6 +515,15 @@ class Matrix(csr_matrix):
         string += "{:>12s}: {}\n".format('unitary', str(self.is_unitary()))
         string += "{:>12s}: {}\n".format('hermitean', str(self.is_hermitean()))
         string += "{:>12s}: {}\n".format('symmetric', str(self.is_symmetric()))
+        
+        tmp = str(self.n_blocks) if self.n_blocks is not None else "unknown"
+        string += "{:>12s}: {}\n".format('n. blocks', tmp)
+        
+        tmp = "computed" if self.eigenvalues is not None else "unknown"
+        string += "{:>12s}: {}\n".format('eigenvalues', tmp)
+        tmp = "computed" if self.eigenstates is not None else "unknown"
+        string += "{:>12s}: {}\n".format('eigenstates', tmp)
+
         return string
     
     def __len__(self:T)->int:
@@ -495,6 +549,22 @@ class Matrix(csr_matrix):
             T: A new Matrix instance representing an empty matrix.
         """
         return self.clone(self.shape,dtype=self.dtype) # type(self)(self.shape,dtype=self.dtype)
+    
+    @staticmethod
+    def one_hot(dim:int,i:int,j:int,*argc,**argv)->T:
+        """
+        Creates a one-hot matrix of the same shape and with the same dtype as the original matrix.
+        
+        Parameters:
+            i (int): The row index of the one-hot element.
+            j (int): The column index of the one-hot element.
+        
+        Returns:
+            T: A new Matrix instance representing a one-hot matrix.
+        """
+        empty = Matrix((dim,dim),*argc,**argv)
+        empty[i,j] = 1
+        return empty
     
     def as_diagonal(self:T)->T:
         """
@@ -582,6 +652,25 @@ class Matrix(csr_matrix):
             return n_components, labels
         else:
             raise ImplErr
+        
+    def block_summary(self):
+        """
+        Provides a summary of the blocks in the matrix.
+
+        Prints the number of blocks and the dimensions of each subspace.
+
+        Returns:
+            np.ndarray: An array containing the dimensions of each subspace.
+        """
+        nblocks, labels = self.count_blocks()
+        print("n. blocks: ",nblocks)
+        subspaces = np.unique(labels)
+        assert len(subspaces) == nblocks, "Coding error"
+        dim = np.zeros(len(subspaces),dtype=int)
+        for n,s in enumerate(subspaces):
+            dim[n] = np.sum(labels == s)
+        print("subspaces dimension: ",dim.tolist())
+        return dim
 
     def mask2submatrix(self:T, mask) -> T:
         """
@@ -769,6 +858,11 @@ class Matrix(csr_matrix):
         self.eigenstates = my_copy(f)
         self.nearly_diag = my_copy(N) if N is not None else None
         
+        # if isinstance(self.eigenstates,np.ndarray):
+        #     self.eigenstates = Matrix(self.eigenstates)
+        # else:
+        #     pass
+        
         return w,f,N
     
     def test_eigensolution(self:T)->T:
@@ -794,57 +888,93 @@ class Matrix(csr_matrix):
             self = out
         return out
         
+
+    
+@dataclass
+class DiagonalBlockMatrix(Matrix):
+    
+    blocks: List[Matrix]
+    cumulative_indices:List[int] = field(init=False)
+    
+    # def __post_init__(self):
+    #     assert self.indices.ndim == 2, "error: 'indices' should be a 2D array"
+    #     assert self.indices.shape[1] == 2, "error: 'indices.shape[1]' should be of lenght 2"
+    #     assert self.indices.shape[0] == len(self.blocks), "error: 'indices.shape[0]' should be equal to 'len(self.blocks)'"
+    
+    def __post_init__(self):
+        for block in self.blocks:
+            assert block.shape[0] == block.shape[1], "error: each block should be square"
+        self.cumulative_indices = np.cumsum([0]+[block.shape[0] for block in self.blocks]).tolist()
+    
+    def __getitem__(self, pos):
+        """Retrieve an element based on global position (row, col)."""
+        row, col = pos
+        iR = first_larger_than_N(self.cumulative_indices[1:],row)
+        iC = first_larger_than_N(self.cumulative_indices[1:],col)
         
+        
+        if iR is None or iC is None:
+            raise IndexError(f"Position ({row}, {col}) is out of bounds in the BlockMatrix")
+        elif iR == iC:
+            block = self.blocks[iR]
+            iR = row - self.cumulative_indices[iR]
+            iC = col - self.cumulative_indices[iC]
+            return block[iR,iC]
+        else: 
+            return 0 
+
+    def __setitem__(self, pos, value):
+        """Set an element based on global position (row, col)."""
+        row, col = pos
+
+        # Find the block that contains the (row, col) position
+        for (i, block) in enumerate(self.blocks):
+            block_start_row, block_start_col = self.indices[i]
+            block_end_row = block_start_row + block.data.shape[0]
+            block_end_col = block_start_col + block.data.shape[1]
+
+            # Check if the requested position lies in the current block
+            if block_start_row <= row < block_end_row and block_start_col <= col < block_end_col:
+                local_row = row - block_start_row
+                local_col = col - block_start_col
+                block[local_row, local_col] = value
+                return
+
+        raise IndexError(f"Position ({row}, {col}) is out of bounds in the BlockMatrix")
+
+    # def shape(self):
+    #     """Return the global shape of the BlockMatrix."""
+    #     total_rows = max(start_row + block.data.shape[0] for start_row, _ in self.indices)
+    #     total_cols = max(start_col + block.data.shape[1] for _, start_col in self.indices)
+    #     return total_rows, total_cols
+        
+
+def main():
+    
+    import numpy as np
+    from icecream import ic
+    
+    # Define individual block matrices
+    A = np.array([[1, 2], [3, 4]])
+    B = np.array([[5, 6],[7, 8]])
+    C = np.array([[9, 10,4],[11, 12,0],[11, 12,2]])
+    null = np.zeros((2,2))
+    
+    block1 = Matrix(A)
+    block2 = Matrix(B)
+    block3 = Matrix(C)
+
+    # Create the BlockMatrix
+    bm = DiagonalBlockMatrix(blocks=[block1, block2,block3])
+    
+    test = sparse.bmat([[A,None,None],[None,B,None],[None,None,C]],format="csr")# .toarray()
+    ic(test)
+    
+    for i in range(test.shape[0]):
+        for j in range(test.shape[1]):
+            assert test[i,j] == bm[i,j], "error: block matrices do not match"
+               
     
 
-    # def kernel(self:T)->T:
-    #     # dense = self.todense()
-    #     # N = null_space(dense)
-    #     # N = Q.tocsr()[:,r:]
-    #     N = mumps_nullspace(self)
-    #     return N
-    
-# import numpy as np
-# import kwant.linalg.mumps as mumps
-# import scipy.linalg as la
-
-# def mumps_nullspace(a):
-#     a = sparse.coo_matrix(a, dtype=complex)
-#     a.eliminate_zeros()
-
-#     dtype, row, col, data = mumps._make_assembled_from_coo(a, overwrite_a=True)
-
-#     mumps_instance = getattr(mumps._mumps, dtype+"mumps")(True)
-
-#     n = a.shape[0]
-#     row = row
-#     col = col
-#     data = data
-
-#     mumps_instance.set_assembled_matrix(a.shape[0], row, col, data)
-#     ordering='auto'
-#     mumps_instance.icntl[7] = mumps.orderings[ordering]
-#     mumps_instance.job = 1
-#     mumps_instance.call()
-
-#     # Find null pivots
-#     mumps_instance.icntl[24] = 1
-#     mumps_instance.job = 2
-#     mumps_instance.call()
-
-#     # Get the size of the null space
-#     n_null = mumps_instance.infog[28]
-#     if n_null == 0:
-#         return np.empty((a.shape[1], 0))
-#     # Initialize matrix for null space basis
-#     nullspace = np.zeros((a.shape[1], n_null), dtype=complex, order='F')
-#     # Set RHS
-#     mumps_instance.set_dense_rhs(nullspace)
-#     mumps_instance.job = 3
-#     # Return all null space basis vectors, overwriting RHS
-#     mumps_instance.icntl[25] = -1
-#     mumps_instance.call()
-#     # Orthonormalize
-#     nullspace, _ = la.qr(nullspace, mode='economic')
-
-#     return nullspace
+if __name__ == "__main__":
+    main()

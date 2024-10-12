@@ -1,4 +1,4 @@
-# some function recalling statistical physics results
+s# some function recalling statistical physics results
 import numpy as np
 # from scipy import sparse
 from .quantum_mechanics import expectation_value

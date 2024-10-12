@@ -1,7 +1,9 @@
 import numpy as np
 from QuantumSparse.spin import SpinOperators
 from QuantumSparse.operator import Operator
-from QuantumSparse.spin import Heisenberg
+from QuantumSparse.spin import Heisenberg, DM
+
+from scipy.sparse.linalg import eigsh, eigs
 
 # In QuantumSparse/spin/interactions.py you can find:
 # - Ising
@@ -12,9 +14,11 @@ from QuantumSparse.spin import Heisenberg
 # - BiQuadraticIsing
 # - BiQuadraticHeisenberg
 
-S     = 2
-NSpin = 4
-spin_values = np.full(NSpin,S)
+S     = 0.5 # spin value for all sites
+NSpin = 4 # number of spins
+spin_values = np.full(NSpin,S) # spin values for all the sites
+
+# spin_values = np.asarray([0.5,0.5,1,0.5])
 
 # construct the spin operators
 SpinOp = SpinOperators(spin_values)
@@ -22,7 +26,9 @@ SpinOp = SpinOperators(spin_values)
 Sx,Sy,Sz = SpinOp.Sx,SpinOp.Sy,SpinOp.Sz
 
 # Ising Hamiltonian along the z-axis
-H = Heisenberg(Sx=Sx,Sy=Sy,Sz=Sz) 
+H = Heisenberg(Sx=Sx,Sy=Sy,Sz=Sz)
+# dm_term = DM(Sx,Sy,Sz)
+# H = H + dm_term 
 print("\tH.shape = ",H.shape)
 
 # Let's build the Heisenberg Hamiltonian from scratch
@@ -39,10 +45,12 @@ H = Operator(H)
 # Let's have a look at the Hamiltonian
 repr(H) # better than print(H)
 
+w,f = eigs(H,k=5)
+
 # Diagonalize!
 # YOU CAN DECOMMENT THESE LINES
 # print()
-# E0,Psi = H.diagonalize(method="dense") #),NLanczos=20,tol=1E-8,MaxDim=100)
+E0,Psi = H.diagonalize(method="dense") #),NLanczos=20,tol=1E-8,MaxDim=100)
 
 # or let's do with our favorite numerical routine
 Hdense = np.asarray(H.todense()) # let's convert H from a scipy.sparse matrix into a normal np.array
