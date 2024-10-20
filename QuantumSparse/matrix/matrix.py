@@ -809,14 +809,14 @@ class Matrix(csr_matrix):
         # type(self)(bmat(submatrices))
         return eigenvalues, eigenstates##NEARLY_DIAG## , nearly_diagonal
  
-    def eigensolver(self:T,method="jacobi",original=True,tol:float=1.0e-3,max_iter:int=-1):
+    def eigensolver(self:T,method="dense",original=True,tol:float=1.0e-3,max_iter:int=-1):
         """
         Diagonalize the matrix using the specified method.
 
         Parameters
         ----------
         method : str, optional
-            The method used for diagonalization (default is "jacobi").
+            The method used for diagonalization (default is "dense").
         original : bool, optional
             If True, the block being diagonalized is printed (default is True).
         tol : float, optional
@@ -847,9 +847,6 @@ class Matrix(csr_matrix):
         N = None
 
         n_components, labels = self.count_blocks(inplace=True)               
-        # self.blocks = labels
-        # self.n_blocks = len(np.unique(labels))
-        # self.visualize()
         if original : 
             print("\tn_components:",n_components) 
         elif self.n_blocks != 1 :
@@ -859,6 +856,7 @@ class Matrix(csr_matrix):
             if self.shape[0] < NoJacobi:
                 method = "dense"
             if method == "jacobi":
+                raise ValueError("method 'jacobi' is no longer supported.")
                 if not self.is_hermitean():
                     raise ValueError("'matrix' object is not hermitean and then it can not be diagonalized with the Jacobi method")
                 from QuantumSparse.matrix.jacobi import jacobi
