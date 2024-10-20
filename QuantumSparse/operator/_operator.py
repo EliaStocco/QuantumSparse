@@ -153,14 +153,12 @@ class Operator(Matrix):
                 iden[i] = Matrix.identity(dim,dtype=int)  
             return iden
     
-    def diagonalize(self:T,method="dense",restart=False,tol:float=1.0e-3,max_iter:int=-1,test=True):
+    def diagonalize(self:T,restart=False,tol:float=1.0e-3,max_iter:int=-1,test=True):
         """
         Diagonalize the operator using the specified method.
 
         Parameters
         ----------
-        method : str, optional
-            The method used for diagonalization (default is "jacobi").
         restart : bool, optional
             Whether to restart the diagonalization process (default is False).
         tol : float, optional
@@ -187,7 +185,7 @@ class Operator(Matrix):
         #     raise ValueError("'operator' is not hermitean")
         
         ##NEARLY_DIAG##w,f,_ = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
-        w,f = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
+        self.eigenvalues,self.eigenstates = super().eigensolver(original=True,tol=tol,max_iter=max_iter)
         if test:
             eigtest = self.test_eigensolution()
             print("\teigensolution test:",eigtest.norm())
@@ -198,7 +196,7 @@ class Operator(Matrix):
         self.eigenstates.blocks = self.blocks
         
         # print(f)
-        return w,f
+        return self.eigenvalues,self.eigenstates
         # self.eigenvalues = w
         # self.eigenstates = f
         # self.nearly_diag = N

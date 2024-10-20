@@ -750,14 +750,13 @@ class Matrix(csr_matrix):
         return out
 
     # #@jit
-    def diagonalize_each_block(self: T, labels: np.ndarray, method: str, original: bool, tol: float,
+    def diagonalize_each_block(self: T, labels: np.ndarray, original: bool, tol: float,
                                max_iter: int) -> Union[np.ndarray, T]:
         """
         Diagonalizes each block of the matrix.
 
         Parameters:
             labels (array-like): An array of labels indicating the block each element belongs to.
-            method (str): The method to use for diagonalization. Default is "jacobi".
             original (bool): If True, prints the block being diagonalized. Default is True.
             tol (float): The tolerance for convergence. Default is 1e-3.
             max_iter (int): The maximum number of iterations. If -1, there is no maximum. Default is -1.
@@ -794,11 +793,17 @@ class Matrix(csr_matrix):
             # diagonalize the block
             ##NEARLY_DIAG##v, f, M = submatrix.eigensolver(original=False, method=method, tol=tol, max_iter=max_iter)
             ##NEARLY_DIAG##submatrices[n, n] = M
-            v, f = submatrix.eigensolver(original=False, method=method, tol=tol, max_iter=max_iter)
-            eigenvalues[n] = v
-            eigenstates[n] = f
+            eigenvalues[n], eigenstates[n] = submatrix.eigensolver(original=False, tol=tol, max_iter=max_iter)
+            # eigenvalues[n] = v
+            # eigenstates[n] = f
 
         eigenvalues = np.concatenate(eigenvalues)
+        
+        # Attention:
+        # This is extremely inefficient for large matrices
+        # because if you are using a symmetry operator
+        # when coming back to the original basis 
+        # the eigenstates will no longer be in block form.
         eigenstates = Matrix.from_blocks(eigenstates)
         # eigenstates = DiagonalBlockMatrix(eigenstates)
 
@@ -861,26 +866,30 @@ class Matrix(csr_matrix):
             #     w,f,N = jacobi(self,tol=tol,max_iter=max_iter)
             # elif method == "dense":
             M = np.asarray(self.todense())
-            N = self.empty()
-            if self.is_hermitean():
-                w,f = eigh(M)
-            else :
-                w,f = eig(M)
-            N = N.astype(w.dtype)
-            N.setdiag(w)
+            # N = self.empty()
+            self.eigenvalues,self.eigenstates = eigh(M) if self.is_hermitean() else eig(M)
+            # if self.is_hermitean():
+            #     self.eigenvalues,self.eigenstates = eigh(M) if self.is_hermitean() else eig(M)
+            # else :
+            #     self.eigenvalues,self.eigenstates = eig(M)
+            # N = N.astype(w.dtype)
+            # N.setdiag(w)
             # pass
             # else :
             #     raise ImplErr
         
         elif self.n_blocks > 1:
             ##NEARLY_DIAG## w,f,N = self.diagonalize_each_block(labels=labels,original=True,method=method,tol=tol,max_iter=max_iter)
-            w,f = self.diagonalize_each_block(labels=labels,original=True,tol=tol,max_iter=max_iter)
+            self.eigenvalues,self.eigenstates = self.diagonalize_each_block(labels=labels,original=True,tol=tol,max_iter=max_iter)
 
         else :
             raise ValueError("error: n. of block should be >= 1")
         
-        self.eigenvalues = my_copy(w)
-        self.eigenstates = my_copy(f)
+        # self.eigenvalues = my_copy(w)
+        # self.eigenstates = my_copy(f)
+        # self.eigenvalues = w 
+        # self.eigenstates = f
+        
         ##NEARLY_DIAG## self.nearly_diag = my_copy(N) if N is not None else None
         
         # if isinstance(self.eigenstates,np.ndarray):
@@ -888,7 +897,8 @@ class Matrix(csr_matrix):
         # else:
         #     pass
         
-        return w,f##NEARLY_DIAG##,N
+        # return w,f##NEARLY_DIAG##,N
+        return self.eigenvalues,self.eigenstates
     
     def test_eigensolution(self:T)->T:
         """

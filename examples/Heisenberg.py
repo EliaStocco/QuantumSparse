@@ -50,7 +50,7 @@ w,f = eigs(H,k=5)
 # Diagonalize!
 # YOU CAN DECOMMENT THESE LINES
 # print()
-E0,Psi = H.diagonalize(method="dense") #),NLanczos=20,tol=1E-8,MaxDim=100)
+E0,Psi = H.diagonalize() #),NLanczos=20,tol=1E-8,MaxDim=100)
 
 # or let's do with our favorite numerical routine
 Hdense = np.asarray(H.todense()) # let's convert H from a scipy.sparse matrix into a normal np.array
