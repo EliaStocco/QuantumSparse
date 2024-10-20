@@ -129,10 +129,10 @@ class SpinOperators:
     def identity(self):
         return self.Sx[0].identity(len(self.Sx[0]))
 
-    def get_operator_basis(self:T,*argc,**argv)->NDArray[OpArr]:
-        """Returns the basis of the Hilbert space of the hermitian operators of each site"""
-        dim = spin2dim(self.spin_values)
-        return get_operator_basis(dim,*argc,**argv)
+    # def get_operator_basis(self:T,*argc,**argv)->NDArray[OpArr]:
+    #     """Returns the basis of the Hilbert space of the hermitian operators of each site"""
+    #     dim = spin2dim(self.spin_values)
+    #     return get_operator_basis(dim,*argc,**argv)
     
     # def get_projectors_on_operator_basis(self:T,OpBasis:NDArray[OpArr]=None,*argc,**argv)->NDArray[OpArr]:
     #     if OpBasis is None:
