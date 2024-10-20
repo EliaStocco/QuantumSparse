@@ -809,14 +809,12 @@ class Matrix(csr_matrix):
         # type(self)(bmat(submatrices))
         return eigenvalues, eigenstates##NEARLY_DIAG## , nearly_diagonal
  
-    def eigensolver(self:T,method="dense",original=True,tol:float=1.0e-3,max_iter:int=-1):
+    def eigensolver(self:T,original=True,tol:float=1.0e-3,max_iter:int=-1):
         """
         Diagonalize the matrix using the specified method.
 
         Parameters
         ----------
-        method : str, optional
-            The method used for diagonalization (default is "dense").
         original : bool, optional
             If True, the block being diagonalized is printed (default is True).
         tol : float, optional
@@ -853,30 +851,30 @@ class Matrix(csr_matrix):
             raise ValueError("some error occurred")
 
         if self.n_blocks == 1 :
-            if self.shape[0] < NoJacobi:
-                method = "dense"
-            if method == "jacobi":
-                raise ValueError("method 'jacobi' is no longer supported.")
-                if not self.is_hermitean():
-                    raise ValueError("'matrix' object is not hermitean and then it can not be diagonalized with the Jacobi method")
-                from QuantumSparse.matrix.jacobi import jacobi
-                w,f,N = jacobi(self,tol=tol,max_iter=max_iter)
-            elif method == "dense":
-                M = np.asarray(self.todense())
-                N = self.empty()
-                if self.is_hermitean():
-                    w,f = eigh(M)
-                else :
-                    w,f = eig(M)
-                N = N.astype(w.dtype)
-                N.setdiag(w)
-                pass
+            # if self.shape[0] < NoJacobi:
+            #     method = "dense"
+            # if method == "jacobi":
+            #     raise ValueError("method 'jacobi' is no longer supported.")
+            #     if not self.is_hermitean():
+            #         raise ValueError("'matrix' object is not hermitean and then it can not be diagonalized with the Jacobi method")
+            #     from QuantumSparse.matrix.jacobi import jacobi
+            #     w,f,N = jacobi(self,tol=tol,max_iter=max_iter)
+            # elif method == "dense":
+            M = np.asarray(self.todense())
+            N = self.empty()
+            if self.is_hermitean():
+                w,f = eigh(M)
             else :
-                raise ImplErr
+                w,f = eig(M)
+            N = N.astype(w.dtype)
+            N.setdiag(w)
+            # pass
+            # else :
+            #     raise ImplErr
         
         elif self.n_blocks > 1:
             ##NEARLY_DIAG## w,f,N = self.diagonalize_each_block(labels=labels,original=True,method=method,tol=tol,max_iter=max_iter)
-            w,f = self.diagonalize_each_block(labels=labels,original=True,method=method,tol=tol,max_iter=max_iter)
+            w,f = self.diagonalize_each_block(labels=labels,original=True,tol=tol,max_iter=max_iter)
 
         else :
             raise ValueError("error: n. of block should be >= 1")
