@@ -181,12 +181,13 @@ class Operator(Matrix):
         if restart :
             self.eigenvalues = None
             self.eigenstates = None
-            self.nearly_diag = None
+            ##NEARLY_DIAG## self.nearly_diag = None
 
         # if not self.is_hermitean():
         #     raise ValueError("'operator' is not hermitean")
         
-        w,f,_ = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
+        ##NEARLY_DIAG##w,f,_ = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
+        w,f = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
         if test:
             eigtest = self.test_eigensolution()
             print("\teigensolution test:",eigtest.norm())
@@ -231,14 +232,14 @@ class Operator(Matrix):
             if self.diagonalized():
                 out.eigenvalues = copy(self.eigenvalues)
                 out.eigenstates = S.eigenstates.dagger() @ self.eigenstates
-                out.nearly_diag = S.eigenstates.dagger() @ self.nearly_diag @ S.eigenstates
+                ##NEARLY_DIAG## out.nearly_diag = S.eigenstates.dagger() @ self.nearly_diag @ S.eigenstates
         
         elif direction == "backward":
             out = self.clone(S.eigenstates @ self @ S.eigenstates.dagger())
             if self.diagonalized():
                 out.eigenvalues = copy(self.eigenvalues)
                 out.eigenstates = S.eigenstates @ self.eigenstates
-                out.nearly_diag = S.eigenstates @ self.nearly_diag @ S.eigenstates.dagger() 
+                ##NEARLY_DIAG## out.nearly_diag = S.eigenstates @ self.nearly_diag @ S.eigenstates.dagger() 
 
         else:
             raise ValueError("'direction' can be only 'forward' or 'backward'")
@@ -320,7 +321,7 @@ class Operator(Matrix):
 
         self.eigenvalues = to_diag.eigenvalues
         self.eigenstates = to_diag.eigenstates # @ to_diag.eigenstates
-        self.nearly_diag = to_diag.nearly_diag # @ to_diag.nearly_diag @ S.eigenstates.dagger()
+        ##NEARLY_DIAG## self.nearly_diag = to_diag.nearly_diag # @ to_diag.nearly_diag @ S.eigenstates.dagger()
 
         if test:
             solution = self.test_eigensolution()
