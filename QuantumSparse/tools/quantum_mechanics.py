@@ -24,23 +24,5 @@ def standard_deviation(Op:Operator,Psi:Operator,mean:np.ndarray=None)->np.ndarra
     Quad = expectation_value(Op@Op,Psi)
     return np.sqrt( Quad - mean**2)
 
-def projector(Op:Operator)->Operator:
-    return Op.T@Op
 
-def inner_product(A,B):
-    return A@B
-
-def Hilbert_Schmidt(A:Matrix,B:Matrix)->float:
-    return (A.dagger() @ B).trace()
-
-def check_orthogonality(Arr:np.ndarray,product=inner_product):
-    N = len(Arr)
-    results = np.zeros((N,N))
-    for i in range(N):
-        for j in range(N):
-            results[i,j] = product(Arr[i],Arr[j])
-    assert np.allclose(results,results.T), "The provided scalar product is not symmetric!"
-    if not np.allclose(results,np.eye(N)):
-        return False
-    return True
 

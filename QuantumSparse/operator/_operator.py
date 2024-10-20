@@ -15,6 +15,59 @@ class Operator(Matrix):
     """
     
     name:str
+    
+    
+    def __mul__(self: T, other: T) -> T:
+        """
+        Implements the left matrix multiplication operator (*) for the Operator class.
+
+        Parameters
+        ----------
+        self : Operator
+            The Operator object to multiply.
+        other : Operator
+            The Operator object to multiply with.
+
+        Returns
+        -------
+        T
+            The result of the matrix multiplication.
+        """
+        return super().__mul__(other)
+    
+    def __rmul__(self: T, other: T) -> T:
+        """
+        Implements the right matrix multiplication operator (*) for the Operator class.
+
+        Parameters
+        ----------
+        self : Operator
+            The Operator object to multiply.
+        other : Operator
+            The Operator object to multiply with.
+
+        Returns
+        -------
+        T
+            The result of the matrix multiplication.
+        """
+        return super().__rmul__(other)
+    
+    def __matmul__(self,other):
+        """
+        Implements the matrix multiplication operator (@) for the Operator class.
+
+        Parameters
+        ----------
+        other : Operator
+            The Operator object to multiply with.
+
+        Returns
+        -------
+        Operator
+            The result of the matrix multiplication.
+        """
+        return super().__matmul__(other)
 
     def __init__(self: T, *argc, **argv) -> None:
         """
@@ -232,7 +285,7 @@ class Operator(Matrix):
         w,labels = unique_with_tolerance(sym.eigenvalues)
         
         # new = self.clone(sym.eigenstates.dagger() @ self @ sym.eigenstates)
-        new:T = self.change_basis(sym,direction="forward")
+        to_diag:T = self.change_basis(sym,direction="forward")
         for n in range(1,len(S)):
             S[n] = S[n].change_basis(sym,direction="forward")
 
@@ -242,13 +295,13 @@ class Operator(Matrix):
             self.n_blocks = len(np.unique(labels))
             return self.n_blocks, self.blocks
         import types
-        new.count_blocks  = types.MethodType(new_count_blocks, new)
+        to_diag.count_blocks  = types.MethodType(new_count_blocks, to_diag)
 
         if use_block_form:
-            new.count_blocks(inplace=True)
-            to_diag = new.divide_into_block(labels)
-        else:
-            to_diag = new
+            to_diag.count_blocks(inplace=True)
+            to_diag = to_diag.divide_into_block(labels)
+        # else:
+        #     to_diag = new
 
         if len(S) == 1 :
             to_diag.diagonalize(test=False,**argv)
@@ -270,9 +323,12 @@ class Operator(Matrix):
         self.nearly_diag = to_diag.nearly_diag # @ to_diag.nearly_diag @ S.eigenstates.dagger()
 
         if test:
-            print("\teigensolution test:",self.test_eigensolution().norm())
+            solution = self.test_eigensolution()
+            norm = solution.norm()
+            print("\teigensolution test:",norm)
         
-        return copy(self.eigenvalues),copy(self.eigenstates)
+        return self.eigenvalues, self.eigenstates
+        # return copy(self.eigenvalues),copy(self.eigenstates)
     
     def energy_levels(self,tol=1e-8):
         

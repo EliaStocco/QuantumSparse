@@ -782,7 +782,7 @@ class Matrix(csr_matrix):
 
         for n in range(self.n_blocks):
             if original:
-                print(f"\t\tdiagonalizing block n. {n}")
+                print(f"\t\tdiagonalizing block n. {n}/{self.n_blocks}")
 
             mask = (labels == n)
             permutation[k:k + len(indeces[mask])] = indeces[mask]

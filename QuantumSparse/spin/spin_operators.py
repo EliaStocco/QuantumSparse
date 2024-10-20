@@ -5,7 +5,8 @@ from QuantumSparse.tools.functions import prepare_opts
 from typing import Tuple, Union, Any, TypeVar, List, Type
 import pandas as pd
 from QuantumSparse.global_variables import NDArray
-from QuantumSparse.tools.quantum_mechanics import projector, check_orthogonality, Hilbert_Schmidt
+# from QuantumSparse.tools.quantum_mechanics import projector, check_orthogonality, Hilbert_Schmidt
+# from QuantumSparse.hilbert import get_operator_basis
 
 T = TypeVar('T', bound='SpinOperators')
 
@@ -130,17 +131,18 @@ class SpinOperators:
 
     def get_operator_basis(self:T,*argc,**argv)->NDArray[OpArr]:
         """Returns the basis of the Hilbert space of the hermitian operators of each site"""
-        return get_operator_basis(self.spin_values,*argc,**argv)
+        dim = spin2dim(self.spin_values)
+        return get_operator_basis(dim,*argc,**argv)
     
-    def get_projectors_on_operator_basis(self:T,OpBasis:NDArray[OpArr]=None,*argc,**argv)->NDArray[OpArr]:
-        if OpBasis is None:
-            OpBasis = self.get_operator_basis(*argc,**argv)
-        return get_projectors_on_operator_basis(OpBasis)
+    # def get_projectors_on_operator_basis(self:T,OpBasis:NDArray[OpArr]=None,*argc,**argv)->NDArray[OpArr]:
+    #     if OpBasis is None:
+    #         OpBasis = self.get_operator_basis(*argc,**argv)
+    #     return get_projectors_on_operator_basis(OpBasis)
     
-    def get_projectors_on_site_operator(self:T,OpProj:NDArray[OpArr]=None,*argc,**argv)->OpArr:
-        if OpProj is None:
-            OpProj = self.get_projectors_on_operator_basis(*argc,**argv)
-        return get_projectors_on_site_operator(OpProj)
+    # def get_projectors_on_site_operator(self:T,OpProj:NDArray[OpArr]=None,*argc,**argv)->OpArr:
+    #     if OpProj is None:
+    #         OpProj = self.get_projectors_on_operator_basis(*argc,**argv)
+    #     return get_projectors_on_site_operator(OpProj)
             
 def spin2dim(spin_values: np.ndarray)->np.ndarray:
     """
@@ -342,92 +344,3 @@ def compute_spin_operators(spin_values:np.ndarray,opts=None)->Tuple[OpArr,OpArr,
     #     Sx[n],Sy[n],Sz[n] = operator(Sx[n]), operator(Sy[n]), operator(Sz[n])
             
     return Sx,Sy,Sz,Sp,Sm
-
-def get_operator_basis(spin_values: np.ndarray,*argc,**argv)->NDArray[OpArr]:
-    """Returns the basis of the Hilbert space of the hermitian operators of each site"""
-    assert spin_values.ndim == 1, "spin_values must be a 1D array"
-    dims = spin2dim(spin_values)
-    N = len(spin_values)
-    OpBasis = [None]*N# np.zeros(N,dtype=object) 
-    for n,(s,dim) in enumerate(zip(spin_values,dims)):
-        dimOp = dim*2
-        operators = np.zeros(dimOp,dtype=object)
-        k = 0 
-        for i in range(dim): # diagonal
-            for j in range(dim):
-                # tmp:Operator = (Operator.one_hot(dim,i,j) + Operator.one_hot(dim,j,i))/2
-                # print(tmp.todense())
-                # OpBasis[n][k] = tmp
-                # k += 1
-                if i > j:
-                    tmp:Operator = (1.j*Operator.one_hot(dim,i,j) -1.j* Operator.one_hot(dim,j,i))/np.sqrt(2)
-                    print(tmp.todense())
-                    operators[k] = tmp
-                    k += 1
-                elif i < j:
-                    tmp:Operator = (Operator.one_hot(dim,i,j) + Operator.one_hot(dim,j,i))/np.sqrt(2)
-                    print(tmp.todense())
-                    operators[k] = tmp
-                    k += 1
-                else:
-                    tmp:Operator = Operator.one_hot(dim,i,i)
-                    print(tmp.todense())
-                    operators[k] = tmp
-                    k += 1
-        assert np.all([Op.is_hermitean() for Op in operators]), "Operators are not hermitian"
-        
-        
-        
-        assert check_orthogonality(operators,Hilbert_Schmidt), "Operators are not orthogonal"
-        
-        
-        OpBasis[n] = [None]*len(operators)#np.zeros(len(operators),dtype=object) # S z
-        
-        
-        # Sx = np.zeros(NSpin,dtype=object) # S x
-        # Sy = np.zeros(NSpin,dtype=object) # S y
-        # Sp = np.zeros(NSpin,dtype=object) # S y
-        # Sm = np.zeros(NSpin,dtype=object) # S y
-        iden = Operator.identity(dims)
-        for ii in range(len(operators)):
-            for i in range(N):
-                Ops = iden.copy()
-                Ops[i] = operators[ii]
-                OpBasis[n][ii][i] = Ops[0]
-                for j in range(1,N):
-                    OpBasis[n][ii][i] = Operator.kron(OpBasis[n][ii][i],Ops[j])
-        
-        for ii,zpm,out in enumerate(zip(operators,OpBasis[n])):
-            for i in range(N):
-                Ops = iden.copy()
-                Ops[i] = zpm[i]
-                out[i] = Ops[0]
-                for j in range(1,N):
-                    out[i] = Operator.kron(out[i],Ops[j]) 
-                    
-        # for i in range(NSpin):
-        #     Sx[i] = compute_sx(Sp[i],Sm[i])
-        #     Sy[i] = compute_sy(Sp[i],Sm[i])
-            
-        # return Sx,Sy,Sz,Sp,Sm       
-        
-    return OpBasis
-
-def get_projectors_on_operator_basis(OpBasis:NDArray[OpArr]=None)->NDArray[OpArr]:
-    N = len(OpBasis)
-    OpProj = np.zeros(N,dtype=object)
-    for n in range(N):
-        dimOp = len(OpBasis[n])
-        OpProj[n] = np.zeros(dimOp,dtype=object) 
-        for i in range(dimOp):
-            a = np.asarray(OpBasis[n][i].todense())
-            OpProj[n][i] = OpBasis[n][i] #np.outer(np.conjugate(a.T),a)# projector(OpBasis[n][i])
-    return OpProj
-
-def get_projectors_on_site_operator(OpProj:NDArray[OpArr]=None)->OpArr:
-    N = len(OpProj)
-    Proj = np.zeros(N,dtype=object)
-    for n in range(N):
-        Proj[n] = OpProj[n].sum()/np.sqrt(len(OpProj[n]))
-        assert np.allclose((Proj[n]@Proj[n]).todense(),Proj[n].todense()), "Projection is not idempotent"
-    return Proj

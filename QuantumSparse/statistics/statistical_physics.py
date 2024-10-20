@@ -111,7 +111,7 @@ def correlation_function(T: np.ndarray, E: np.ndarray, OpA: Operator, Psi: Matri
     square = quantum_thermal_average_value(T, E, OpAB, Psi)
     
     # Initialize the Chi array to hold the correlation result
-    Chi = square - meanA * meanA
+    Chi = square - meanA * meanB
     return Chi
 
 
