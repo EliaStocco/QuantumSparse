@@ -9,7 +9,7 @@ import numpy as np
 # from QuantumSparse.tools.optimize import jit
 from QuantumSparse.errors import ImplErr
 from QuantumSparse.tools import first_larger_than_N, get_deep_size
-from typing import TypeVar, Union, Type, List
+from typing import TypeVar, Union, Type, List, Dict, Any
 import pickle
 from dataclasses import dataclass, field
 import concurrent.futures
@@ -53,6 +53,7 @@ class Matrix(csr_matrix):
     eigenstates:T
     ##NEARLY_DIAG## nearly_diag:bool
     is_adjacency:bool
+    extras:Dict[str,Any]
 
     def __init__(self:T,*argc,**argv):
         """
@@ -79,6 +80,7 @@ class Matrix(csr_matrix):
         self.eigenstates = None
         ##NEARLY_DIAG## self.nearly_diag = None
         self.is_adjacency = None
+        self.extras = {}
         # if is_adjacency:
         #     self.is_adjacency = True
         # else:
@@ -718,7 +720,7 @@ class Matrix(csr_matrix):
 
         return submatrix
 
-    def divide_into_block(self: T, labels: np.ndarray, sort=True) -> T:
+    def clean_block_form(self: T, labels: np.ndarray, sort=True) -> T:
         """
         Divides the matrix into blocks.
 
@@ -751,7 +753,7 @@ class Matrix(csr_matrix):
 
     # #@jit
     def diagonalize_each_block(self: T, labels: np.ndarray, original: bool, tol: float,
-                               max_iter: int) -> Union[np.ndarray, T]:
+                               max_iter: int,**argv) -> Union[np.ndarray, T]:
         """
         Diagonalizes each block of the matrix.
 
@@ -793,12 +795,13 @@ class Matrix(csr_matrix):
             # diagonalize the block
             ##NEARLY_DIAG##v, f, M = submatrix.eigensolver(original=False, method=method, tol=tol, max_iter=max_iter)
             ##NEARLY_DIAG##submatrices[n, n] = M
-            eigenvalues[n], eigenstates[n] = submatrix.eigensolver(original=False, tol=tol, max_iter=max_iter)
-            # eigenvalues[n] = v
-            # eigenstates[n] = f
+            eigenvalues[n], eigenstates[n] = submatrix.eigensolver(original=False, tol=tol, max_iter=max_iter,**argv)
 
         eigenvalues = np.concatenate(eigenvalues)
         
+        if "blockeigenstates2extras" in argv and argv["blockeigenstates2extras"]:
+            self.extras["blockeigenstates"]    = deepcopy(eigenstates)
+            
         # Attention:
         # This is extremely inefficient for large matrices
         # because if you are using a symmetry operator
@@ -810,11 +813,17 @@ class Matrix(csr_matrix):
         reverse_permutation = np.argsort(permutation)
         eigenvalues = eigenvalues[reverse_permutation]
         eigenstates = eigenstates[reverse_permutation][:, reverse_permutation]
+        
+        if "blockeigenstates2extras" in argv and argv["blockeigenstates2extras"]:
+            # self.extras["blockeigenstates"]    = eigenstates
+            self.extras["permutation"]         = permutation
+            self.extras["reverse_permutation"] = reverse_permutation
+            
         ##NEARLY_DIAG## nearly_diagonal = self.clone(bmat(submatrices))[reverse_permutation][:, reverse_permutation]
         # type(self)(bmat(submatrices))
         return eigenvalues, eigenstates##NEARLY_DIAG## , nearly_diagonal
  
-    def eigensolver(self:T,original=True,tol:float=1.0e-3,max_iter:int=-1):
+    def eigensolver(self:T,original=True,tol:float=1.0e-3,max_iter:int=-1,**argv):
         """
         Diagonalize the matrix using the specified method.
 
@@ -836,7 +845,6 @@ class Matrix(csr_matrix):
         N : Matrix
             The nearly diagonal matrix.
         """
-        # if Matrix.module is sparse :
 
         #############################
         # |-------------------------|
@@ -846,8 +854,6 @@ class Matrix(csr_matrix):
         # |    =1    |  ok  |  yes  |
         # |    >1    |  ok  | error |
         # |-------------------------|
-        
-        N = None
 
         n_components, labels = self.count_blocks(inplace=True)               
         if original : 
@@ -856,47 +862,17 @@ class Matrix(csr_matrix):
             raise ValueError("some error occurred")
 
         if self.n_blocks == 1 :
-            # if self.shape[0] < NoJacobi:
-            #     method = "dense"
-            # if method == "jacobi":
-            #     raise ValueError("method 'jacobi' is no longer supported.")
-            #     if not self.is_hermitean():
-            #         raise ValueError("'matrix' object is not hermitean and then it can not be diagonalized with the Jacobi method")
-            #     from QuantumSparse.matrix.jacobi import jacobi
-            #     w,f,N = jacobi(self,tol=tol,max_iter=max_iter)
-            # elif method == "dense":
             M = np.asarray(self.todense())
-            # N = self.empty()
             self.eigenvalues,self.eigenstates = eigh(M) if self.is_hermitean() else eig(M)
-            # if self.is_hermitean():
-            #     self.eigenvalues,self.eigenstates = eigh(M) if self.is_hermitean() else eig(M)
-            # else :
-            #     self.eigenvalues,self.eigenstates = eig(M)
-            # N = N.astype(w.dtype)
-            # N.setdiag(w)
-            # pass
-            # else :
-            #     raise ImplErr
-        
+
         elif self.n_blocks > 1:
             ##NEARLY_DIAG## w,f,N = self.diagonalize_each_block(labels=labels,original=True,method=method,tol=tol,max_iter=max_iter)
-            self.eigenvalues,self.eigenstates = self.diagonalize_each_block(labels=labels,original=True,tol=tol,max_iter=max_iter)
+            self.eigenvalues,self.eigenstates = self.diagonalize_each_block(labels=labels,original=True,tol=tol,max_iter=max_iter,**argv)
 
         else :
             raise ValueError("error: n. of block should be >= 1")
         
-        # self.eigenvalues = my_copy(w)
-        # self.eigenstates = my_copy(f)
-        # self.eigenvalues = w 
-        # self.eigenstates = f
-        
         ##NEARLY_DIAG## self.nearly_diag = my_copy(N) if N is not None else None
-        
-        # if isinstance(self.eigenstates,np.ndarray):
-        #     self.eigenstates = Matrix(self.eigenstates)
-        # else:
-        #     pass
-        
         # return w,f##NEARLY_DIAG##,N
         return self.eigenvalues,self.eigenstates
     

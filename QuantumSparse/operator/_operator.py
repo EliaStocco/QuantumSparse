@@ -1,8 +1,7 @@
 # "operator" class
 
 import numpy as np
-import pickle
-from copy import copy
+from copy import copy, deepcopy
 from QuantumSparse.matrix import Matrix
 from typing import TypeVar, Union, List
 
@@ -153,7 +152,7 @@ class Operator(Matrix):
                 iden[i] = Matrix.identity(dim,dtype=int)  
             return iden
     
-    def diagonalize(self:T,restart=False,tol:float=1.0e-3,max_iter:int=-1,test=True):
+    def diagonalize(self:T,restart=False,tol:float=1.0e-3,max_iter:int=-1,test=True,**argv):
         """
         Diagonalize the operator using the specified method.
 
@@ -180,30 +179,17 @@ class Operator(Matrix):
             self.eigenvalues = None
             self.eigenstates = None
             ##NEARLY_DIAG## self.nearly_diag = None
-
-        # if not self.is_hermitean():
-        #     raise ValueError("'operator' is not hermitean")
         
         ##NEARLY_DIAG##w,f,_ = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
-        self.eigenvalues,self.eigenstates = super().eigensolver(original=True,tol=tol,max_iter=max_iter)
+        self.eigenvalues,self.eigenstates = super().eigensolver(original=True,tol=tol,max_iter=max_iter,**argv)
         if test:
             eigtest = self.test_eigensolution()
             print("\teigensolution test:",eigtest.norm())
-        # self.eigenvalues = np.asarray(self.eigenvalues)
-        # self.eigenstates = np.asarray(self.eigenstates)
         
         self.eigenstates.n_blocks = self.n_blocks
         self.eigenstates.blocks = self.blocks
         
-        # print(f)
         return self.eigenvalues,self.eigenstates
-        # self.eigenvalues = w
-        # self.eigenstates = f
-        # self.nearly_diag = N
-
-        # return self.eigenvalues, self.eigenstates
-        
-        
 
     def change_basis(self:T,S:T,direction="forward"):
         """
@@ -242,10 +228,14 @@ class Operator(Matrix):
         else:
             raise ValueError("'direction' can be only 'forward' or 'backward'")
         
+        try:
+            out.extras = deepcopy(self.extras)
+        except:
+            pass
         return out
 
 
-    def diagonalize_with_symmetry(self:T,S:Union[List[T],T],use_block_form=True,test=True,**argv):
+    def diagonalize_with_symmetry(self:T,S:Union[List[T],T],test=True,**argv):
         """
         Diagonalizes the operator using the given symmetry operator(s).
 
@@ -254,8 +244,6 @@ class Operator(Matrix):
         S : Union[List[T], T]
             The symmetry operator(s) used for the diagonalization.
             If a single operator is provided, it will be wrapped in a list.
-        use_block_form : bool, optional
-            Whether to use the block form of the operator (default is False).
         test : bool, optional
             Whether to test the eigensolution (default is True).
         **argv
@@ -268,7 +256,7 @@ class Operator(Matrix):
         """
 
         if type(S) is not list:
-            return self.diagonalize_with_symmetry([S],use_block_form,test,**argv)
+            return self.diagonalize_with_symmetry([S],test,**argv)
         if len(S) == 0 :
             return self.diagonalize(**argv)
         
@@ -280,27 +268,25 @@ class Operator(Matrix):
         if sym.eigenvalues is None:
             raise ValueError("The symmetry operator 'S' should have already been diagonalized.")
 
-        # I should define a 'symmetry' operator
         w,labels = unique_with_tolerance(sym.eigenvalues)
         
-        # new = self.clone(sym.eigenstates.dagger() @ self @ sym.eigenstates)
         to_diag:T = self.change_basis(sym,direction="forward")
         for n in range(1,len(S)):
             S[n] = S[n].change_basis(sym,direction="forward")
 
-        # little dirty trick
-        def new_count_blocks(self:T,inplace=True)->T:
-            self.blocks = labels
-            self.n_blocks = len(np.unique(labels))
-            return self.n_blocks, self.blocks
-        import types
-        to_diag.count_blocks  = types.MethodType(new_count_blocks, to_diag)
-
-        if use_block_form:
-            to_diag.count_blocks(inplace=True)
-            to_diag = to_diag.divide_into_block(labels)
-        # else:
-        #     to_diag = new
+        #  `to_diag` will have the same block form of `sym`
+        # and it will be usefull in `to_diag.clean_block_form` to remove 
+        # sporious off diagonal elements (numerical noise)
+        to_diag.blocks = labels
+        to_diag.n_blocks = len(np.unique(labels))
+    
+        
+        # This line removes all the off-diagonal small elements that could create numerical instabilities
+        to_diag = to_diag.clean_block_form(labels)
+        
+        # Pay attention that `to_diag.blocks` and `to_diag.n_blocks` are both `None` now.
+        # But this is okay because `to_diag.count_blocks` will be called withing `to_diag.diagonalize` 
+        # and more blocks might be found.
 
         if len(S) == 1 :
             to_diag.diagonalize(test=False,**argv)
@@ -319,6 +305,8 @@ class Operator(Matrix):
 
         self.eigenvalues = to_diag.eigenvalues
         self.eigenstates = to_diag.eigenstates # @ to_diag.eigenstates
+        self.extras      = to_diag.extras
+        
         ##NEARLY_DIAG## self.nearly_diag = to_diag.nearly_diag # @ to_diag.nearly_diag @ S.eigenstates.dagger()
 
         if test:
@@ -361,7 +349,7 @@ class Operator(Matrix):
         new.count_blocks  = types.MethodType(new_count_blocks, new)
         new.count_blocks(inplace=True)
         
-        # divide_into_block
+        # clean_block_form
         
         # submatrices = np.full((self.n_blocks, self.n_blocks), None, dtype=object)
         submatrices = [None]*new.n_blocks
