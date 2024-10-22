@@ -1,5 +1,7 @@
 from QuantumSparse.constants import muB,g
 import numpy as np
+from typing import Tuple
+from QuantumSparse.operator import Operator
 
 def extract_Sxyz(func):
     def wrapper(spins,*argc,**argv):
@@ -10,7 +12,7 @@ def extract_Sxyz(func):
             return func(spins=None,*argc,**argv)
     return wrapper
 
-def magnetic_moments(Sx=None,Sy=None,Sz=None,opts=None):
+def magnetic_moments(Sx=None,Sy=None,Sz=None,opts=None)->Tuple[Operator,Operator,Operator]:
     """Create the magnetic moment operator from the spin operators"""
     Mx,My,Mz = 0,0,0
     for sx,sy,sz in zip(Sx,Sy,Sz):

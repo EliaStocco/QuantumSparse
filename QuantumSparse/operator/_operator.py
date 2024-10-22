@@ -207,15 +207,18 @@ class Operator(Matrix):
         out : T
             The operator in the new basis.
         """
+        
+        # ToDo: specialize this function for the case when self == S
 
         if not S.diagonalized():
             raise ValueError("The operator 'S' should have already been diagonalized.")
         
         if direction == "forward":
-            out = self.clone(S.eigenstates.dagger() @ self @ S.eigenstates)
+            dagger = S.eigenstates.dagger()
+            out = self.clone(dagger @ self @ S.eigenstates)
             if self.diagonalized():
                 out.eigenvalues = copy(self.eigenvalues)
-                out.eigenstates = S.eigenstates.dagger() @ self.eigenstates
+                out.eigenstates = dagger @ self.eigenstates
                 ##NEARLY_DIAG## out.nearly_diag = S.eigenstates.dagger() @ self.nearly_diag @ S.eigenstates
         
         elif direction == "backward":

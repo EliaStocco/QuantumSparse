@@ -4,6 +4,7 @@ from QuantumSparse.constants import kB,g,_NA,_eV,muB
 from QuantumSparse.tools.quantum_mechanics import expectation_value
 from QuantumSparse.operator import Operator
 from QuantumSparse.matrix import Matrix
+from typing import Optional
 
 
 def T2beta(T:np.ndarray)->np.ndarray:
@@ -73,7 +74,7 @@ def quantum_thermal_average_value(T: np.ndarray,E: np.ndarray,Op:Operator,Psi:Ma
     Obs = expectation_value(Op,Psi)
     return classical_thermal_average_value(T,E,Obs)
 
-def correlation_function(T: np.ndarray, E: np.ndarray, OpA: Operator, Psi: Matrix, OpB: Operator=None) -> np.ndarray:
+def correlation_function(T: np.ndarray, E: np.ndarray, OpA: Operator, Psi: Matrix, OpB: Optional[Operator]=None) -> np.ndarray:
     """
     Calculates the correlation function of a system.
 

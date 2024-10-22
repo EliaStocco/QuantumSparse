@@ -9,7 +9,7 @@ import numpy as np
 # from QuantumSparse.tools.optimize import jit
 from QuantumSparse.errors import ImplErr
 from QuantumSparse.tools import first_larger_than_N, get_deep_size
-from typing import TypeVar, Union, Type, List, Dict, Any
+from typing import TypeVar, Union, Type, List, Dict, Any, Optional
 import pickle
 from dataclasses import dataclass, field
 import concurrent.futures
@@ -720,34 +720,45 @@ class Matrix(csr_matrix):
 
         return submatrix
 
-    def clean_block_form(self: T, labels: np.ndarray, sort=True) -> T:
+    def divide_into_blocks(self:T, labels: Optional[np.ndarray]=None) -> T:
         """
-        Divides the matrix into blocks.
+        Divides a matrix into blocks based on the given labels.
 
         Parameters:
-            labels (array-like): An array of labels indicating the block each element belongs to.
-            sort (bool): If True, sorts the matrix according to the labels. Default is True.
+            labels (Optional[np.ndarray]): The labels of the blocks. If None, the blocks are determined by the matrix's connected components.
 
         Returns:
-            T: A new matrix instance representing the matrix divided into blocks.
+            T: A tuple containing an array of submatrices, where each submatrix corresponds to a block, and a permutation array that maps the original indices to the block indices.
         """
-        submatrices = np.full((self.n_blocks, self.n_blocks), None, dtype=object)
-        # submatrices = [None]*self.n_blocks
+        
+        if labels is None:
+            n_blocks,labels = self.count_blocks(inplace=False)
+        else:
+            n_blocks = len(np.unique(labels))
+            
+        submatrices = np.full((n_blocks, n_blocks), None, dtype=object)
         indeces = np.arange(self.shape[0])
         permutation = np.arange(self.shape[0])
 
         k = 0
-        for n in range(self.n_blocks):
+        for n in range(n_blocks):
             mask = (labels == n)
             permutation[k:k + len(indeces[mask])] = indeces[mask]
             k += len(indeces[mask])
             # create a submatrix from one block
             submatrices[n,n] = self.mask2submatrix(mask)
-
+        
+        # a = self[permutation,:][:,permutation]
+        # b = bmat(submatrices)
+        # c = a - b
+        # assert np.allclose(c.norm(),0)
+            
+        return submatrices, permutation, np.argsort(permutation), labels
+            
+    def clean_block_form(self: T, labels: np.ndarray, sort=True) -> T:
+        submatrices, permutation, reverse_permutation, _ = self.divide_into_blocks(labels)
         out = self.clone(bmat(submatrices))
-        # out = DiagonalBlockMatrix(submatrices)
         if sort:
-            reverse_permutation = np.argsort(permutation)
             out = out[reverse_permutation][:, reverse_permutation]
         return out
 
@@ -796,12 +807,11 @@ class Matrix(csr_matrix):
             ##NEARLY_DIAG##v, f, M = submatrix.eigensolver(original=False, method=method, tol=tol, max_iter=max_iter)
             ##NEARLY_DIAG##submatrices[n, n] = M
             eigenvalues[n], eigenstates[n] = submatrix.eigensolver(original=False, tol=tol, max_iter=max_iter,**argv)
-
-        eigenvalues = np.concatenate(eigenvalues)
         
         if "blockeigenstates2extras" in argv and argv["blockeigenstates2extras"]:
             self.extras["blockeigenstates"]    = deepcopy(eigenstates)
-            
+            self.extras["blockeigenvalues"]    = deepcopy(eigenvalues)
+                    
         # Attention:
         # This is extremely inefficient for large matrices
         # because if you are using a symmetry operator
@@ -809,7 +819,8 @@ class Matrix(csr_matrix):
         # the eigenstates will no longer be in block form.
         eigenstates = Matrix.from_blocks(eigenstates)
         # eigenstates = DiagonalBlockMatrix(eigenstates)
-
+        eigenvalues = np.concatenate(eigenvalues)
+        
         reverse_permutation = np.argsort(permutation)
         eigenvalues = eigenvalues[reverse_permutation]
         eigenstates = eigenstates[reverse_permutation][:, reverse_permutation]
