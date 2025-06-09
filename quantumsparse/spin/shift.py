@@ -1,5 +1,5 @@
-from QuantumSparse.operator import Operator, Symmetry
-from QuantumSparse.spin import SpinOperators
+from quantumsparse.operator import Operator, Symmetry
+from quantumsparse.spin import SpinOperators
 import numpy as np
 
 def shift(ops:SpinOperators)->Operator:

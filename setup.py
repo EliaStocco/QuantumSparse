@@ -1,8 +1,8 @@
 from setuptools import setup
 
-setup(name='QuantumSparse',
+setup(name='quantumsparse',
       version='0.0',
       description='A scipy.sparse based package to represent quantum spin operators',
-      packages=['QuantumSparse'],
+      packages=['quantumsparse'],
       author_email='eliastocco@gmail.com',
       zip_safe=False)

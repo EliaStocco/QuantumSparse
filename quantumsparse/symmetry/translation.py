@@ -1,6 +1,6 @@
-from QuantumSparse.operator import Operator
-from QuantumSparse.hilbert import HilbertSpace
-from QuantumSparse.hilbert.tools import mutual_product, Hilbert_Schmidt, check_orthogonality
+from quantumsparse.operator import Operator
+from quantumsparse.hilbert import HilbertSpace
+from quantumsparse.hilbert.tools import mutual_product, Hilbert_Schmidt, check_orthogonality
 import numpy as np
 from icecream import ic
 from typing import TypeVar, Type, List
@@ -8,7 +8,7 @@ T = TypeVar('T', bound='Translation')
 
 class Translation(Operator):
     """
-    This class is a subclass of QuantumSparse.operator.Operator and is used to represent the translation operator.
+    This class is a subclass of quantumsparse.operator.Operator and is used to represent the translation operator.
     """
     
     @classmethod

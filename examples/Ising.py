@@ -1,9 +1,9 @@
 import numpy as np
-from QuantumSparse.spin import SpinOperators
-from QuantumSparse.operator import Operator
-from QuantumSparse.spin import Ising
+from quantumsparse.spin import SpinOperators
+from quantumsparse.operator import Operator
+from quantumsparse.spin import Ising
 
-# In QuantumSparse/spin/interactions.py you can find:
+# In quantumsparse/spin/interactions.py you can find:
 # - Ising
 # - Heisenberg
 # - DM

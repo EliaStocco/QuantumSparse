@@ -1,13 +1,13 @@
 import numpy as np
-from QuantumSparse.spin import SpinOperators, from_S2_to_S
-from QuantumSparse.operator import Operator
-from QuantumSparse.operator import Symmetry, roots_of_unity
-from QuantumSparse.spin import Heisenberg, anisotropy, spin2dim
-from QuantumSparse.spin.shift import shift
-from QuantumSparse.symmetry import Translation
+from quantumsparse.spin import SpinOperators, from_S2_to_S
+from quantumsparse.operator import Operator
+from quantumsparse.operator import Symmetry, roots_of_unity
+from quantumsparse.spin import Heisenberg, anisotropy, spin2dim
+from quantumsparse.spin.shift import shift
+from quantumsparse.symmetry import Translation
 import pytest
 
-# In QuantumSparse/spin/interactions.py you can find:
+# In quantumsparse/spin/interactions.py you can find:
 # - Ising
 # - Heisenberg
 # - DM

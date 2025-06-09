@@ -3,10 +3,10 @@ import os
 import json
 import numpy as np
 import pandas as pd
-from QuantumSparse.operator import Operator
-from QuantumSparse.spin import SpinOperators, compute_total_S2
-# from QuantumSparse.spin.functions import magnetic_moments, rotate_spins
-from QuantumSparse.spin.interactions import Heisenberg, DM, anisotropy, rhombicity# , Ising
+from quantumsparse.operator import Operator
+from quantumsparse.spin import SpinOperators, compute_total_S2
+# from quantumsparse.spin.functions import magnetic_moments, rotate_spins
+from quantumsparse.spin.interactions import Heisenberg, DM, anisotropy, rhombicity# , Ising
 
 import argparse
 
@@ -146,8 +146,8 @@ if file is None or args.restart:
 else :
     H = Operator.load(file)
 
-from QuantumSparse.spin.shift import shift
-from QuantumSparse.spin.flip import flip
+from quantumsparse.spin.shift import shift
+from quantumsparse.spin.flip import flip
 D = shift(spins)
 D.diagonalize(method="dense",test=False)
 D.save("shift.pickle")

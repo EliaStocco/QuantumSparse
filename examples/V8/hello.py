@@ -11,7 +11,7 @@ eigenvalues, eigenvectors = eigsh(A, k=num_eigenvalues, which='SA', v0=v0)
 #     self._arpack_solver(self.ido, self.bmat, self.which, self.k,
 #   File "/home/stoccoel/miniconda3/envs/elia/lib/python3.10/site-packages/scipy/sparse/linalg/_eigen/arpack/arpack.py", line 1697, in eigsh
 #     params.iterate()
-#   File "/home/stoccoel/google-personal/QuantumSparse/examples/V8/hello.py", line 12, in <module>
+#   File "/home/stoccoel/google-personal/quantumsparse/examples/V8/hello.py", line 12, in <module>
 #     eigenvalues, eigenvectors = eigsh(A, k=num_eigenvalues, which='SA', v0=v0)
 #   File "/home/stoccoel/miniconda3/envs/elia/lib/python3.10/runpy.py", line 86, in _run_code
 #     exec(code, run_globals)

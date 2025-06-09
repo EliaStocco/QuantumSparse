@@ -1,11 +1,11 @@
 import numpy as np
-from QuantumSparse.spin import SpinOperators
-from QuantumSparse.operator import Operator
-from QuantumSparse.spin import Heisenberg, DM
+from quantumsparse.spin import SpinOperators
+from quantumsparse.operator import Operator
+from quantumsparse.spin import Heisenberg, DM
 
 from scipy.sparse.linalg import eigsh, eigs
 
-# In QuantumSparse/spin/interactions.py you can find:
+# In quantumsparse/spin/interactions.py you can find:
 # - Ising
 # - Heisenberg
 # - DM

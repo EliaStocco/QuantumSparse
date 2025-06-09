@@ -1,7 +1,7 @@
 import numpy as np
 from copy import copy
-from QuantumSparse.tools.optimize import jit
-from QuantumSparse.matrix import Matrix
+from quantumsparse.tools.optimize import jit
+from quantumsparse.matrix import Matrix
 from typing import Union
 
 #@jit

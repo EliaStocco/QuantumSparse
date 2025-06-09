@@ -1,7 +1,7 @@
 import numpy as np
-from QuantumSparse.tools.optimize import jit
-from QuantumSparse.operator import Operator
-from QuantumSparse.matrix import Matrix
+from quantumsparse.tools.optimize import jit
+from quantumsparse.operator import Operator
+from quantumsparse.matrix import Matrix
 
 #@jit
 def expectation_value(Op:Operator,Psi:Operator)->np.ndarray:

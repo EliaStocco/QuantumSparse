@@ -2,7 +2,7 @@
 
 import numpy as np
 from copy import copy, deepcopy
-from QuantumSparse.matrix import Matrix
+from quantumsparse.matrix import Matrix
 from typing import TypeVar, Union, List
 
 T = TypeVar('T', bound='Operator')  # type of the class itself
@@ -10,7 +10,7 @@ T = TypeVar('T', bound='Operator')  # type of the class itself
 
 class Operator(Matrix):
     """
-    This class is a subclass of QuantumSparse.matrix.Matrix and is used to represent a general operator.
+    This class is a subclass of quantumsparse.matrix.Matrix and is used to represent a general operator.
     """
     
     name:str

@@ -1,12 +1,12 @@
-# the core of QuantumSparse code: a module defining spin operators via Kronecker (tensor) product
+# the core of quantumsparse code: a module defining spin operators via Kronecker (tensor) product
 import numpy as np
-from QuantumSparse.operator import Operator
-from QuantumSparse.tools.functions import prepare_opts
+from quantumsparse.operator import Operator
+from quantumsparse.tools.functions import prepare_opts
 from typing import Tuple, Union, Any, TypeVar, List, Type
 import pandas as pd
-from QuantumSparse.global_variables import NDArray
-# from QuantumSparse.tools.quantum_mechanics import projector, check_orthogonality, Hilbert_Schmidt
-# from QuantumSparse.hilbert import get_operator_basis
+from quantumsparse.global_variables import NDArray
+# from quantumsparse.tools.quantum_mechanics import projector, check_orthogonality, Hilbert_Schmidt
+# from quantumsparse.hilbert import get_operator_basis
 
 T = TypeVar('T', bound='SpinOperators')
 
@@ -339,7 +339,7 @@ def compute_spin_operators(spin_values:np.ndarray,opts=None)->Tuple[OpArr,OpArr,
     # print("\t\tallocating the Sx,Sy,Sz operators (on the system Hilbert space) ... ",end="")  
     Sx,Sy,Sz,Sp,Sm = system_Sxypm_operators(dimensions,sz,sp,sm)
     
-    from QuantumSparse.hilbert import embed_operators
+    from quantumsparse.hilbert import embed_operators
     testz, testp, testm = embed_operators([sz,sp,sm],dimensions,normalize=False)
     
     # assert np.allclose( [ (testz[i] - Sz[i] ).norm() for i in range(len(testz)) ] , 0 )

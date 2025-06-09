@@ -1,14 +1,14 @@
 import numpy as np
-from QuantumSparse.spin import SpinOperators, from_S2_to_S
-from QuantumSparse.operator import Operator
-from QuantumSparse.operator import Symmetry, roots_of_unity
-from QuantumSparse.spin import Heisenberg, anisotropy, DM
-from QuantumSparse.spin.shift import shift
+from quantumsparse.spin import SpinOperators, from_S2_to_S
+from quantumsparse.operator import Operator
+from quantumsparse.operator import Symmetry, roots_of_unity
+from quantumsparse.spin import Heisenberg, anisotropy, DM
+from quantumsparse.spin.shift import shift
 import pytest
 from typing import List
-# from QuantumSparse.tools.quantum_mechanics import projector, Hilbert_Schmidt
+# from quantumsparse.tools.quantum_mechanics import projector, Hilbert_Schmidt
 
-# In QuantumSparse/spin/interactions.py you can find:
+# In quantumsparse/spin/interactions.py you can find:
 # - Ising
 # - Heisenberg
 # - DM

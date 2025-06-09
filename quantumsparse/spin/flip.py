@@ -1,4 +1,4 @@
-from QuantumSparse.operator import Operator
+from quantumsparse.operator import Operator
 import numpy as np
 
 def mapping(N, i):

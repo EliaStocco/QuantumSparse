@@ -1,9 +1,9 @@
 # some function recalling statistical physics results
 import numpy as np
-from QuantumSparse.constants import kB,g,_NA,_eV,muB
-from QuantumSparse.tools.quantum_mechanics import expectation_value
-from QuantumSparse.operator import Operator
-from QuantumSparse.matrix import Matrix
+from quantumsparse.constants import kB,g,_NA,_eV,muB
+from quantumsparse.tools.quantum_mechanics import expectation_value
+from quantumsparse.operator import Operator
+from quantumsparse.matrix import Matrix
 from typing import Optional
 
 

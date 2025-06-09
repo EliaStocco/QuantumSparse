@@ -1,7 +1,7 @@
 # "spin_system" class
 import numpy as np
-from QuantumSparse.constants import muB,g
-from QuantumSparse.system import System
+from quantumsparse.constants import muB,g
+from quantumsparse.system import System
 from .spin_operators import SpinOperators
 
 class SpinSystem(SpinOperators,System):

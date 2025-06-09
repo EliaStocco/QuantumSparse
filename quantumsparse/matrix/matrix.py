@@ -6,9 +6,9 @@ from scipy.sparse.csgraph import connected_components
 from copy import copy, deepcopy
 from scipy.sparse import bmat
 import numpy as np
-# from QuantumSparse.tools.optimize import jit
-from QuantumSparse.errors import ImplErr
-from QuantumSparse.tools import first_larger_than_N, get_deep_size
+# from quantumsparse.tools.optimize import jit
+from quantumsparse.errors import ImplErr
+from quantumsparse.tools import first_larger_than_N, get_deep_size
 from typing import TypeVar, Union, Type, List, Dict, Any, Optional
 import pickle
 from dataclasses import dataclass, field

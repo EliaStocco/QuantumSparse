@@ -1,10 +1,10 @@
 import numpy as np
-from QuantumSparse.spin import SpinOperators, from_S2_to_S, spin2dim
-from QuantumSparse.operator import Operator
-from QuantumSparse.operator import Symmetry, roots_of_unity
-from QuantumSparse.spin import Heisenberg, anisotropy, DM
-from QuantumSparse.spin.shift import shift
-from QuantumSparse.hilbert import HilbertSpace, LocalHilbertSpace, embed_operators
+from quantumsparse.spin import SpinOperators, from_S2_to_S, spin2dim
+from quantumsparse.operator import Operator
+from quantumsparse.operator import Symmetry, roots_of_unity
+from quantumsparse.spin import Heisenberg, anisotropy, DM
+from quantumsparse.spin.shift import shift
+from quantumsparse.hilbert import HilbertSpace, LocalHilbertSpace, embed_operators
 import pytest
 
 @pytest.mark.parametrize("S,NSpin", [(2,4),(3,3),(5,2)])

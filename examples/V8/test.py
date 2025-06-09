@@ -3,10 +3,10 @@ import os
 import numpy as np
 import pandas as pd
 from functions import get_couplings
-from QuantumSparse.operator import Operator
-from QuantumSparse.spin.spin_operators import spin_operators
-from QuantumSparse.spin.functions import magnetic_moments, rotate_spins
-from QuantumSparse.spin.interactions import Heisenberg, DM, anisotropy, rhombicity, Ising
+from quantumsparse.operator import Operator
+from quantumsparse.spin.spin_operators import spin_operators
+from quantumsparse.spin.functions import magnetic_moments, rotate_spins
+from quantumsparse.spin.interactions import Heisenberg, DM, anisotropy, rhombicity, Ising
 
 # build spin operators
 #print("\tbuilding spin operators ... ",end="")

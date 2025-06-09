@@ -1,7 +1,7 @@
-from QuantumSparse.constants import muB,g
+from quantumsparse.constants import muB,g
 import numpy as np
 from typing import Tuple
-from QuantumSparse.operator import Operator
+from quantumsparse.operator import Operator
 
 def extract_Sxyz(func):
     def wrapper(spins,*argc,**argv):

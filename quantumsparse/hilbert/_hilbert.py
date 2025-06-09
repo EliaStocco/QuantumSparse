@@ -1,8 +1,8 @@
 
 import numpy as np
-from QuantumSparse.operator import Operator
-from QuantumSparse.matrix import Matrix, State
-from QuantumSparse.global_variables import NDArray
+from quantumsparse.operator import Operator
+from quantumsparse.matrix import Matrix, State
+from quantumsparse.global_variables import NDArray
 from typing import List, Union, Optional
 from .tools import embed_operators, embed_states, check_orthogonality, Hilbert_Schmidt
 from warnings import warn
