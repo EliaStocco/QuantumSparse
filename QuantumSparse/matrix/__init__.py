@@ -1,4 +1,4 @@
-from .matrix import Matrix
+from .matrix import *
 # from .mask import *
 
 from scipy.sparse import csr_matrix

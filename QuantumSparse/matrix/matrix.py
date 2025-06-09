@@ -1,6 +1,6 @@
 from scipy.linalg import eigh, eig
 from scipy import sparse
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, csr_array
 from scipy.sparse.csgraph import connected_components
 # from scipy.sparse import issparse, diags, hstack
 from copy import copy, deepcopy
@@ -40,6 +40,28 @@ def my_copy(x):
     
 
 # class matrix(metaclass=get_class)
+
+class State(csr_array):
+    
+    
+    @staticmethod
+    def one_hot(dim:int,i:int,*argc,**argv)->T:
+        """
+        Creates a one-hot matrix of the same shape and with the same dtype as the original matrix.
+        
+        Parameters:
+            i (int): The row index of the one-hot element.
+            j (int): The column index of the one-hot element.
+        
+        Returns:
+            T: A new Matrix instance representing a one-hot matrix.
+        """
+        # Create an empty sparse array
+        empty = State((dim,), *argc, **argv)
+        # Set the one-hot element
+        empty[i] = 1
+        return empty
+    
 class Matrix(csr_matrix):
     """
     Class to handle matrices in different form, i.e. dense, sparse, with 'numpy', 'scipy', or 'torch'
@@ -576,8 +598,8 @@ class Matrix(csr_matrix):
         """
         return self.clone(self.shape,dtype=self.dtype) # type(self)(self.shape,dtype=self.dtype)
     
-    @staticmethod
-    def one_hot(dim:int,i:int,j:int,*argc,**argv)->T:
+    @classmethod
+    def one_hot(cls,dim:int,i:int,j:int,*argc,**argv)->T:
         """
         Creates a one-hot matrix of the same shape and with the same dtype as the original matrix.
         
@@ -590,7 +612,7 @@ class Matrix(csr_matrix):
         """
         empty = Matrix((dim,dim),*argc,**argv)
         empty[i,j] = 1
-        return empty
+        return cls(empty)
     
     def as_diagonal(self:T)->T:
         """

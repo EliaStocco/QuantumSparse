@@ -2,8 +2,9 @@ import numpy as np
 from QuantumSparse.spin import SpinOperators, from_S2_to_S
 from QuantumSparse.operator import Operator
 from QuantumSparse.operator import Symmetry, roots_of_unity
-from QuantumSparse.spin import Heisenberg, anisotropy
+from QuantumSparse.spin import Heisenberg, anisotropy, spin2dim
 from QuantumSparse.spin.shift import shift
+from QuantumSparse.symmetry import Translation
 import pytest
 
 # In QuantumSparse/spin/interactions.py you can find:
@@ -16,7 +17,7 @@ import pytest
 # - BiQuadraticHeisenberg
 
 @pytest.mark.parametrize("S,NSpin", [(2,4),(3,3),(5,2)])
-def test_Heisenberg_symmetries(S=1,NSpin=4,use_symmetries=True):
+def test_Heisenberg_symmetries(S=0.5,NSpin=3,use_symmetries=True):
     
     spin_values = np.full(NSpin,S)
 
@@ -24,6 +25,10 @@ def test_Heisenberg_symmetries(S=1,NSpin=4,use_symmetries=True):
     SpinOp = SpinOperators(spin_values)
     # unpack the operators
     Sx,Sy,Sz = SpinOp.Sx,SpinOp.Sy,SpinOp.Sz
+    
+    #-----------------#
+    T = Translation.from_dims(NSpin,2*S+1)
+    
     
     #-----------------#
     if use_symmetries:

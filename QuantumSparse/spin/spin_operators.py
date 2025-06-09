@@ -338,6 +338,13 @@ def compute_spin_operators(spin_values:np.ndarray,opts=None)->Tuple[OpArr,OpArr,
     
     # print("\t\tallocating the Sx,Sy,Sz operators (on the system Hilbert space) ... ",end="")  
     Sx,Sy,Sz,Sp,Sm = system_Sxypm_operators(dimensions,sz,sp,sm)
+    
+    from QuantumSparse.hilbert import embed_operators
+    testz, testp, testm = embed_operators([sz,sp,sm],dimensions,normalize=False)
+    
+    # assert np.allclose( [ (testz[i] - Sz[i] ).norm() for i in range(len(testz)) ] , 0 )
+    # assert np.allclose( [ (testp[i] - Sp[i] ).norm() for i in range(len(testz)) ] , 0 )
+    # assert np.allclose( [ (testm[i] - Sm[i] ).norm() for i in range(len(testz)) ] , 0 )
     # print("done")    
 
     # for n in range(len(spin_values)):
