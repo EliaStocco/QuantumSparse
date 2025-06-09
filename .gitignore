@@ -1,4 +1,4 @@
-quantumsparse.egg-info/
+*.egg-info/*
 .vscode/
 *.npz
 *.pickle
