@@ -1,0 +1,24 @@
+[project]
+name = "Quantum-Sparse"
+version = "1.0.0"
+description = "An efficient python package based on `scipy.sparse` to work with quantum spin operators"
+authors = [
+    { name = "Elia Stocco", email = "eliastocco@gmail.com" }
+]
+requires-python = ">=3.9"
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "typing-extensions",  # Optional, for better compatibility across Python versions
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest"
+]
+
+# Note:
+# - `pickle` is part of the Python standard library and doesn't need to be listed.
+# - `typing` is included in the standard library from Python 3.5+.
