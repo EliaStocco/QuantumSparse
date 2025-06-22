@@ -266,7 +266,7 @@ class Operator(Matrix):
         sym = S[0]
 
         if not self.commute(sym):
-            raise ValueError('Ypu provided a symmetry operator which does not commute with the operator that you want to diagonalize.')
+            raise ValueError('You have provided a symmetry operator which does not commute with the operator that you want to diagonalize.')
         
         if sym.eigenvalues is None:
             raise ValueError("The symmetry operator 'S' should have already been diagonalized.")
