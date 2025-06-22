@@ -1,12 +1,9 @@
-# the core of quantumsparse code: a module defining spin operators via Kronecker (tensor) product
 import numpy as np
 from quantumsparse.operator import Operator
 from quantumsparse.tools.functions import prepare_opts
-from typing import Tuple, Union, Any, TypeVar, List, Type
+from typing import Tuple, Union, Any, TypeVar
 import pandas as pd
 from quantumsparse.global_variables import NDArray
-# from quantumsparse.tools.quantum_mechanics import projector, check_orthogonality, Hilbert_Schmidt
-# from quantumsparse.hilbert import get_operator_basis
 
 T = TypeVar('T', bound='SpinOperators')
 
@@ -128,21 +125,20 @@ class SpinOperators:
     
     def identity(self):
         return self.Sx[0].identity(len(self.Sx[0]))
-
-    # def get_operator_basis(self:T,*argc,**argv)->NDArray[OpArr]:
-    #     """Returns the basis of the Hilbert space of the hermitian operators of each site"""
-    #     dim = spin2dim(self.spin_values)
-    #     return get_operator_basis(dim,*argc,**argv)
     
-    # def get_projectors_on_operator_basis(self:T,OpBasis:NDArray[OpArr]=None,*argc,**argv)->NDArray[OpArr]:
-    #     if OpBasis is None:
-    #         OpBasis = self.get_operator_basis(*argc,**argv)
-    #     return get_projectors_on_operator_basis(OpBasis)
-    
-    # def get_projectors_on_site_operator(self:T,OpProj:NDArray[OpArr]=None,*argc,**argv)->OpArr:
-    #     if OpProj is None:
-    #         OpProj = self.get_projectors_on_operator_basis(*argc,**argv)
-    #     return get_projectors_on_site_operator(OpProj)
+    def check_site_independence(self:T,tolerance:float=1e-10)->bool:
+        
+        to_run = [["Sx","Sx"],["Sy","Sy"],["Sz","Sz"],["Sx","Sy"],["Sx","Sz"],["Sy","Sz"]]
+        
+        N = len(self.spin_values)
+        for op in to_run:
+            OpA = getattr(self,op[0]) 
+            OpB = getattr(self,op[1])
+            for i in range(N):
+                for j in range(i+1,N):
+                    comm:Operator = Operator.commutator(OpA[i],OpB[j])
+                    norm = comm.norm()
+                    assert norm < tolerance, f"The operator {op[0]}[{i}] does not commute with the operator {op[0]}[{j}]: {norm}"
             
 def spin2dim(spin_values: np.ndarray)->np.ndarray:
     """
