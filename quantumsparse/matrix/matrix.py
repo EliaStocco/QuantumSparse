@@ -25,22 +25,6 @@ def my_copy(x):
     else:
         return x
 
-# class get_class(type):
-#     def __new__(cls, name, bases, attrs):
-#         # Iterate through the attributes of the class
-#         if issubclass(dtype, sparse.spmatrix) :
-#             attrs["module"] = sparse
-#         else :
-#             raise ImplErr
-#        
-#         bases = bases + (dtype,)
-#
-#         # Create the class using the modified attributes
-#         return super().__new__(cls, name, bases, attrs)
-    
-
-# class matrix(metaclass=get_class)
-
 class State(csr_array):
     
     
@@ -918,6 +902,8 @@ class Matrix(csr_matrix):
         norm : float
             The norm of the error.
         """
+        assert self.eigenvalues is not None, "Eigenvalues should not be None: diagonalization not performed"
+        assert self.eigenstates is not None, "Eigenstates should not be None: diagonalization not performed"
         return self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues)
     
     def sort(self:T,inplace=False)->T:
