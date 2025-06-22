@@ -13,6 +13,9 @@ dependencies = [
     "pandas",
     "typing-extensions",  # Optional, for better compatibility across Python versions
     "matplotlib",
+    "pyyaml",
+    "argparse",
+    "dataclasses",
 ]
 
 [project.optional-dependencies]

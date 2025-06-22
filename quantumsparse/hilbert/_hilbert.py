@@ -8,7 +8,7 @@ from .tools import embed_operators, embed_states, check_orthogonality, Hilbert_S
 from warnings import warn
 from functools import wraps
 from typing import Optional, Callable
-import xarray as xr
+# import xarray as xr
 #OpArr = NDArray[Operator]
 OpArr = Union[List[Operator],np.ndarray]
 

@@ -1,0 +1,7 @@
+name: heisenberg
+
+description:
+  spin: [1 1 1 1]
+
+tasks:
+  - diagonalize: 
