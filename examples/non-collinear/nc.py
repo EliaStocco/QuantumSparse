@@ -91,7 +91,7 @@ for name in ["Cr8"]:
         D.save(D_file)
         logging.info(f"Symmetry operator saved to {D_file}")
 
-    for xc in ["LDA+U", "LDA+U+V"]:
+    for xc in ["LDA+U+V"]:
         logging.info(f"Starting Hamiltonian calculation for functional '{xc}'")
         H_file = f"H.{name}.xc={xc}.pickle"
 

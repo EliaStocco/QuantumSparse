@@ -45,7 +45,7 @@ def shift(ops: SpinOperators, parallel: bool = True) -> Operator:
     for result in results:
         if result is not None:
             r, c = result
-            D[r, c] = 1
+            D[r, c] = 1 # this is a gage choice, since it could be phase
 
     return Symmetry(D)
 
