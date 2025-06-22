@@ -2,7 +2,10 @@ from quantumsparse.operator import Operator, Symmetry
 from quantumsparse.spin import SpinOperators
 import numpy as np
 
-def shift(ops:SpinOperators)->Operator:
+from joblib import Parallel, delayed
+import numpy as np
+
+def shift(ops: SpinOperators, parallel: bool = True) -> Operator:
     """
     Compute the shift/translation operator for a spin system.
 
@@ -10,30 +13,42 @@ def shift(ops:SpinOperators)->Operator:
     ----------
     ops : SpinOperators
         The operator whose basis is to be shifted.
+    parallel : bool, optional
+        Whether to run in parallel (default is True).
 
     Returns
     -------
     Operator
         The shift/translation operator for the spin system.
     """
-
     basis = np.asarray(ops.basis)
-    D = ops.empty()
-    left = None
     N = len(basis)
-    for c,right in enumerate(basis):
-        print("\t\t{:d}/{:d}".format(c+1,N),end="\r")
-        if left is None:
-            left = right.copy()
-        left[0]  = right[-1]
-        left[1:] = right[:-1]
-        # = np.concatenate((right[-1].reshape((1)), right[:-1]))
-        r = np.where(np.all(basis == left, axis=1))
-        D[r,c] = 1
-    #levels = np.arange(0,len(ops.spin_values))/len(ops.spin_values)
-    D = Symmetry(D)
-    # D.levels2eigenstates(levels)
-    return D
+    basis_lookup = {tuple(b): i for i, b in enumerate(basis)}
+    D = ops.empty()
+
+    def process_state(c):
+        right = basis[c]
+        left = np.roll(right, 1)
+        r = basis_lookup.get(tuple(left), None)
+        if r is not None:
+            return (r, c)
+        return None
+
+    if parallel:
+        from joblib import Parallel, delayed
+        results = Parallel(n_jobs=-1, prefer="threads")(
+            delayed(process_state)(c) for c in range(N)
+        )
+    else:
+        results = [process_state(c) for c in range(N)]
+
+    for result in results:
+        if result is not None:
+            r, c = result
+            D[r, c] = 1
+
+    return Symmetry(D)
+
 
     D = ops.empty()
 
