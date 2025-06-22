@@ -88,7 +88,7 @@ class Operator(Matrix):
         pass
 
     def __repr__(self: T) -> str:
-        string = "{:>12s}: {}\n".format('name', str(self.name))
+        string = "{:>14s}: {}\n".format('name', str(self.name))
         string += super().__repr__()
         return string
         

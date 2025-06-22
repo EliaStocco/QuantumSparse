@@ -539,19 +539,19 @@ class Matrix(csr_matrix):
         sparsity, number of elements, norms, and symmetry properties.
         """
         
-        string  = "{:>12s}: {} bytes\n".format('memory (csr)', str(get_deep_size(csr_matrix(self))))
-        string += "{:>12s}: {} bytes\n".format('memory (deep)', str(get_deep_size(self)))
-        string += "{:>12s}: {}\n".format('type', str(self.data.dtype))
-        string += "{:>12s}: {}\n".format('shape', str(self.shape))
-        string += "{:>12s}: {:6f}\n".format('sparsity', self.sparsity())
-        string += "{:>12s}: {}\n".format('# all', str(self.count("all")))
-        string += "{:>12s}: {}\n".format('#  on', str(self.count("diag")))
-        string += "{:>12s}: {}\n".format('# off', str(self.count("off")))
-        string += "{:>12s}: {:6f}\n".format('norm (all)', self.norm())
-        string += "{:>12s}: {:6f}\n".format('norm  (on)', self.as_diagonal().norm())
-        string += "{:>12s}: {:6f}\n".format('norm (off)', self.off_diagonal().norm())
-        string += "{:>12s}: {}\n".format('hermitean', str(self.is_hermitean()))
-        string += "{:>12s}: {}\n".format('symmetric', str(self.is_symmetric()))
+        string  = "{:>14s}: {} bytes\n".format('memory (csr)', str(get_deep_size(csr_matrix(self))))
+        string += "{:>14s}: {} bytes\n".format('memory (deep)', str(get_deep_size(self)))
+        string += "{:>14s}: {}\n".format('type', str(self.data.dtype))
+        string += "{:>14s}: {}\n".format('shape', str(self.shape))
+        string += "{:>14s}: {:6f}\n".format('sparsity', self.sparsity())
+        string += "{:>14s}: {}\n".format('# all', str(self.count("all")))
+        string += "{:>14s}: {}\n".format('#  on', str(self.count("diag")))
+        string += "{:>14s}: {}\n".format('# off', str(self.count("off")))
+        string += "{:>14s}: {:6f}\n".format('norm (all)', self.norm())
+        string += "{:>14s}: {:6f}\n".format('norm  (on)', self.as_diagonal().norm())
+        string += "{:>14s}: {:6f}\n".format('norm (off)', self.off_diagonal().norm())
+        string += "{:>14s}: {}\n".format('hermitean', str(self.is_hermitean()))
+        string += "{:>14s}: {}\n".format('symmetric', str(self.is_symmetric()))
         
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(self.is_unitary)
@@ -562,15 +562,15 @@ class Matrix(csr_matrix):
             except concurrent.futures.TimeoutError:
                 is_unitary = "unknown"  # Return the default value if the task times out
                 
-        string += "{:>12s}: {}\n".format('unitary', str(is_unitary))
+        string += "{:>14s}: {}\n".format('unitary', str(is_unitary))
         
         tmp = str(self.n_blocks) if self.n_blocks is not None else "unknown"
-        string += "{:>12s}: {}\n".format('n. blocks', tmp)
+        string += "{:>14s}: {}\n".format('n. blocks', tmp)
         
         tmp = "computed" if self.eigenvalues is not None else "unknown"
-        string += "{:>12s}: {}\n".format('eigenvalues', tmp)
+        string += "{:>14s}: {}\n".format('eigenvalues', tmp)
         tmp = "computed" if self.eigenstates is not None else "unknown"
-        string += "{:>12s}: {}\n".format('eigenstates', tmp)
+        string += "{:>14s}: {}\n".format('eigenstates', tmp)
 
         return string
     
@@ -998,7 +998,7 @@ class DiagonalBlockMatrix(Matrix):
 def main():
     
     import numpy as np
-    from icecream import ic
+    # from icecream import ic
     
     # Define individual block matrices
     A = np.array([[1, 2], [3, 4]])
@@ -1014,7 +1014,7 @@ def main():
     bm = DiagonalBlockMatrix(blocks=[block1, block2,block3])
     
     test = sparse.bmat([[A,None,None],[None,B,None],[None,None,C]],format="csr")# .toarray()
-    ic(test)
+    # ic(test)
     
     for i in range(test.shape[0]):
         for j in range(test.shape[1]):
