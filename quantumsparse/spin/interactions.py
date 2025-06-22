@@ -31,15 +31,15 @@ def Ising(S:np.ndarray,couplings=1.0,nn=1,opts=None)->Operator:
         
     return H
 
-def Heisenberg(Sx:np.ndarray=None,Sy:np.ndarray=None,Sz:np.ndarray=None,couplings=1.0,nn=1,opts=None)->Operator:
+def Heisenberg(Sx:np.ndarray,Sy:np.ndarray,Sz:np.ndarray,couplings=1.0,nn=1,opts=None)->Operator:
     """
-    This function generates the Heisenberg interaction Hamiltonian.
+    (Non-isotropic) Heisenberg interaction.
     
     Parameters:
     Sx (np.ndarray): The x-component of the spin operators. Default is None.
     Sy (np.ndarray): The y-component of the spin operators. Default is None.
     Sz (np.ndarray): The z-component of the spin operators. Default is None.
-    couplings (float or np.ndarray): The coupling constants. Default is 1.0.
+    couplings (float or 2D np.ndarray): The coupling constants. Default is 1.0.
     nn (int): The number of nearest neighbors. Default is 1.
     opts (dict): Optional parameters. Default is None.
     
