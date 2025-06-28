@@ -35,12 +35,22 @@ def Rz(psi):
   return np.matrix([[ np.cos(psi), -np.sin(psi), 0 ],
                    [ np.sin(psi), np.cos(psi) , 0 ],
                    [ 0           , 0            , 1 ]])
+  
+def get_unitary_rotation_matrix(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray)->Tuple[OpArr,OpArr,OpArr]:
+    Sx, Sy, Sz = spins
+    N = len(Sx)
+    for n in range(N):
+        phi, theta, psi = EulerAngles[n,:]
+        Sx[n].exp()
+    
+    
 
 def rotate_spins(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray,method:str="R")->Tuple[OpArr,OpArr,OpArr]:
     Sx, Sy, Sz = spins
     N = len(Sx)
     SxR,SyR,SzR = Sx.copy(),Sy.copy(),Sz.copy()
     if method == "R":
+        # rotation in cartesian space
         v = np.zeros(3,dtype=object)
         for n in range(N):
             phi,theta,psi   = EulerAngles[n,:]
@@ -50,6 +60,7 @@ def rotate_spins(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray,method:st
             temp = R @ v
             SxR[n],SyR[n], SzR[n] = temp[0,0], temp[0,1], temp[0,2]
     elif method == "U":
+        # rotation in Hilbert space
         raise ImplErr
     else:
         raise ValueError(f"'method' can be only 'R' or 'U', ut you provided '{method}'")
