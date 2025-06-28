@@ -152,44 +152,41 @@ class Operator(Matrix):
                 iden[i] = Matrix.identity(dim,dtype=int)  
             return iden
     
-    def diagonalize(self:T,restart=False,tol:float=1.0e-3,max_iter:int=-1,test=True,**argv):
-        """
-        Diagonalize the operator using the specified method.
+    # def diagonalize(self:T,restart=False,tol:float=1.0e-3,max_iter:int=-1,**argv):
+    #     """
+    #     Diagonalize the operator using the specified method.
 
-        Parameters
-        ----------
-        restart : bool, optional
-            Whether to restart the diagonalization process (default is False).
-        tol : float, optional
-            The tolerance for the diagonalization process (default is 1.0e-3).
-        max_iter : int, optional
-            The maximum number of iterations for the diagonalization process (default is -1).
-        test : bool, optional
-            Whether to test the eigensolution (default is True).
+    #     Parameters
+    #     ----------
+    #     restart : bool, optional
+    #         Whether to restart the diagonalization process (default is False).
+    #     tol : float, optional
+    #         The tolerance for the diagonalization process (default is 1.0e-3).
+    #     max_iter : int, optional
+    #         The maximum number of iterations for the diagonalization process (default is -1).
+    #     test : bool, optional
+    #         Whether to test the eigensolution (default is True).
 
-        Returns
-        -------
-        w : numpy.ndarray
-            The eigenvalues of the operator.
-        f : numpy.ndarray
-            The eigenstates of the operator.
-        """
+    #     Returns
+    #     -------
+    #     w : numpy.ndarray
+    #         The eigenvalues of the operator.
+    #     f : numpy.ndarray
+    #         The eigenstates of the operator.
+    #     """
 
-        if restart :
-            self.eigenvalues = None
-            self.eigenstates = None
-            ##NEARLY_DIAG## self.nearly_diag = None
+    #     if restart :
+    #         self.eigenvalues = None
+    #         self.eigenstates = None
+    #         ##NEARLY_DIAG## self.nearly_diag = None
         
-        ##NEARLY_DIAG##w,f,_ = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
-        self.eigenvalues,self.eigenstates = super().eigensolver(original=True,tol=tol,max_iter=max_iter,**argv)
-        if test:
-            eigtest = self.test_eigensolution()
-            print("\teigensolution test:",eigtest.norm())
+    #     ##NEARLY_DIAG##w,f,_ = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
+    #     self.eigenvalues,self.eigenstates = super().eigensolver(original=True,tol=tol,max_iter=max_iter,**argv)
         
-        self.eigenstates.n_blocks = self.n_blocks
-        self.eigenstates.blocks = self.blocks
+    #     self.eigenstates.n_blocks = self.n_blocks
+    #     self.eigenstates.blocks = self.blocks
         
-        return self.eigenvalues,self.eigenstates
+    #     return self.eigenvalues,self.eigenstates
 
     def change_basis(self:T,S:T,direction="forward"):
         """
