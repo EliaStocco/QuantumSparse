@@ -7,7 +7,7 @@ from copy import copy, deepcopy
 from scipy.sparse import bmat
 import numpy as np
 # from quantumsparse.tools.optimize import jit
-from quantumsparse.bookkeeping import ImplErr
+from quantumsparse.bookkeeping import ImplErr, scalar
 from quantumsparse.tools import first_larger_than_N, get_deep_size
 from typing import TypeVar, Union, Type, List, Dict, Any, Optional
 import pickle
@@ -902,14 +902,50 @@ class Matrix(csr_matrix):
         norm : float
             The norm of the error.
         """
-        assert self.eigenvalues is not None, "Eigenvalues should not be None: diagonalization not performed"
-        assert self.eigenstates is not None, "Eigenstates should not be None: diagonalization not performed"
+        assert self.diagonalized(), "The matrix should be already diagonalized."
         eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
         assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
         return Matrix(self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues))
     
-    def sort(self:T,inplace=False)->T:
+    def diagonalize(self:T,restart=False,tol:float=1.0e-3,max_iter:int=-1,**argv):
+        """
+        Diagonalize the operator using the specified method.
+
+        Parameters
+        ----------
+        restart : bool, optional
+            Whether to restart the diagonalization process (default is False).
+        tol : float, optional
+            The tolerance for the diagonalization process (default is 1.0e-3).
+        max_iter : int, optional
+            The maximum number of iterations for the diagonalization process (default is -1).
+        test : bool, optional
+            Whether to test the eigensolution (default is True).
+
+        Returns
+        -------
+        w : numpy.ndarray
+            The eigenvalues of the operator.
+        f : numpy.ndarray
+            The eigenstates of the operator.
+        """
+
+        if restart :
+            self.eigenvalues = None
+            self.eigenstates = None
+            ##NEARLY_DIAG## self.nearly_diag = None
         
+        ##NEARLY_DIAG##w,f,_ = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
+        self.eigenvalues,self.eigenstates = self.eigensolver(original=True,tol=tol,max_iter=max_iter,**argv)
+        
+        self.eigenstates.n_blocks = self.n_blocks
+        self.eigenstates.blocks = self.blocks
+        
+        return self.eigenvalues,self.eigenstates
+
+    
+    def sort(self:T,inplace=False)->T:
+        """Sort the eigenvalues, and the eigenvectors acoordingly."""
         out = self.copy()
         index = np.argsort(self.eigenvalues)
         out.eigenvalues = self.eigenvalues[index]
@@ -921,14 +957,41 @@ class Matrix(csr_matrix):
         return out
     
     def normalize_eigevecs(self:T):
+        """Normalize inplace the eigenvectors."""
         eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
         self.eigenstates /= eigvecs_norm
         eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
         assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
         
+    def exp(self:T,alpha:scalar=1,diag_inplace:bool=True,tol:float=1e-8,*argv,**kwargs)->T:
+        """Exponential of a matrix via diagonalization and exponentiation of its eigenvalues."""
+        func = lambda x: np.exp(x*alpha)
+        return self._eigenvalues_wise_operation(func)
+    
+    def ln(self:T)->T:
+        """Natural logarithm of a matrix computed via diagonalization and ln of its eigenvalues."""
+        func = lambda x: np.log(x)
+        return self._eigenvalues_wise_operation(func)
+    
+    
+    def _eigenvalues_wise_operation(self,func,diag_inplace:bool=True,tol:float=1e-8,*argv,**kwargs):
+        """General function to apply function to a matrix via diagonalization, e.g. exp, ln, sqrt."""
+        if diag_inplace:
+            self.diagonalize(*argv,**kwargs)
+            new = self.copy()
+        else:
+            new = self.copy()
+            new.diagonalize(*argv,**kwargs)
+        eigenvalues = func(new.eigenvalues)
+        eigenstates = new.eigenstates
+        new = Matrix(eigenstates @ Matrix.diags(eigenvalues))
+        new.eigenvalues = eigenvalues
+        new.eigenstates = eigenstates
+        test = new.test_eigensolution()
+        assert test.norm() < tol, "error"
+        return new
         
 
-    
 @dataclass
 class DiagonalBlockMatrix(Matrix):
     
