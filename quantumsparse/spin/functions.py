@@ -1,8 +1,8 @@
 from quantumsparse.constants import muB,g
 import numpy as np
 from typing import Tuple
-from quantumsparse.operator import Operator
-from quantumsparse.bookkeeping import OpArr, ImplErr
+from quantumsparse.operator import Operator, OpArr
+from quantumsparse.bookkeeping import ImplErr
 
 def extract_Sxyz(func):
     def wrapper(spins,*argc,**argv):
@@ -36,12 +36,14 @@ def Rz(psi):
                    [ np.sin(psi), np.cos(psi) , 0 ],
                    [ 0           , 0            , 1 ]])
   
-def get_unitary_rotation_matrix(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray)->Tuple[OpArr,OpArr,OpArr]:
+def get_unitary_rotation_matrix(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray)->OpArr:
     Sx, Sy, Sz = spins
     N = len(Sx)
+    U = np.full(N,1.)
     for n in range(N):
         phi, theta, psi = EulerAngles[n,:]
-        Sx[n].exp()
+        U[n] = Sx[n].exp(1.j*phi) @ Sy[n].exp(1.j*theta) @ Sz[n].exp(1.j*psi) 
+    return U
     
     
 
@@ -61,7 +63,10 @@ def rotate_spins(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray,method:st
             SxR[n],SyR[n], SzR[n] = temp[0,0], temp[0,1], temp[0,2]
     elif method == "U":
         # rotation in Hilbert space
-        raise ImplErr
+        U = get_unitary_rotation_matrix(spins,EulerAngles)
+        for n in range(N):
+            SxR[n],SyR[n], SzR[n] = U@Sx[n], U@Sy[n], U@Sz[n] 
+        return SxR, SyR, SzR
     else:
         raise ValueError(f"'method' can be only 'R' or 'U', ut you provided '{method}'")
     return SxR,SyR,SzR

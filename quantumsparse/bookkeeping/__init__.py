@@ -1,7 +1,5 @@
-import numpy as np
-from typing import Union, List
-from quantumsparse.operator import Operator
+# please try not to import quantumsparse here
+from typing import Union
 ImplErr = ValueError("not implemented yet")
 
-OpArr = Union[List[Operator],np.ndarray]
 scalar = Union[float,complex]

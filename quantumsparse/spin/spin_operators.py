@@ -1,13 +1,10 @@
 import numpy as np
-from quantumsparse.operator import Operator
+from quantumsparse.operator import Operator, OpArr
 from quantumsparse.tools.functions import prepare_opts
 from typing import Tuple, Union, Any, TypeVar
 import pandas as pd
-from quantumsparse.global_variables import NDArray
 
 T = TypeVar('T', bound='SpinOperators')
-
-OpArr = NDArray[Operator]
 
 class SpinOperators:
     """Class to represent a spin system (ideally a chain of spins)."""
