@@ -7,7 +7,7 @@ from copy import copy, deepcopy
 from scipy.sparse import bmat
 import numpy as np
 # from quantumsparse.tools.optimize import jit
-from quantumsparse.errors import ImplErr
+from quantumsparse.bookkeeping import ImplErr
 from quantumsparse.tools import first_larger_than_N, get_deep_size
 from typing import TypeVar, Union, Type, List, Dict, Any, Optional
 import pickle
@@ -904,7 +904,9 @@ class Matrix(csr_matrix):
         """
         assert self.eigenvalues is not None, "Eigenvalues should not be None: diagonalization not performed"
         assert self.eigenstates is not None, "Eigenstates should not be None: diagonalization not performed"
-        return self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues)
+        eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
+        assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
+        return Matrix(self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues))
     
     def sort(self:T,inplace=False)->T:
         
@@ -917,6 +919,13 @@ class Matrix(csr_matrix):
         if inplace:
             self = out
         return out
+    
+    def normalize_eigevecs(self:T):
+        eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
+        self.eigenstates /= eigvecs_norm
+        eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
+        assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
+        
         
 
     
