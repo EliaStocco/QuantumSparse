@@ -1,9 +1,25 @@
 from quantumsparse.operator import Operator, Symmetry
 from quantumsparse.spin import SpinOperators
+from quantumsparse.tools.mathematics import roots_of_unity
 import numpy as np
 
 from joblib import Parallel, delayed
 import numpy as np
+
+def shift_foundamental(N:int):
+    T = np.zeros((N,N))
+    for n in range(N-1):
+        T[n,n+1] = 1
+    T[N-1,0] = 1
+    T = Symmetry(T)
+    w = roots_of_unity(N)
+    r = np.linspace(0,1,N,endpoint=False)
+    k = np.linspace(0,1,N,endpoint=False)
+    f = np.exp(1.j*2*np.pi*np.outer(r,k)*N)
+    test = T.set_eigen(w,f)
+    T.count_blocks()
+    assert test.norm() < 1e-8, "error"
+    return T
 
 def shift(ops: SpinOperators, parallel: bool = True) -> Operator:
     """
