@@ -2,6 +2,7 @@ from quantumsparse.constants import muB,g
 import numpy as np
 from typing import Tuple
 from quantumsparse.operator import Operator
+from quantumsparse.bookkeeping import OpArr, ImplErr
 
 def extract_Sxyz(func):
     def wrapper(spins,*argc,**argv):
@@ -35,26 +36,31 @@ def Rz(psi):
                    [ np.sin(psi), np.cos(psi) , 0 ],
                    [ 0           , 0            , 1 ]])
 
-@extract_Sxyz
-def rotate_spins(Sx=None,Sy=None,Sz=None,spins=None,EulerAngles=None):
+def rotate_spins(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray,method:str="R")->Tuple[OpArr,OpArr,OpArr]:
+    Sx, Sy, Sz = spins
     N = len(Sx)
     SxR,SyR,SzR = Sx.copy(),Sy.copy(),Sz.copy()
-    v = np.zeros(3,dtype=object)
-    for n in range(N):
-        phi,theta,psi   = EulerAngles[n,:]
-        R = Rz(psi) @ Ry(theta) @ Rx(phi)
-        # v = np.asarray([Sx[n],Sy[n],Sz[n]],dtype=object)
-        v[0], v[1], v[2] = Sx[n],Sy[n],Sz[n]
-        temp = R @ v
-        SxR[n],SyR[n], SzR[n] = temp[0,0],temp[0,1],  temp[0,2]
+    if method == "R":
+        v = np.zeros(3,dtype=object)
+        for n in range(N):
+            phi,theta,psi   = EulerAngles[n,:]
+            R = Rz(psi) @ Ry(theta) @ Rx(phi)
+            # v = np.asarray([Sx[n],Sy[n],Sz[n]],dtype=object)
+            v[0], v[1], v[2] = Sx[n],Sy[n],Sz[n]
+            temp = R @ v
+            SxR[n],SyR[n], SzR[n] = temp[0,0], temp[0,1], temp[0,2]
+    elif method == "U":
+        raise ImplErr
+    else:
+        raise ValueError(f"'method' can be only 'R' or 'U', ut you provided '{method}'")
     return SxR,SyR,SzR
 
-def from_S2_to_S(S2)->float:
+def from_S2_to_S(S2:np.ndarray)->np.ndarray:
     """
     Parameters
     ----------
     S2 : float
-        eigenvalue the S2 operator
+        eigenvalue of the S2 operator
 
     Returns
     -------
