@@ -20,8 +20,9 @@ class Symmetry(Operator):
             self.eigenvalues = w   
         
         assert self.shape == f.shape, "error"
-        self.eigenstates = f
-        self.normalize_eigevecs()
+        from quantumsparse.matrix import Matrix
+        self.eigenstates = Matrix(f)
+        self.normalize_eigenvecs()
         return self.test_eigensolution()         
         
     # def levels2eigenstates(self:T,energy_levels):

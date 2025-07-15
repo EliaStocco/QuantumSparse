@@ -1,8 +1,9 @@
 from quantumsparse.constants import muB,g
 import numpy as np
-from typing import Tuple
+from typing import Tuple, List
 from quantumsparse.operator import Operator, OpArr
 from quantumsparse.bookkeeping import ImplErr
+from quantumsparse.matrix import Matrix
 
 def extract_Sxyz(func):
     def wrapper(spins,*argc,**argv):
@@ -35,19 +36,64 @@ def Rz(psi):
   return np.matrix([[ np.cos(psi), -np.sin(psi), 0 ],
                    [ np.sin(psi), np.cos(psi) , 0 ],
                    [ 0           , 0            , 1 ]])
-  
-def get_unitary_rotation_matrix(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray)->OpArr:
+
+def euler_to_axis_angle(phi: float, theta: float, psi: float) -> Tuple[float, np.ndarray]:
+    """
+    Convert Euler angles (phi, theta, psi) in ZYZ convention to axis-angle representation.
+    
+    Args:
+        phi (float): Rotation angle around X-axis (1st rotation)
+        theta (float): Rotation angle around Y-axis (2nd rotation)
+        psi (float): Rotation angle around Z-axis (3rd rotation)
+    
+    Returns:
+        theta_angle (float): Rotation angle θ
+        n (np.ndarray): Rotation axis (unit vector of shape (3,))
+    """
+    # Use existing Rx, Ry, Rz functions (assume already defined)
+    R = Rz(psi) @ Ry(theta) @ Rx(phi)
+    R = np.asarray(R)  # convert from np.matrix to ndarray
+
+    # Compute the rotation angle θ from the trace
+    trace = np.trace(R)
+    theta_angle = np.arccos(np.clip((trace - 1) / 2, -1.0, 1.0))
+
+    # Compute the rotation axis n
+    if np.isclose(theta_angle, 0):
+        # Identity rotation — arbitrary axis
+        n = np.array([1.0, 0.0, 0.0])
+    elif np.isclose(theta_angle, np.pi):
+        # Special case: extract axis from (R + I)/2
+        A = (R + np.eye(3)) / 2
+        axis = np.sqrt(np.maximum(np.diag(A), 0))
+        axis /= np.linalg.norm(axis)
+        n = axis
+    else:
+        # General case
+        n = np.array([
+            R[2, 1] - R[1, 2],
+            R[0, 2] - R[2, 0],
+            R[1, 0] - R[0, 1]
+        ]) / (2 * np.sin(theta_angle))
+        n /= np.linalg.norm(n)
+
+    return theta_angle, n
+
+def get_unitary_rotation_matrix(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray)->Tuple[List[Matrix],List[Matrix]]:
     Sx, Sy, Sz = spins
     N = len(Sx)
-    U = np.full(N,1.)
+    U:List[Matrix]  = [None]*N # np.full(N,1.,dtype=object)
+    Ud:List[Matrix] = [None]*N # np.full(N,1.,dtype=object)
     for n in range(N):
         phi, theta, psi = EulerAngles[n,:]
+        # theta,n = euler_to_axis_angle(phi, theta, psi)
         U[n] = Sx[n].exp(1.j*phi) @ Sy[n].exp(1.j*theta) @ Sz[n].exp(1.j*psi) 
-    return U
+        Ud[n] = U[n].dagger()
+    return U, Ud
     
     
 
-def rotate_spins(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray,method:str="R")->Tuple[OpArr,OpArr,OpArr]:
+def rotate_spins(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray,method:str="R")->Tuple[List[Matrix],List[Matrix],List[Matrix]]:
     Sx, Sy, Sz = spins
     N = len(Sx)
     SxR,SyR,SzR = Sx.copy(),Sy.copy(),Sz.copy()
@@ -63,9 +109,15 @@ def rotate_spins(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray,method:st
             SxR[n],SyR[n], SzR[n] = temp[0,0], temp[0,1], temp[0,2]
     elif method == "U":
         # rotation in Hilbert space
-        U = get_unitary_rotation_matrix(spins,EulerAngles)
+        from quantumsparse.matrix import Matrix
+        # or annotate explicitly:
+        U: List[Matrix]
+        Ud: List[Matrix]
+        U, Ud = get_unitary_rotation_matrix(spins, EulerAngles)
         for n in range(N):
-            SxR[n],SyR[n], SzR[n] = U@Sx[n], U@Sy[n], U@Sz[n] 
+            SxR[n] = U[n]@Sx[n]@Ud[n]
+            SyR[n] = U[n]@Sy[n]@Ud[n]
+            SzR[n] = U[n]@Sz[n]@Ud[n]
         return SxR, SyR, SzR
     else:
         raise ValueError(f"'method' can be only 'R' or 'U', ut you provided '{method}'")

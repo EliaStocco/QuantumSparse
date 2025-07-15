@@ -60,8 +60,14 @@ class Matrix(csr_matrix):
     ##NEARLY_DIAG## nearly_diag:bool
     is_adjacency:bool
     extras:Dict[str,Any]
+    
+    # def __new__(cls, arg1=None, shape=None, dtype=None, copy=False):
+    #     # Let scipy create the object safely
+    #     obj = super().__new__(cls)
+    #     super().__init__(obj, arg1, shape=shape, dtype=dtype, copy=copy)
+    #     return obj
 
-    def __init__(self:T,*argc,**argv):
+    def __init__(self: T, *argc, **argv) -> None:
         """
         Initializes a Matrix object.
 
@@ -78,19 +84,14 @@ class Matrix(csr_matrix):
             Initializes the Matrix object and sets its attributes.
         """
         # https://realpython.com/python-super/
-        super().__init__(*argc,**argv)
-
-        self.blocks = None
-        self.n_blocks = None
-        self.eigenvalues = None
-        self.eigenstates = None
-        ##NEARLY_DIAG## self.nearly_diag = None
-        self.is_adjacency = None
-        self.extras = {}
-        # if is_adjacency:
-        #     self.is_adjacency = True
-        # else:
-        #     self.is_adjacency = self.det_is_adjacency()
+        super().__init__(*argc, **argv)
+        self.blocks: Optional[List] = None
+        self.n_blocks: Optional[int] = None
+        self.eigenvalues: Optional[np.ndarray] = None
+        self.eigenstates: Optional[T] = None
+        self.nearly_diag: Optional[bool] = None
+        self.is_adjacency: Optional[bool] = None
+        self.extras: Dict[str, Any] = {}
     
     def clone(self:T,*argc,**argv)->T:
         """Clone a matrix
@@ -241,6 +242,28 @@ class Matrix(csr_matrix):
             The Hermitian conjugate of the matrix.
         """
         return self.clone(self.conjugate().transpose()) #type(self)(self.conjugate().transpose())
+    
+    def inv(self:T)->T:
+        """
+        Computes the inverse of the matrix.
+
+        Returns
+        -------
+        T
+            The inverse of the matrix.
+
+        Raises
+        ------
+        ImplErr
+            If the matrix module is not sparse.
+        """
+        if self.is_unitary():
+            return self.dagger()
+        else:
+            if Matrix.module is sparse :
+                return self.clone(sparse.linalg.inv(self))
+            else:
+                raise ImplErr
 
     def is_symmetric(self:T,**argv)->bool:
         """
@@ -794,13 +817,13 @@ class Matrix(csr_matrix):
             indeces = np.arange(self.shape[0])
             permutation = np.arange(self.shape[0])
             k = 0
-            print("\tStarting diagonalization")
+            # print("\tStarting diagonalization")
         else:
             raise ValueError("some error occurred")
 
         for n in range(self.n_blocks):
-            if original:
-                print(f"\t\tdiagonalizing block n. {n}/{self.n_blocks}")
+            # if original:
+            # print(f"\t\tdiagonalizing block n. {n}/{self.n_blocks}")
 
             mask = (labels == n)
             permutation[k:k + len(indeces[mask])] = indeces[mask]
@@ -874,7 +897,8 @@ class Matrix(csr_matrix):
 
         n_components, labels = self.count_blocks(inplace=True)               
         if original : 
-            print("\tn_components:",n_components) 
+            pass
+            # print("\tn_components:",n_components) 
         elif self.n_blocks != 1 :
             raise ValueError("some error occurred")
 
@@ -903,7 +927,10 @@ class Matrix(csr_matrix):
             The norm of the error.
         """
         assert self.diagonalized(), "The matrix should be already diagonalized."
-        eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
+        if isinstance(self.eigenstates,np.ndarray):
+            eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
+        else:
+            eigvecs_norm = np.asarray([ self.eigenstates[:,n].norm() for n in range(self.eigenstates.shape[0])])
         assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
         return Matrix(self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues))
     
@@ -956,11 +983,19 @@ class Matrix(csr_matrix):
             self = out
         return out
     
-    def normalize_eigevecs(self:T):
+    def __truediv__(self, other):
+        result = super().__truediv__(other)
+        return self.__class__(result)
+
+    def __itruediv__(self, other):
+        result = super().__truediv__(other)
+        return self.__class__(result)
+
+    def normalize_eigenvecs(self:T):
         """Normalize inplace the eigenvectors."""
-        eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
+        eigvecs_norm = self.eigenstates.column_norm()
         self.eigenstates /= eigvecs_norm
-        eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
+        eigvecs_norm = self.eigenstates.column_norm()
         assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
         
     def exp(self:T,alpha:scalar=1,diag_inplace:bool=True,tol:float=1e-8,*argv,**kwargs)->T:
@@ -973,7 +1008,6 @@ class Matrix(csr_matrix):
         func = lambda x: np.log(x)
         return self._eigenvalues_wise_operation(func)
     
-    
     def _eigenvalues_wise_operation(self,func,diag_inplace:bool=True,tol:float=1e-8,*argv,**kwargs):
         """General function to apply function to a matrix via diagonalization, e.g. exp, ln, sqrt."""
         if diag_inplace:
@@ -983,13 +1017,24 @@ class Matrix(csr_matrix):
             new = self.copy()
             new.diagonalize(*argv,**kwargs)
         eigenvalues = func(new.eigenvalues)
-        eigenstates = new.eigenstates
-        new = Matrix(eigenstates @ Matrix.diags(eigenvalues))
+        eigenstates:Matrix = new.eigenstates
+        new = Matrix(eigenstates@Matrix.diags(eigenvalues)@eigenstates.inv())
         new.eigenvalues = eigenvalues
         new.eigenstates = eigenstates
         test = new.test_eigensolution()
         assert test.norm() < tol, "error"
         return new
+    
+    def column_norm(self:T)->np.ndarray:
+        """
+        Computes the column norms of the matrix.
+
+        Returns
+        -------
+        np.ndarray
+            An array containing the norms of each column.
+        """
+        return np.asarray([ self[:,n].norm() for n in range(self.shape[1])])
         
 
 @dataclass

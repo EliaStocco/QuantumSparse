@@ -7,7 +7,7 @@ from typing import TypeVar, Union, List
 
 T = TypeVar('T', bound='Operator')  # type of the class itself
 
-OpArr = Union[List[T],np.ndarray]
+OpArr = Union[List[T],T]
 
 class Operator(Matrix):
     """
