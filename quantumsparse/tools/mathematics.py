@@ -1,5 +1,7 @@
 import cmath
 import numpy as np
+from typing import List
+from quantumsparse.matrix import Matrix
 
 def roots_of_unity(N:int)->np.ndarray:
     """
@@ -19,3 +21,22 @@ def roots_of_unity(N:int)->np.ndarray:
         roots[k] = root
     
     return roots
+
+def product(Ops:List[Matrix])->Matrix:
+    """
+    Calculate the product of a list of operators.
+    
+    Parameters:
+        Ops (List[Matrix]): A list of operators to be multiplied.
+    
+    Returns:
+        Matrix: The product of the operators.
+    """
+    if not Ops:
+        raise ValueError("The list of operators is empty.")
+    
+    result = Ops[0]
+    for op in Ops[1:]:
+        result = result @ op
+    
+    return result

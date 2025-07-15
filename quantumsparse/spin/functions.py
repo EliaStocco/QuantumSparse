@@ -91,7 +91,7 @@ def get_unitary_rotation_matrix(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.nd
         Ud[n] = U[n].dagger()
     return U, Ud
     
-    
+
 
 def rotate_spins(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray,method:str="R")->Tuple[List[Matrix],List[Matrix],List[Matrix]]:
     Sx, Sy, Sz = spins

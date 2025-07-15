@@ -4,6 +4,7 @@ from quantumsparse.operator import Symmetry, Operator
 from quantumsparse.spin.shift import shift, shift_foundamental
 from quantumsparse.spin import Heisenberg, Ising
 from quantumsparse.spin.functions import rotate_spins, get_unitary_rotation_matrix
+from quantumsparse.tools.mathematics import product
 import numpy as np
 from copy import deepcopy
 import matplotlib.pyplot as plt
@@ -22,7 +23,9 @@ T
 
 SpinOps = SpinOperators(spin_values)
 spins = SpinOps.Sx, SpinOps.Sy, SpinOps.Sz
-Sz = SpinOps.Sx
+Sx = SpinOps.Sx
+Sy = SpinOps.Sy
+Sz = SpinOps.Sz
 
 
 EulerAngles = np.zeros((8,3))
@@ -42,6 +45,14 @@ for n in range(Nsites):
     assert (SrR[n] - SrU[n]).norm() < tol, "Sr rotation mismatch"
     assert (SzR[n] - SzU[n]).norm() < tol, "Sz rotation mismatch"
 
+Utot = product(U)
+UdTot = product(Ud)
+assert (Utot - UdTot.dagger()).norm() < tol, "Utot and UdTot mismatch"
+
+for n in range(Nsites):
+    assert (StR[n] - Utot @ Sx[n] @ UdTot).norm() < tol, "St rotation mismatch"
+    assert (SrR[n] - Utot @ Sy[n] @ UdTot).norm() < tol, "Sr rotation mismatch"
+    assert (SzR[n] - Utot @ Sz[n] @ UdTot).norm() < tol, "Sz rotation mismatch"
 
 H = Ising(Sz)
 H
