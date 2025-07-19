@@ -350,36 +350,8 @@ def compute_spin_operators(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr,OpAr
         represented with sparse matrices,
         acting on the system (all sites) Hilbert space
     """
-    
     spin_values = np.asarray(spin_values)    
-    # from_list_to_str = lambda x :  '[ '+ ' '.join([ "{:d} ,".format(int(i)) if i.is_integer() 
-    #                                                 else "{:f} ,".format(i) 
-    #                                                 for i in x ])[0:-1]+' ]'
-        
-    # print("\n\tcomputing the spin operators")
-    # print("\t\tinput parameters:")
-    # NSpin        = len(spin_values)     
-    # print("\t\t{:>20s} : {:<60d}".format("N spins",NSpin))
-    # print("\t\t{:>20s} : {:<60s}".format("spin values",from_list_to_str(spin_values)))
-    dimensions = spin2dim(spin_values)#(2*spin_values+1).astype(int)
-    # print("\t\t{:>20s} : {:<60s}".format("dimensions",from_list_to_str(dimensions)))
-    
-    # print("\t\tallocating single Sz,S+,S- operators (on the single-spin Hilbert space) ... ",end="")
+    dimensions = spin2dim(spin_values)
     sx,sy,sz,sp,sm = single_Szpm(spin_values)
-    # print("done")    
-    
-    # print("\t\tallocating the Sx,Sy,Sz operators (on the system Hilbert space) ... ",end="")  
     Sx,Sy,Sz,Sp,Sm = system_Sxypm_operators(dimensions,sx,sy,sz,sp,sm)
-    
-    # from quantumsparse.hilbert import embed_operators
-    # testz, testp, testm = embed_operators([sz,sp,sm],dimensions,normalize=False)
-    
-    # assert np.allclose( [ (testz[i] - Sz[i] ).norm() for i in range(len(testz)) ] , 0 )
-    # assert np.allclose( [ (testp[i] - Sp[i] ).norm() for i in range(len(testz)) ] , 0 )
-    # assert np.allclose( [ (testm[i] - Sm[i] ).norm() for i in range(len(testz)) ] , 0 )
-    # print("done")    
-
-    # for n in range(len(spin_values)):
-    #     Sx[n],Sy[n],Sz[n] = operator(Sx[n]), operator(Sy[n]), operator(Sz[n])
-            
     return Sx,Sy,Sz,Sp,Sm
