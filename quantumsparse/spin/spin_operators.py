@@ -268,16 +268,6 @@ def system_Sxypm_operators(dimensions,sx,sy,sz,sp,sm)->Tuple[OpArr,OpArr,OpArr,O
             out[i] = Ops[0]
             for j in range(1,NSpin):
                 out[i] = Operator.kron(out[i],Ops[j]) 
-                
-    # for i in range(NSpin):
-    #     Sx[i] = compute_sx(Sp[i],Sm[i])
-    #     Sy[i] = compute_sy(Sp[i],Sm[i])
-    
-    # for i in range(NSpin):
-    #     a = compute_sx(Sp[i],Sm[i])
-    #     assert (a-Sx[i]).norm() < 1e-10, f"Error in Sx[{i}]"
-    #     a = compute_sy(Sp[i],Sm[i])
-    #     assert (a-Sy[i]).norm() < 1e-10, f"Error in Sy[{i}]"
         
     return Sx,Sy,Sz,Sp,Sm       
 
@@ -309,9 +299,7 @@ def single_Szpm(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr]:
     dimensions = spin2dim(spin_values)  
     
     for i,s,deg in zip(range(NSpin),spin_values,dimensions):
-        
-        # print("\t\t",i+1,"/",NSpin,end="\r")
-        
+                
         m = np.linspace(s,-s,deg)
         Sz[i] = Operator.diags(m,dtype=float)          
         
