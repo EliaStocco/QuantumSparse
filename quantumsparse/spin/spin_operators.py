@@ -223,7 +223,7 @@ def compute_sy(p:Operator,m:Operator)->Operator:
     Sy = -1.j/2.0*(p-m) 
     return Sy
     
-def system_Sxypm_operators(dimensions,sz,sp,sm)->Tuple[OpArr,OpArr,OpArr,OpArr,OpArr]:
+def system_Sxypm_operators(dimensions,sx,sy,sz,sp,sm)->Tuple[OpArr,OpArr,OpArr,OpArr,OpArr]:
     """
     Parameters
     ----------
@@ -253,16 +253,15 @@ def system_Sxypm_operators(dimensions,sz,sp,sm)->Tuple[OpArr,OpArr,OpArr,OpArr,O
     """
     NSpin= len(sz)
     if NSpin != len(sp) or NSpin != len(sm) or NSpin != len(dimensions):
-        print("\t\terror in \"compute_Sxy_operators\" function: arrays of different lenght")
-        raise()
+        raise ValueError("Arrays of different length in 'compute_Sxy_operators'")
     Sz = np.zeros(NSpin,dtype=object) # S z
     Sx = np.zeros(NSpin,dtype=object) # S x
     Sy = np.zeros(NSpin,dtype=object) # S y
-    Sp = np.zeros(NSpin,dtype=object) # S y
-    Sm = np.zeros(NSpin,dtype=object) # S y
+    Sp = np.zeros(NSpin,dtype=object) # S plus
+    Sm = np.zeros(NSpin,dtype=object) # S minus
     iden = Operator.identity(dimensions)
     
-    for zpm,out in zip([sz,sp,sm],[Sz,Sp,Sm]):
+    for zpm,out in zip([sx,sy,sz,sp,sm],[Sx,Sy,Sz,Sp,Sm]):
         for i in range(NSpin):
             Ops = iden.copy()
             Ops[i] = zpm[i]
@@ -270,9 +269,15 @@ def system_Sxypm_operators(dimensions,sz,sp,sm)->Tuple[OpArr,OpArr,OpArr,OpArr,O
             for j in range(1,NSpin):
                 out[i] = Operator.kron(out[i],Ops[j]) 
                 
-    for i in range(NSpin):
-        Sx[i] = compute_sx(Sp[i],Sm[i])
-        Sy[i] = compute_sy(Sp[i],Sm[i])
+    # for i in range(NSpin):
+    #     Sx[i] = compute_sx(Sp[i],Sm[i])
+    #     Sy[i] = compute_sy(Sp[i],Sm[i])
+    
+    # for i in range(NSpin):
+    #     a = compute_sx(Sp[i],Sm[i])
+    #     assert (a-Sx[i]).norm() < 1e-10, f"Error in Sx[{i}]"
+    #     a = compute_sy(Sp[i],Sm[i])
+    #     assert (a-Sy[i]).norm() < 1e-10, f"Error in Sy[{i}]"
         
     return Sx,Sy,Sz,Sp,Sm       
 
@@ -296,6 +301,8 @@ def single_Szpm(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr]:
         acting on the local (only one site) Hilbert space
     """
     NSpin = len(spin_values)
+    Sx = np.zeros(NSpin,dtype=object) # s x
+    Sy = np.zeros(NSpin,dtype=object) # s y
     Sz = np.zeros(NSpin,dtype=object) # s z
     Sp = np.zeros(NSpin,dtype=object) # s plus
     Sm = np.zeros(NSpin,dtype=object) # s minus
@@ -312,8 +319,11 @@ def single_Szpm(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr]:
         vm = np.sqrt( (s+m)*(s-m+1) )[0:-1]
         Sp[i] = Operator.diags(vp,offsets= 1)
         Sm[i] = Operator.diags(vm,offsets=-1)
+        
+        Sx[i] = compute_sx(Sp[i],Sm[i])
+        Sy[i] = compute_sy(Sp[i],Sm[i])
 
-    return Sz,Sp,Sm
+    return Sx,Sy,Sz,Sp,Sm
 
 def compute_spin_operators(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr,OpArr,OpArr]:
     """
@@ -355,11 +365,11 @@ def compute_spin_operators(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr,OpAr
     # print("\t\t{:>20s} : {:<60s}".format("dimensions",from_list_to_str(dimensions)))
     
     # print("\t\tallocating single Sz,S+,S- operators (on the single-spin Hilbert space) ... ",end="")
-    sz,sp,sm = single_Szpm(spin_values)
+    sx,sy,sz,sp,sm = single_Szpm(spin_values)
     # print("done")    
     
     # print("\t\tallocating the Sx,Sy,Sz operators (on the system Hilbert space) ... ",end="")  
-    Sx,Sy,Sz,Sp,Sm = system_Sxypm_operators(dimensions,sz,sp,sm)
+    Sx,Sy,Sz,Sp,Sm = system_Sxypm_operators(dimensions,sx,sy,sz,sp,sm)
     
     # from quantumsparse.hilbert import embed_operators
     # testz, testp, testm = embed_operators([sz,sp,sm],dimensions,normalize=False)
