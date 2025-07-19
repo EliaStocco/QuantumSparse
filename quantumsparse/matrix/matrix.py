@@ -17,6 +17,7 @@ import concurrent.futures
 T = TypeVar('T',bound="Matrix") 
 dtype = csr_matrix
 NoJacobi = 8
+TOLERANCE = 1e-10
 
 USE_COPY = True
 def my_copy(x):
@@ -230,6 +231,10 @@ class Matrix(csr_matrix):
         """
         return cls(Matrix.module.identity(*argc,**argv))
     
+    def iden(self:T)->T:
+        assert self.shape[0] == self.shape[1], "The matrix must be square to return the identity matrix."
+        return type(self).identity(self.shape[0])
+    
     def dagger(self:T)->T:
         """
         Returns the Hermitian conjugate (or adjoint) of the matrix.
@@ -265,7 +270,7 @@ class Matrix(csr_matrix):
             else:
                 raise ImplErr
 
-    def is_symmetric(self:T,**argv)->bool:
+    def is_symmetric(self:T,tolerance=TOLERANCE)->bool:
         """
         Checks if the matrix is symmetric.
 
@@ -277,12 +282,12 @@ class Matrix(csr_matrix):
             bool: True if the matrix is symmetric, False otherwise.
         """
         if Matrix.module is sparse :
-            tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
+            # tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
             return (self - self.transpose()).norm() < tolerance
         else :
             raise ImplErr
         
-    def is_hermitean(self:T,**argv)->bool:
+    def is_hermitean(self:T,tolerance=TOLERANCE)->bool:
         """
         Checks if the matrix is Hermitian.
 
@@ -294,12 +299,12 @@ class Matrix(csr_matrix):
             bool: True if the matrix is Hermitian, False otherwise.
         """
         if Matrix.module is sparse :
-            tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
+            # tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
             return (self - self.dagger()).norm() < tolerance
         else :
             raise ImplErr
         
-    def is_unitary(self:T,**argv)->bool:
+    def is_unitary(self:T,tolerance=TOLERANCE)->bool:
         """
         Checks if the matrix is unitary.
 
@@ -316,11 +321,24 @@ class Matrix(csr_matrix):
             ImplErr: If the matrix module is not sparse.
         """
         if Matrix.module is sparse :
-            tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
+             #tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
             return (self @ self.dagger() - self.identity(len(self)) ).norm() < tolerance
         else :
             raise ImplErr
         
+    def is_diagonalized(self:T)->bool:
+        """
+        Check if the matrix is diagonalized.
+
+        Returns:
+            bool: True if the matrix is diagonalized, False otherwise.
+        """
+        return self.eigenvalues is not None and self.eigenstates  is not None
+    
+    def is_diagonal(self:T,tolerance=TOLERANCE)->bool:
+        test = self - self.as_diagonal()
+        return test.norm() < tolerance
+    
     def det_is_adjacency(self:T):
         """
         Checks if the matrix is an adjacency matrix.
@@ -332,15 +350,6 @@ class Matrix(csr_matrix):
             self.is_adjacency = self == self.adjacency()
             
         return self.is_adjacency
-
-    def diagonalized(self:T)->bool:
-        """
-        Check if the matrix is diagonalized.
-
-        Returns:
-            bool: True if the matrix is diagonalized, False otherwise.
-        """
-        return self.eigenvalues is not None and self.eigenstates  is not None
 
     @staticmethod
     def anticommutator(A:T,B:T)->T:
@@ -894,6 +903,11 @@ class Matrix(csr_matrix):
         # |    =1    |  ok  |  yes  |
         # |    >1    |  ok  | error |
         # |-------------------------|
+        
+        if self.is_diagonal():
+            self.eigenvalues = self.diagonal()
+            self.eigenstates = self.iden()
+            return self.eigenvalues, self.eigenstates
 
         n_components, labels = self.count_blocks(inplace=True)               
         if original : 
@@ -926,7 +940,7 @@ class Matrix(csr_matrix):
         norm : float
             The norm of the error.
         """
-        assert self.diagonalized(), "The matrix should be already diagonalized."
+        assert self.is_diagonalized(), "The matrix should be already diagonalized."
         if isinstance(self.eigenstates,np.ndarray):
             eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
         else:
@@ -970,7 +984,6 @@ class Matrix(csr_matrix):
         
         return self.eigenvalues,self.eigenstates
 
-    
     def sort(self:T,inplace=False)->T:
         """Sort the eigenvalues, and the eigenvectors acoordingly."""
         out = self.copy()
@@ -998,10 +1011,20 @@ class Matrix(csr_matrix):
         eigvecs_norm = self.eigenstates.column_norm()
         assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
         
-    def exp(self:T,alpha:scalar=1,diag_inplace:bool=True,tol:float=1e-8,*argv,**kwargs)->T:
+    def exp(self:T,alpha,method:str="test",diag_inplace:bool=True,tol:float=1e-8,*argv,**kwargs)->T:
         """Exponential of a matrix via diagonalization and exponentiation of its eigenvalues."""
-        func = lambda x: np.exp(x*alpha)
-        return self._eigenvalues_wise_operation(func)
+        if method == "scipy":
+            from scipy.sparse.linalg import expm
+            return type(self)(expm(alpha*self, *argv, **kwargs))
+        elif method == "qs":
+            func = lambda x: np.exp(x*alpha)
+            return self._eigenvalues_wise_operation(func,diag_inplace=diag_inplace,tol=tol,*argv,**kwargs)
+        elif method == "test":
+            a = self.exp(alpha,"scipy",diag_inplace=diag_inplace,tol=tol,*argv,**kwargs)
+            b = self.exp(alpha,"qs",diag_inplace=diag_inplace,tol=tol,*argv,**kwargs)
+            assert (a-b).norm() < tol, "error: expm and qs do not match"
+        else:
+            raise ValueError(f"Unknown method '{method}' for matrix exponential.")
     
     def ln(self:T)->T:
         """Natural logarithm of a matrix computed via diagonalization and ln of its eigenvalues."""
@@ -1035,6 +1058,26 @@ class Matrix(csr_matrix):
             An array containing the norms of each column.
         """
         return np.asarray([ self[:,n].norm() for n in range(self.shape[1])])
+    
+    def unitary_transformation(self:T,U:T)->T:
+        """
+        Applies a unitary transformation to the matrix.
+
+        Returns
+        -------
+        T
+            The transformed matrix.
+        """
+        assert U.is_unitary(), "'U' should be unitary"
+        new = U @ self @ U.dagger()
+        new = type(self)(new)
+        assert type(new) == type(self), "error: 'new' should be of the same type as 'self'"
+        if self.is_diagonalized():
+            new.eigenvalues = self.eigenvalues
+            new.eigenstates = U @ self.eigenstates
+        return new
+        
+        
         
 
 @dataclass

@@ -1,8 +1,10 @@
 import numpy as np
+import pandas as pd
+from typing import List
 from quantumsparse.operator import Operator, OpArr
 from quantumsparse.tools.functions import prepare_opts
 from typing import Tuple, Union, Any, TypeVar
-import pandas as pd
+
 
 T = TypeVar('T', bound='SpinOperators')
 
@@ -10,14 +12,14 @@ class SpinOperators:
     """Class to represent a spin system (ideally a chain of spins)."""
     
     spin_values:np.ndarray
-    Sx:OpArr
-    Sy:OpArr
-    Sz:OpArr
-    Sp:OpArr 
-    Sm:OpArr 
+    Sx:List[Operator]
+    Sy:List[Operator]
+    Sz:List[Operator]
+    Sp:List[Operator]
+    Sm:List[Operator]
     basis:pd.DataFrame
 
-    def __init__(self:T,spin_values:np.ndarray=None,N:int=1,S:Union[int,float]=0.5,opts:Any=None,**argv):
+    def __init__(self:T,spin_values:np.ndarray=None,N:int=1,S:Union[int,float]=0.5,**argv):
         """
         Parameters
         ----------
@@ -37,7 +39,7 @@ class SpinOperators:
         # super().__init__(**argv)
         
         # print("\n\tconstructor of \"SpinSystem\" class")     
-        opts = prepare_opts(opts)
+        # opts = prepare_opts(opts)
         if spin_values is not None:
             self.spin_values = spin_values
         else :
@@ -51,12 +53,40 @@ class SpinOperators:
             print("\n\terror: not all spin values are integer or semi-integer: ",self.spin_values)
             raise() 
             
-        Sx,Sy,Sz,Sp,Sm = compute_spin_operators(self.spin_values,opts)
+        Sx,Sy,Sz,Sp,Sm = compute_spin_operators(self.spin_values)
         self.Sx = Sx
         self.Sy = Sy
         self.Sz = Sz  
         self.Sp = Sp 
         self.Sm = Sm 
+        
+        from quantumsparse.spin.functions import rotate_spins, get_unitary_rotation_matrix
+        
+        for n,Sz in enumerate(self.Sz):
+            assert Sz.is_diagonal(), "error: the Sz operator is not diagonal"
+            Sz.diagonalize() 
+            # test = Sz.test_eigensolution()
+            # assert test.norm() < 1e-10, "error: the Sz operator does not have the correct eigenvalues"
+            
+            euler = np.zeros((len(self.spin_values),3),dtype=float)
+            euler[:,1] = np.pi/2. # Sz -> Sx
+            test_Sx = get_unitary_rotation_matrix((Sx,Sy,Sz),euler)
+            
+            pass
+            
+        for n,Sx in enumerate(self.Sx):
+            #assert Sx.is_diagonal(), "error: the Sx operator is not diagonal"
+            Sx.diagonalize() 
+            # test = Sx.test_eigensolution()
+            # assert test.norm() < 1e-10, "error: the Sx operator does not have the correct eigenvalues"
+        
+        for n,Sy in enumerate(self.Sy):
+            # assert Sy.is_diagonal(), "error: the Sy operator is not diagonal"
+            Sy.diagonalize() 
+            # test = Sy.test_eigensolution()
+            # assert test.norm() < 1e-10, "error: the Sy operator does not have the correct eigenvalues"
+            
+        
 
         self.basis:pd.DataFrame = self.compute_basis()
 
@@ -285,7 +315,7 @@ def single_Szpm(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr]:
 
     return Sz,Sp,Sm
 
-def compute_spin_operators(spin_values:np.ndarray,opts=None)->Tuple[OpArr,OpArr,OpArr,OpArr,OpArr]:
+def compute_spin_operators(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr,OpArr,OpArr]:
     """
     Parameters
     ----------
@@ -311,19 +341,18 @@ def compute_spin_operators(spin_values:np.ndarray,opts=None)->Tuple[OpArr,OpArr,
         acting on the system (all sites) Hilbert space
     """
     
-    opts = prepare_opts(opts)
     spin_values = np.asarray(spin_values)    
-    from_list_to_str = lambda x :  '[ '+ ' '.join([ "{:d} ,".format(int(i)) if i.is_integer() 
-                                                    else "{:f} ,".format(i) 
-                                                    for i in x ])[0:-1]+' ]'
+    # from_list_to_str = lambda x :  '[ '+ ' '.join([ "{:d} ,".format(int(i)) if i.is_integer() 
+    #                                                 else "{:f} ,".format(i) 
+    #                                                 for i in x ])[0:-1]+' ]'
         
-    print("\n\tcomputing the spin operators")
-    print("\t\tinput parameters:")
-    NSpin        = len(spin_values)     
-    print("\t\t{:>20s} : {:<60d}".format("N spins",NSpin))
-    print("\t\t{:>20s} : {:<60s}".format("spin values",from_list_to_str(spin_values)))
+    # print("\n\tcomputing the spin operators")
+    # print("\t\tinput parameters:")
+    # NSpin        = len(spin_values)     
+    # print("\t\t{:>20s} : {:<60d}".format("N spins",NSpin))
+    # print("\t\t{:>20s} : {:<60s}".format("spin values",from_list_to_str(spin_values)))
     dimensions = spin2dim(spin_values)#(2*spin_values+1).astype(int)
-    print("\t\t{:>20s} : {:<60s}".format("dimensions",from_list_to_str(dimensions)))
+    # print("\t\t{:>20s} : {:<60s}".format("dimensions",from_list_to_str(dimensions)))
     
     # print("\t\tallocating single Sz,S+,S- operators (on the single-spin Hilbert space) ... ",end="")
     sz,sp,sm = single_Szpm(spin_values)
@@ -332,8 +361,8 @@ def compute_spin_operators(spin_values:np.ndarray,opts=None)->Tuple[OpArr,OpArr,
     # print("\t\tallocating the Sx,Sy,Sz operators (on the system Hilbert space) ... ",end="")  
     Sx,Sy,Sz,Sp,Sm = system_Sxypm_operators(dimensions,sz,sp,sm)
     
-    from quantumsparse.hilbert import embed_operators
-    testz, testp, testm = embed_operators([sz,sp,sm],dimensions,normalize=False)
+    # from quantumsparse.hilbert import embed_operators
+    # testz, testp, testm = embed_operators([sz,sp,sm],dimensions,normalize=False)
     
     # assert np.allclose( [ (testz[i] - Sz[i] ).norm() for i in range(len(testz)) ] , 0 )
     # assert np.allclose( [ (testp[i] - Sp[i] ).norm() for i in range(len(testz)) ] , 0 )

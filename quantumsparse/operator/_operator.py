@@ -208,20 +208,20 @@ class Operator(Matrix):
         
         # ToDo: specialize this function for the case when self == S
 
-        if not S.diagonalized():
+        if not S.is_diagonalized():
             raise ValueError("The operator 'S' should have already been diagonalized.")
         
         if direction == "forward":
             dagger = S.eigenstates.dagger()
             out = self.clone(dagger @ self @ S.eigenstates)
-            if self.diagonalized():
+            if self.is_diagonalized():
                 out.eigenvalues = copy(self.eigenvalues)
                 out.eigenstates = dagger @ self.eigenstates
                 ##NEARLY_DIAG## out.nearly_diag = S.eigenstates.dagger() @ self.nearly_diag @ S.eigenstates
         
         elif direction == "backward":
             out = self.clone(S.eigenstates @ self @ S.eigenstates.dagger())
-            if self.diagonalized():
+            if self.is_diagonalized():
                 out.eigenvalues = copy(self.eigenvalues)
                 out.eigenstates = S.eigenstates @ self.eigenstates
                 ##NEARLY_DIAG## out.nearly_diag = S.eigenstates @ self.nearly_diag @ S.eigenstates.dagger() 
@@ -329,7 +329,7 @@ class Operator(Matrix):
     
     def band_diagram(self:T,sym:T):
         
-        if not self.diagonalized():
+        if not self.is_diagonalized():
             raise ValueError("The operator has not been diagonalized yet.")
         
         if not self.commute(sym):
