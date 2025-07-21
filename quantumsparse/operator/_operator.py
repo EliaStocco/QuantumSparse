@@ -236,7 +236,7 @@ class Operator(Matrix):
         return out
 
 
-    def diagonalize_with_symmetry(self:T,S:Union[List[T],T],test=True,**argv):
+    def diagonalize_with_symmetry(self:T,S:Union[List[T],T],test=False,**argv):
         """
         Diagonalizes the operator using the given symmetry operator(s).
 
@@ -290,6 +290,7 @@ class Operator(Matrix):
         # and more blocks might be found.
 
         if len(S) == 1 :
+            argv["tqdm"] = True
             to_diag.diagonalize(test=False,**argv)
         else:
             raise ValueError("not implemented yet")
