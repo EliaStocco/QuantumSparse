@@ -35,7 +35,7 @@ def product(Ops:List[Matrix])->Matrix:
     if not Ops:
         raise ValueError("The list of operators is empty.")
     
-    result = Ops[0]
+    result = Ops[0].copy()
     for op in Ops[1:]:
         result = result @ op
     
