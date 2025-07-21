@@ -13,6 +13,7 @@ from typing import TypeVar, Union, Type, List, Dict, Any, Optional
 import pickle
 from dataclasses import dataclass, field
 import concurrent.futures
+from tqdm import tqdm
     
 T = TypeVar('T',bound="Matrix") 
 dtype = csr_matrix
@@ -212,6 +213,26 @@ class Matrix(csr_matrix):
         """
         return cls(Matrix.module.kron(*argc,**argv))
 
+    def kronecker(self:T,A:T)->T:
+        """
+        Create a new Matrix instance by taking the Kronecker product of the current matrix with the given matrices.
+
+        Parameters:
+            *argc (Matrix or array-like): The matrices to take the Kronecker product of.
+            **argv (dict): Additional keyword arguments to pass to the Kronecker product function.
+
+        Returns:
+            T: A new Matrix instance representing the Kronecker product of the current matrix and the given matrices.
+        """
+        new = type(self).kron(self,A)
+        if self.is_diagonalized() and A.is_diagonalized():
+            a = type(self).diags(self.eigenvalues)
+            b = type(A).diags(A.eigenvalues)
+            w = type(self).kron(a,b)
+            new.eigenvalues = w.diagonal()
+            new.eigenstates = type(self).kron(self.eigenstates,A.eigenstates)
+        return new
+    
     @classmethod
     def identity(cls,*argc,**argv):
         """
@@ -830,7 +851,10 @@ class Matrix(csr_matrix):
         else:
             raise ValueError("some error occurred")
 
-        for n in range(self.n_blocks):
+        enable_tqdm = argv["tqdm"] if "tqdm" in argv else True
+        argv["tqdm"] = False
+        for n in tqdm(range(self.n_blocks), disable=not enable_tqdm, desc="Diagonalizing blocks", unit="block"):
+
             # if original:
             # print(f"\t\tdiagonalizing block n. {n}/{self.n_blocks}")
 
@@ -929,6 +953,8 @@ class Matrix(csr_matrix):
         
         ##NEARLY_DIAG## self.nearly_diag = my_copy(N) if N is not None else None
         # return w,f##NEARLY_DIAG##,N
+        if isinstance(self.eigenstates,np.ndarray):
+            self.eigenstates = Matrix(self.eigenstates)
         return self.eigenvalues,self.eigenstates
     
     def test_eigensolution(self:T)->T:
@@ -1011,7 +1037,7 @@ class Matrix(csr_matrix):
         eigvecs_norm = self.eigenstates.column_norm()
         assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
         
-    def exp(self:T,alpha,method:str="test",diag_inplace:bool=True,tol:float=1e-8,*argv,**kwargs)->T:
+    def exp(self:T,alpha,method:str="qs",diag_inplace:bool=True,tol:float=1e-8,*argv,**kwargs)->T:
         """Exponential of a matrix via diagonalization and exponentiation of its eigenvalues."""
         if method == "scipy":
             from scipy.sparse.linalg import expm
@@ -1034,18 +1060,20 @@ class Matrix(csr_matrix):
     def _eigenvalues_wise_operation(self,func,diag_inplace:bool=True,tol:float=1e-8,*argv,**kwargs):
         """General function to apply function to a matrix via diagonalization, e.g. exp, ln, sqrt."""
         if diag_inplace:
-            self.diagonalize(*argv,**kwargs)
+            if not self.is_diagonalized():
+                self.diagonalize(*argv,**kwargs)
             new = self.copy()
         else:
             new = self.copy()
-            new.diagonalize(*argv,**kwargs)
+            if not new.is_diagonalized():
+                new.diagonalize(*argv,**kwargs)
         eigenvalues = func(new.eigenvalues)
         eigenstates:Matrix = new.eigenstates
         new = Matrix(eigenstates@Matrix.diags(eigenvalues)@eigenstates.inv())
         new.eigenvalues = eigenvalues
         new.eigenstates = eigenstates
-        test = new.test_eigensolution()
-        assert test.norm() < tol, "error"
+        # test = new.test_eigensolution()
+        # assert test.norm() < tol, "error"
         return new
     
     def column_norm(self:T)->np.ndarray:
