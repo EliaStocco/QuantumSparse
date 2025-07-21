@@ -56,7 +56,7 @@ def Heisenberg(Sx:np.ndarray,Sy:np.ndarray,Sz:np.ndarray,couplings=1.0,nn=1,opts
            Ising(Sz,Js[:,2],nn,opts=opts)
 
 
-def DM(Sx:np.ndarray=None,Sy:np.ndarray=None,Sz:np.ndarray=None,couplings=1.0,nn=1,opts=None)->Operator:
+def Dzyaloshinskii_Moriya(Sx:np.ndarray=None,Sy:np.ndarray=None,Sz:np.ndarray=None,couplings=1.0,nn=1,opts=None)->Operator:
     """
     This function generates the Dzyaloshinskii-Moriya (DM) interaction Hamiltonian.
     
@@ -120,7 +120,7 @@ def rhombicity(Sx:np.ndarray,Sy:np.ndarray,couplings,opts=None)->Operator:
     """
     return Ising(Sx,couplings,nn=0,opts=opts) - Ising(Sy,couplings,nn=0,opts=opts)
 
-def BiQuadraticIsing(S:np.ndarray,couplings=1.0,nn=1,opts=None)->Operator:
+def biquadratic_Ising(S:np.ndarray,couplings=1.0,nn=1)->Operator:
     """
     This function generates the biquadratic Ising interaction Hamiltonian.
 
@@ -149,7 +149,7 @@ def BiQuadraticIsing(S:np.ndarray,couplings=1.0,nn=1,opts=None)->Operator:
         
     return H
 
-def BiQuadraticHeisenberg(Sx:np.ndarray=None,Sy:np.ndarray=None,Sz:np.ndarray=None,couplings=1.0,nn=1,opts=None)->Operator:
+def biquadratic_Heisenberg(Sx:np.ndarray=None,Sy:np.ndarray=None,Sz:np.ndarray=None,couplings=1.0,nn=1)->Operator:
     """
     This function generates the biquadratic Heisenberg interaction Hamiltonian.
 
@@ -169,6 +169,6 @@ def BiQuadraticHeisenberg(Sx:np.ndarray=None,Sy:np.ndarray=None,Sz:np.ndarray=No
     if len(Js.shape) != 2 : 
         Js = np.full((N,3),couplings)
     
-    return BiQuadraticIsing(Sx,Js[:,0],nn,opts=opts) +\
-           BiQuadraticIsing(Sy,Js[:,1],nn,opts=opts) +\
-           BiQuadraticIsing(Sz,Js[:,2],nn,opts=opts)
+    return biquadratic_Ising(Sx,Js[:,0],nn) +\
+           biquadratic_Ising(Sy,Js[:,1],nn) +\
+           biquadratic_Ising(Sz,Js[:,2],nn)
