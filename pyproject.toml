@@ -16,6 +16,7 @@ dependencies = [
     "pyyaml",
     "argparse",
     "dataclasses",
+    "tqdm"
 ]
 
 [project.optional-dependencies]

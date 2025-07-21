@@ -4,3 +4,4 @@ scipy
 typing
 pandas
 pickle
+tqdm
