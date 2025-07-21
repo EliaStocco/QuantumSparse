@@ -19,6 +19,7 @@ T = TypeVar('T',bound="Matrix")
 dtype = csr_matrix
 NoJacobi = 8
 TOLERANCE = 1e-10
+NOISE = 1e-12
 
 USE_COPY = True
 def my_copy(x):
@@ -1074,7 +1075,7 @@ class Matrix(csr_matrix):
         new.eigenstates = eigenstates
         # test = new.test_eigensolution()
         # assert test.norm() < tol, "error"
-        return new
+        return new.clean()
     
     def column_norm(self:T)->np.ndarray:
         """
@@ -1103,7 +1104,36 @@ class Matrix(csr_matrix):
         if self.is_diagonalized():
             new.eigenvalues = self.eigenvalues
             new.eigenstates = U @ self.eigenstates
-        return new
+        return new.clean()
+        
+    def clean(self:T,noise=NOISE):
+        """
+        Removes elements in the matrix with absolute value below `noise`.
+
+        Parameters:
+        - noise: float, threshold below which values are considered noise
+        """
+        mask = np.abs(self.data) >= noise
+
+        self.data = self.data[mask]
+        self.indices = self.indices[mask]
+
+        # Reconstruct indptr safely
+        row_counts = np.diff(self.indptr)
+        kept_counts = np.add.reduceat(mask, np.cumsum(np.r_[0, row_counts[:-1]]))
+
+        # Ensure the correct dtype for indptr (usually int32)
+        new_indptr = np.empty_like(self.indptr)
+        np.cumsum(np.r_[0, kept_counts], out=new_indptr)
+
+        self.indptr = new_indptr
+
+        # Ensure correct dtype of data and indices if needed
+        self.data = self.data.astype(self.data.dtype, copy=False)
+        self.indices = self.indices.astype(self.indices.dtype, copy=False)
+
+        self.eliminate_zeros()
+        return self
         
         
         
