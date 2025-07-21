@@ -19,7 +19,7 @@ class SpinOperators:
     Sm:List[Operator]
     basis:pd.DataFrame
 
-    def __init__(self:T,spin_values:np.ndarray=None,N:int=1,S:Union[int,float]=0.5,**argv):
+    def __init__(self:T,spin_values:np.ndarray=None,N:int=1,S:Union[int,float]=0.5,test:bool=False,**argv):
         """
         Parameters
         ----------
@@ -60,34 +60,16 @@ class SpinOperators:
         self.Sp = Sp 
         self.Sm = Sm 
         
-        from quantumsparse.spin.functions import rotate_spins, get_unitary_rotation_matrix
-        
-        for n,Sz in enumerate(self.Sz):
-            assert Sz.is_diagonal(), "error: the Sz operator is not diagonal"
-            Sz.diagonalize() 
-            # test = Sz.test_eigensolution()
-            # assert test.norm() < 1e-10, "error: the Sz operator does not have the correct eigenvalues"
+        if test:
+            for n in range(len(self.spin_values)):
+                testx = self.Sx[n].test_eigensolution()
+                testy = self.Sy[n].test_eigensolution()
+                testz = self.Sz[n].test_eigensolution()
+                
+                assert testx.norm() < 1e-10, f"Spin Sx[{n}] is not diagonalized: {testx.norm()}"
+                assert testy.norm() < 1e-10, f"Spin Sy[{n}] is not diagonalized: {testy.norm()}"
+                assert testz.norm() < 1e-10, f"Spin Sz[{n}] is not diagonalized: {testz.norm()}"
             
-            euler = np.zeros((len(self.spin_values),3),dtype=float)
-            euler[:,1] = np.pi/2. # Sz -> Sx
-            test_Sx = get_unitary_rotation_matrix((Sx,Sy,Sz),euler)
-            
-            pass
-            
-        for n,Sx in enumerate(self.Sx):
-            #assert Sx.is_diagonal(), "error: the Sx operator is not diagonal"
-            Sx.diagonalize() 
-            # test = Sx.test_eigensolution()
-            # assert test.norm() < 1e-10, "error: the Sx operator does not have the correct eigenvalues"
-        
-        for n,Sy in enumerate(self.Sy):
-            # assert Sy.is_diagonal(), "error: the Sy operator is not diagonal"
-            Sy.diagonalize() 
-            # test = Sy.test_eigensolution()
-            # assert test.norm() < 1e-10, "error: the Sy operator does not have the correct eigenvalues"
-            
-        
-
         self.basis:pd.DataFrame = self.compute_basis()
 
     def compute_basis(self)->pd.DataFrame:
@@ -260,6 +242,8 @@ def system_Sxypm_operators(dimensions,sx,sy,sz,sp,sm)->Tuple[OpArr,OpArr,OpArr,O
     Sp = np.zeros(NSpin,dtype=object) # S plus
     Sm = np.zeros(NSpin,dtype=object) # S minus
     iden = Operator.identity(dimensions)
+    for i in iden:
+        i.diagonalize()
     
     for zpm,out in zip([sx,sy,sz,sp,sm],[Sx,Sy,Sz,Sp,Sm]):
         for i in range(NSpin):
@@ -267,7 +251,8 @@ def system_Sxypm_operators(dimensions,sx,sy,sz,sp,sm)->Tuple[OpArr,OpArr,OpArr,O
             Ops[i] = zpm[i]
             out[i] = Ops[0]
             for j in range(1,NSpin):
-                out[i] = Operator.kron(out[i],Ops[j]) 
+                # out[i] = Operator.kron(out[i],Ops[j]) 
+                out[i] = out[i].kronecker(Ops[j])
         
     return Sx,Sy,Sz,Sp,Sm       
 
@@ -310,6 +295,10 @@ def single_Szpm(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr]:
         
         Sx[i] = compute_sx(Sp[i],Sm[i])
         Sy[i] = compute_sy(Sp[i],Sm[i])
+        
+        Sx[i].diagonalize()
+        Sy[i].diagonalize()
+        Sz[i].diagonalize()
 
     return Sx,Sy,Sz,Sp,Sm
 
