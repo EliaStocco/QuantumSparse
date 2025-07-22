@@ -66,7 +66,7 @@ all_DM = {
     }
 }
 
-S     = 3./2
+S     = 3./2 if name == "Cr8" else 1
 Nsites = 8
 spin_values = np.full(Nsites, S)
 
