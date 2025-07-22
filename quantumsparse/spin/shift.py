@@ -2,8 +2,6 @@ from quantumsparse.operator import Operator, Symmetry
 from quantumsparse.spin import SpinOperators
 from quantumsparse.tools.mathematics import roots_of_unity
 import numpy as np
-
-from joblib import Parallel, delayed
 import numpy as np
 
 def shift_foundamental(N:int):
@@ -50,12 +48,17 @@ def shift(ops: SpinOperators, parallel: bool = True) -> Operator:
             return (r, c)
         return None
 
+    parallel_failed = False
     if parallel:
-        from joblib import Parallel, delayed
-        results = Parallel(n_jobs=-1, prefer="threads")(
-            delayed(process_state)(c) for c in range(N)
-        )
-    else:
+        try:
+            from joblib import Parallel, delayed
+        except:
+            parallel_failed = True
+        if not parallel_failed:
+            results = Parallel(n_jobs=-1, prefer="threads")(
+                delayed(process_state)(c) for c in range(N)
+            )
+    if not parallel or parallel_failed:
         results = [process_state(c) for c in range(N)]
 
     for result in results:
