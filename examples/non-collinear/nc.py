@@ -31,6 +31,7 @@ xc = "LDA+U"
 interaction = INTERACTIONS
 oname = "OUTPUT"
 ofolder = "FOLDER"
+os.makedirs(ofolder,exist_ok=True)
 
 all_Js = {
     "Cr8" : {
