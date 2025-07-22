@@ -67,7 +67,7 @@ all_DM = {
 }
 
 S     = 3./2
-Nsites = 4
+Nsites = 8
 spin_values = np.full(Nsites, S)
 
 def build_H(Sx, Sy, Sz):
