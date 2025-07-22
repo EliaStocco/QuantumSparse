@@ -1,7 +1,5 @@
 numpy
 pytest
 scipy
-typing
-pandas
-pickle
+pandas>=2.0
 tqdm
