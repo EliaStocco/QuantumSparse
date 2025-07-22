@@ -1,5 +1,5 @@
 [project]
-name = "quatumsparse"
+name = "quantumsparse"
 version = "1.0.0"
 description = "An efficient python package based on `scipy.sparse` to work with quantum spin operators"
 authors = [
