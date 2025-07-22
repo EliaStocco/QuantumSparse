@@ -14,10 +14,13 @@ TOLERANCE = 1e-10
 
 # Configure logging
 logging.basicConfig(
+    filename="LOGFILE",               # <-- Log to this file
     level=logging.DEBUG if DEBUG else logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filemode='w'                        # Optional: overwrite on each run
 )
-logger = logging.getLogger(LOGFILE)
+
+logger = logging.getLogger()  # Root logger
 
 # %% [markdown]
 # ## Parameters
