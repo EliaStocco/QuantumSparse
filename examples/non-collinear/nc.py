@@ -196,7 +196,7 @@ if not os.path.exists(f"U/{name}/Utot.pickle"):
     logger.debug("Global unitary operator constructed.")
 
     os.makedirs("U/", exist_ok=True)
-    os.makedirs(f"U/{oname}", exist_ok=True)
+    os.makedirs(f"U/{name}", exist_ok=True)
     for n, u in enumerate(U):
         u.save(f"U/{name}/U.n={n}.pickle")
     Utot.save(f"U/{name}/Utot.pickle")
