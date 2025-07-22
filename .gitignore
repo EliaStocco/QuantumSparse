@@ -1,12 +1,12 @@
-*.egg-info/*
-.vscode/
+# Ignore files
 *.npz
 *.pickle
-
-# Ignore __pycache__ directories
-__pycache__/
-
-.ipynb_checkpoints/
-
-# Ignore all .pyc files
 *.pyc
+*.pdf
+
+# Ignore directories
+__pycache__/
+.ipynb_checkpoints/
+*.egg-info/*
+.vscode/
+
