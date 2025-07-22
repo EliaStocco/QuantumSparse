@@ -6,5 +6,7 @@
 # Ignore __pycache__ directories
 __pycache__/
 
+.ipynb_checkpoints/
+
 # Ignore all .pyc files
 *.pyc
