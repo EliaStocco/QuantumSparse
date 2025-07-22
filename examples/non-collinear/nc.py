@@ -1,139 +1,268 @@
-import logging
+# %% [markdown]
+# # Non collinear calculations
+
+# %% [markdown]
+# ## Packages
+
+# %%
+from quantumsparse.spin import SpinOperators
+from quantumsparse.operator import Symmetry, Operator
+from quantumsparse.spin.shift import shift
+from quantumsparse.spin.interactions import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg
+from quantumsparse.spin.functions import rotate_spins, get_unitary_rotation_matrix
+from quantumsparse.tools.mathematics import product, roots_of_unity
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+plt.style.use('../../notebook.mplstyle')                # use matplotlib style notebook.mplstyle
 
-from quantumsparse.spin import SpinOperators
-from quantumsparse.operator import Symmetry, roots_of_unity, Operator
-from quantumsparse.spin.shift import shift
-from quantumsparse.spin import Heisenberg
+DEBUG = False
+TOLERANCE = 1e-10
 
-plt.style.use('../../notebook.mplstyle')
+# %% [markdown]
+# ## Parameters
 
-logging.basicConfig(
-    filename='nc.log',
-    level=logging.INFO,
-    format='[%(asctime)s] %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'  # <-- now includes year, month, day
-)
+# %% [markdown]
+# Let's define the main parameters of the system: the spin value `S` and the number of sites `Nsites`.
 
-def gaussian_dos(l, N=None, sigma=0.1, num_points=1000):
-    logging.info(f"Computing Gaussian DOS with sigma={sigma}, num_points={num_points}")
-    l = np.asarray(l)
-    if N is None:
-        logging.info("No degeneracies provided, using uniform weights")
-        N = np.ones_like(l)
-    else:
-        logging.info(f"Using provided degeneracies, total weight sum={N.sum()}")
-    E_min, E_max = l.min() - 2*sigma, l.max() + 2*sigma
-    logging.info(f"Energy range for DOS: [{E_min:.3f}, {E_max:.3f}]")
-    E_vals = np.linspace(E_min, E_max, num_points)
-    dos = np.zeros_like(E_vals)
-    prefactor = 1 / (sigma * np.sqrt(2 * np.pi))
-    for i, (energy, weight) in enumerate(zip(l, N), start=1):
-        dos += weight * prefactor * np.exp(-0.5 * ((E_vals - energy) / sigma)**2)
-        if i % max(1, len(l)//10) == 0 or i == len(l):
-            logging.debug(f"Processed Gaussian for energy level {i}/{len(l)} (energy={energy:.3f})")
-    return E_vals, dos
-
+# %%
+name = "NAME"
+xc = "LDA+U"
+interaction = INTERACTIONS
+oname = "OUTPUT"
 all_Js = {
-    "Cr8": {
-        "LDA+U": [0.596, 0.596, 0.843],
-        "LDA+U+V": [0.848, 0.848, 1.198],
+    "Cr8" : {
+        "LDA+U"   : [0.596,0.596,0.843], # meV
+        "LDA+U+V" : [0.848,0.848,1.198], # eV
     },
-    "V8": {
-        "LDA+U": [-0.643, -0.654, -0.913],
-        "LDA+U+V": [-0.403, -0.403, -0.585],
+    "V8"  : {
+        "LDA+U"   : [-0.643,-0.654,-0.913], # meV
+        "LDA+U+V" : [-0.403,-0.403,-0.585], # meV
     }
 }
 
-all_S = {
-    "Cr8": 3. / 2.,
-    "V8": 1,
+all_bi = {
+    "Cr8" : {
+        "LDA+U"   : [-0.009,0.005,0.026], # meV
+        "LDA+U+V" : None
+        
+    },
+    "V8"  : {
+        "LDA+U"   : [-0.23,-0.208,0.091], # meV
+        "LDA+U+V" : None
+    }
 }
 
-for name in ["Cr8"]:
-    logging.info(f"Starting processing for system '{name}'")
+all_DM = {
+    "Cr8" : {
+        "LDA+U"   : [-0.193,-0.193,0.608], # meV
+        "LDA+U+V" : [-0.282,-0.282,0.853], # meV
+        
+    },
+    "V8"  : {
+        "LDA+U"   : [-0.060,-0.050,-1.049], # meV
+        "LDA+U+V" : [-0.175,-0.170,-0.813], # meV
+    }
+}
 
-    S = all_S[name]
-    Nsites = 8
-    spin_values = np.full(Nsites, S)
-    logging.info(f"Spin value S={S}, Number of sites={Nsites}")
+S     = 3./2 # spin value
+Nsites = 4 # number of sites
+spin_values = np.full(Nsites,S)
 
-    SpinOp = SpinOperators(spin_values)
-    Sx, Sy, Sz = SpinOp.Sx, SpinOp.Sy, SpinOp.Sz
-    logging.info("Spin operators created")
+def build_H(Sx,Sy,Sz):
+    Js = all_Js[name][xc]
+    BI = all_bi[name][xc]
+    DM = all_DM[name][xc]
+    h =     Heisenberg(Sx,Sy,Sz,Js)
+    if "biquad" in interaction:
+        h = h + biquadratic_Heisenberg(Sx,Sy,Sz,BI)
+    if "dm" in interaction:
+        h = h + Dzyaloshinskii_Moriya(Sx,Sy,Sz,DM)
+    return h.clean()
 
-    assert isinstance(Sx[0], Operator), "Sx[0] should be an Operator instance"
+# %% [markdown]
+# ## Spin operators
 
-    D_file = f"D.S={S}.N={Nsites}.pickle"
-    if os.path.exists(D_file):
-        logging.info(f"Loading symmetry operator from {D_file}")
-        D = Symmetry.load(D_file)
-    else:
-        logging.info(f"Computing symmetry operator for S={S}, N={Nsites}")
-        D = shift(SpinOp)
-        logging.info("Diagonalizing symmetry operator...")
-        D.diagonalize(method="dense")
-        test = D.test_eigensolution()
-        norm = test.norm()
-        logging.info(f"Symmetry operator eigen test norm: {norm:.3e}")
-        assert norm < 1e-10, "Symmetry operator eigen test failed"
+# %% [markdown]
+# From these values we can construct the spin operators `Sx`, `Sy`, and `Sz` of the system (in cartesian coordinates).
 
-        l, N = D.energy_levels()
-        logging.info(f"Symmetry energy levels count: {len(l)}")
-        assert len(l) == Nsites, "Wrong number of energy levels"
+# %%
+# construct the spin operators
+SpinOp = SpinOperators(spin_values)
 
-        ru = np.sort(roots_of_unity(len(spin_values)))
-        l = np.sort(l)
-        assert np.allclose(l, ru), "Eigenvalues should be roots of unity"
+# unpack the operators
+spins = SpinOp.Sx,SpinOp.Sy,SpinOp.Sz
+Sx,Sy,Sz = spins
 
-        D.save(D_file)
-        logging.info(f"Symmetry operator saved to {D_file}")
+# %%
+# let's show the Hilbert space basis:
+# each row is a basis state
+# each column if one component in the Sz-basis
+SpinOp.basis
 
-    for xc in ["LDA+U+V"]:
-        logging.info(f"Starting Hamiltonian calculation for functional '{xc}'")
-        H_file = f"H.{name}.xc={xc}.pickle"
+# %% [markdown]
+# Pay attention that `Sx` (as well as `Sy`, and `Sz`) are `numpy.array` with lenght `Nsites`, and each one of its element is a `Operator` object.
+# 
+# Let's inspect one element.
 
-        if os.path.exists(H_file):
-            logging.info(f"Loading Hamiltonian from {H_file}")
-            H = Operator.load(H_file)
-        else:
-            Js = all_Js[name][xc]
-            logging.info(f"Building Heisenberg Hamiltonian with Js={Js}")
-            H = Heisenberg(Sx, Sy, Sz, Js)
+# %%
+assert isinstance(Sx[0],Operator), "Sx[0] should be an Operator instance"
+Sx[0]
 
-            comm = Operator.commutator(H, D)
-            comm_norm = comm.norm()
-            logging.info(f"Commutator norm between H and D: {comm_norm:.3e}")
-            assert comm_norm < 1e-10, "Symmetry operator does not commute with Hamiltonian"
+# %% [markdown]
+# ## Hamiltonian
 
-            logging.info("Diagonalizing Hamiltonian with symmetry")
-            H.diagonalize_with_symmetry(S=[D], method="dense")
+# %% [markdown]
+# Let's construct the Hamiltonian.
 
-            test = H.test_eigensolution()
-            norm = test.norm()
-            logging.info(f"Hamiltonian eigen test norm: {norm:.3e}")
-            assert norm < 1e-10, "Hamiltonian eigen test failed"
+# %%
+# cylindricar coordinates
+H = build_H(Sx,Sy,Sz)
+H
 
-            H.save(H_file)
-            logging.info(f"Hamiltonian saved to {H_file}")
+# %% [markdown]
+# ## Translational symmetry
 
-        l, N = H.energy_levels()
-        weight_sum = N.sum()
-        expected_size = H.shape[0]
-        logging.info(f"Energy levels found: {len(l)}, sum of weights: {weight_sum}, expected Hilbert space size: {expected_size}")
-        assert weight_sum == expected_size, "Sum of energy level weights mismatch"
+# %% [markdown]
+# Let's construct the shift operator (or traslation operator) because it will be usefull later on to make the diagonalization of the Hamiltoninan cheaper.
 
-        E_vals, dos = gaussian_dos(l, N, sigma=0.1)
+# %%
+if os.path.exists(f"D.S={S}.N={Nsites}.pickle"):
+    D = Symmetry.load(f"D.S={S}.N={Nsites}.pickle") # load the symmetry operator from a file
+else:
+    D:Symmetry = shift(SpinOp)
+D
 
-        plt.plot(E_vals, dos, label=f"{name} {xc}")
-        plt.xlabel('energy [eV]')
-        plt.ylabel('DOS')
-        plt.title(f'{name} - {xc} DOS (σ=0.1 eV)')
-        plt.grid(True)
-        pdf_file = f"{name}.xc={xc}.pdf"
-        plt.savefig(pdf_file, bbox_inches='tight')
-        logging.info(f"DOS plot saved to {pdf_file}")
-        # plt.show()
-        plt.clf()  # Clear the current figure for the next plot
+# %% [markdown]
+# Let's diagonalize the shift operator so that we have access to its eigenvectors.
+
+# %%
+if not D.is_diagonalized():
+    D.diagonalize(method="dense") # 'dense' is much better than 'jacobi'
+    
+if DEBUG:
+    test = D.test_eigensolution()
+    assert test.norm() < TOLERANCE, f"Symmetry operator D is not diagonalized correctly: {test.norm()}"
+
+D
+
+# %%
+if DEBUG :
+    
+    test = D.test_eigensolution()
+    norm  = test.norm()
+    assert norm < TOLERANCE, f"Symmetry operator D is not diagonalized correctly: {norm}"
+
+    # the number of energy levels should be equal to the number of sites
+    l,N = D.energy_levels()
+    # print(len(l))
+    assert len(l) == Nsites, "wrong number of energy levels"
+
+    # the eigenvalues should be the roots of unity
+    ru = np.sort(roots_of_unity(len(spin_values)))
+    l  = np.sort(l)    
+    assert np.allclose(l,ru), "The eigenvalues should be the roots of the unity."
+
+
+# test
+
+# %% [markdown]
+# Let' save the shift operator, and its eigensolutions to file.
+
+# %%
+if not os.path.exists(f"D.S={S}.N={Nsites}.pickle"):
+    D.save(f"D.S={S}.N={Nsites}.pickle") # save the symmetry operator to a file
+
+# %% [markdown]
+# ## Diagonalizing the Hamiltonian
+
+# %%
+if DEBUG:
+    comm = Operator.commutator(H,D)
+    assert comm.norm() < TOLERANCE, "Commutator is not zero, the symmetry operator does not commute with the Hamiltonian"
+
+if not H.is_diagonalized(): 
+    H.diagonalize_with_symmetry(S=[D],method="dense"); # diagonalize the Hamiltonian
+    
+if DEBUG:
+    test = H.test_eigensolution()
+    norm = test.norm()
+    assert norm < TOLERANCE, f"Hamiltonian is not diagonalized correctly: {norm}"
+    
+H
+
+# %%
+H.save(f"H.{oname}.cart.pickle") # save the Hamiltonian to a file
+
+# %% [markdown]
+# ## Cylindrical coordinates
+
+# %%
+EulerAngles = np.zeros((Nsites,3))
+EulerAngles[:,2] = np.linspace(0,360,Nsites,endpoint=False)
+EulerAngles = np.pi * EulerAngles / 180
+print("Euler angles (in radians):\n", EulerAngles)
+
+# %%
+StR,SrR,SzR= rotate_spins(spins,EulerAngles=EulerAngles,method="R")
+U, Ud = get_unitary_rotation_matrix(spins, EulerAngles)
+Utot = product(U).clean() # this is really memory intensive
+Utot
+
+os.makedirs("U/")
+os.makedirs(f"U/{oname}")
+for n,u in enumerate(U):
+    u.save(f"U/{oname}/U.n={n}.pickle") # save to file
+Utot.save(f"U/{oname}/Utot.pickle")
+    
+
+# %%
+if DEBUG:
+    # StR,SrR,SzR= rotate_spins(spins,EulerAngles=EulerAngles,method="R")
+    StU,SrU,SzU= rotate_spins(spins,EulerAngles=EulerAngles,method="U")
+    for n in range(Nsites):
+        print(f"Site {n}:")
+        assert (StR[n] - StU[n]).norm() < TOLERANCE, "St rotation mismatch"
+        assert (SrR[n] - SrU[n]).norm() < TOLERANCE, "Sr rotation mismatch"
+        assert (SzR[n] - SzU[n]).norm() < TOLERANCE, "Sz rotation mismatch"
+
+    # Utot = product(U).clean()
+    UdTot = product(Ud).clean()
+    assert (Utot - UdTot.dagger()).norm() < TOLERANCE, "Utot and UdTot mismatch"
+
+    for n in range(Nsites):
+        print(f"Site {n}:") 
+        assert (StR[n] - Utot @ Sx[n] @ UdTot).norm() < TOLERANCE, "St rotation mismatch"
+        assert (SrR[n] - Utot @ Sy[n] @ UdTot).norm() < TOLERANCE, "Sr rotation mismatch"
+        assert (SzR[n] - Utot @ Sz[n] @ UdTot).norm() < TOLERANCE, "Sz rotation mismatch"
+
+# %%
+Hcyl = build_H(StR,SrR,SzR)
+Hcyl
+
+# %%
+print("n of blocks of H   : ", H.count_blocks()[0])
+print("n of blocks of Hcyl: ", Hcyl.count_blocks()[0])
+
+# %%
+if DEBUG:
+    Htest = H.unitary_transformation(Utot)
+    test = Hcyl - Htest
+    norm = test.norm()
+    assert norm < TOLERANCE, f"Hamiltonian in cylindrical coordinates is not correct: {norm}"
+    Htest
+
+# %%
+Hfinal = H.unitary_transformation(Utot) # from cartesian to cylindrical frame
+if DEBUG:
+    test = Hfinal.test_eigensolution()
+    norm = test.norm()
+    assert norm < TOLERANCE, f"Hamiltonian in cylindrical coordinates is not correct: {norm}"
+Hfinal
+
+# %%
+
+Hfinal.save(f"H.{oname}.cyl.pickle") # save the Hamiltonian to a file
+
+# %% [markdown]
+# ## Density of states
