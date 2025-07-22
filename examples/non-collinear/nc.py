@@ -30,6 +30,7 @@ name = "NAME"
 xc = "LDA+U"
 interaction = INTERACTIONS
 oname = "OUTPUT"
+ofolder = "FOLDER"
 
 all_Js = {
     "Cr8" : {
@@ -175,7 +176,7 @@ H
 
 # %%
 logger.info("Saving Cartesian Hamiltonian.")
-H.save(f"H.{oname}.cart.pickle")
+H.save(f"{ofolder}/H.{oname}.cart.pickle")
 
 # %% [markdown]
 # ## Cylindrical coordinates
@@ -187,22 +188,26 @@ EulerAngles[:, 2] = np.linspace(0, 360, Nsites, endpoint=False)
 EulerAngles = np.pi * EulerAngles / 180
 logger.debug("Euler angles (radians):\n%s", EulerAngles)
 
-StR, SrR, SzR = rotate_spins(spins, EulerAngles=EulerAngles, method="R")
-U, Ud = get_unitary_rotation_matrix(spins, EulerAngles)
+if not os.path.exists(f"U/{name}/Utot.pickle"):
+    U, Ud = get_unitary_rotation_matrix(spins, EulerAngles)
 
-Utot = product(U).clean()
-logger.debug("Global unitary operator constructed.")
+    Utot = product(U).clean()
+    logger.debug("Global unitary operator constructed.")
 
-os.makedirs("U/", exist_ok=True)
-os.makedirs(f"U/{oname}", exist_ok=True)
-for n, u in enumerate(U):
-    u.save(f"U/{oname}/U.n={n}.pickle")
-Utot.save(f"U/{oname}/Utot.pickle")
-logger.info("Unitary operators saved.")
+    os.makedirs("U/", exist_ok=True)
+    os.makedirs(f"U/{oname}", exist_ok=True)
+    for n, u in enumerate(U):
+        u.save(f"U/{name}/U.n={n}.pickle")
+    Utot.save(f"U/{name}/Utot.pickle")
+    logger.info("Unitary operators saved.")
+else:
+    logger.debug("Loading unitary operator from file.")
+    Utot = Operator.load(f"U/{name}/Utot.pickle")
 
 # %%
 if DEBUG:
     logger.debug("Testing rotations using U and R methods.")
+    StR, SrR, SzR = rotate_spins(spins, EulerAngles=EulerAngles, method="R")
     StU, SrU, SzU = rotate_spins(spins, EulerAngles=EulerAngles, method="U")
     for n in range(Nsites):
         assert (StR[n] - StU[n]).norm() < TOLERANCE, "St rotation mismatch"
@@ -218,14 +223,16 @@ if DEBUG:
         assert (SzR[n] - Utot @ Sz[n] @ UdTot).norm() < TOLERANCE
 
 # %%
-logger.info("Building Hamiltonian in cylindrical coordinates.")
-Hcyl = build_H(StR, SrR, SzR)
-Hcyl
+if DEBUG:
+    logger.info("Building Hamiltonian in cylindrical coordinates.")
+    Hcyl = build_H(StR, SrR, SzR)
+    Hcyl
 
 # %%
-logger.info("Comparing block count.")
-print("n of blocks of H   : ", H.count_blocks()[0])
-print("n of blocks of Hcyl: ", Hcyl.count_blocks()[0])
+if DEBUG:
+    logger.info("Comparing block count.")
+    print("n of blocks of H   : ", H.count_blocks()[0])
+    print("n of blocks of Hcyl: ", Hcyl.count_blocks()[0])
 
 # %%
 if DEBUG:
@@ -245,7 +252,7 @@ Hfinal
 
 # %%
 logger.info("Saving cylindrical Hamiltonian.")
-Hfinal.save(f"H.{oname}.cyl.pickle")
+Hfinal.save(f"{ofolder}/H.{oname}.cyl.pickle")
 
 # %% [markdown]
 # ## Density of states
