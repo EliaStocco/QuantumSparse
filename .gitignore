@@ -3,6 +3,7 @@
 *.pickle
 *.pyc
 *.pdf
+*.log
 
 # Ignore directories
 __pycache__/
