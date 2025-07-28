@@ -3,14 +3,11 @@ import numpy as np
 import concurrent.futures
 from copy import copy, deepcopy
 from typing import TypeVar, Union, Type, List, Dict, Any, Optional
-from tqdm import tqdm
 from dataclasses import dataclass, field
 from scipy import sparse
-from scipy.linalg import eigh, eig
 from scipy.sparse import csr_matrix, csr_array, bmat
-from scipy.sparse.csgraph import connected_components
 from quantumsparse.bookkeeping import ImplErr
-from quantumsparse.tools import first_larger_than_N, get_deep_size
+from quantumsparse.tools import first_larger_than_N
 
     
 T = TypeVar('T',bound="Matrix") 
@@ -656,6 +653,7 @@ class Matrix(csr_matrix):
         """
         adjacency = self.adjacency()
         if Matrix.module is sparse:
+            from scipy.sparse.csgraph import connected_components
             n_components, labels = connected_components(adjacency, directed=False, return_labels=True)
             if inplace:
                 self.blocks = labels
@@ -778,6 +776,7 @@ class Matrix(csr_matrix):
 
         enable_tqdm = argv["tqdm"] if "tqdm" in argv else True
         argv["tqdm"] = False
+        from tqdm import tqdm
         for n in tqdm(range(self.n_blocks), disable=not enable_tqdm, desc="Diagonalizing blocks", unit="block"):
 
             # if original:
@@ -866,6 +865,7 @@ class Matrix(csr_matrix):
             raise ValueError("some error occurred")
 
         if self.n_blocks == 1 :
+            from scipy.linalg import eigh, eig
             M = np.asarray(self.todense())
             self.eigenvalues,self.eigenstates = eigh(M) if self.is_hermitean() else eig(M)
 
@@ -1060,7 +1060,7 @@ class Matrix(csr_matrix):
         Returns a string representation of the matrix object, including its type, shape, 
         sparsity, number of elements, norms, and symmetry properties.
         """
-        
+        from quantumsparse.tools import get_deep_size
         string  = "{:>14s}: {} bytes\n".format('memory (csr)', str(get_deep_size(csr_matrix(self))))
         string += "{:>14s}: {} bytes\n".format('memory (deep)', str(get_deep_size(self)))
         string += "{:>14s}: {}\n".format('type', str(self.data.dtype))
@@ -1295,8 +1295,38 @@ def test_inplace_mult():
     assert np.allclose(block.eigenstates.todense(),eigvec), "changed eigenvectors"
     assert np.allclose(block.eigenvalues/2.,eigval), "wrong eigenvalues"
     
+    
+def test_matrix_save_load(tmp_path):
+    """
+    Test that saving and loading a Matrix preserves its data.
+    """
+    # Create example data and Matrix instance
+    data = np.array([[1, 2], [3, 4]], dtype=float)
+    matrix = Matrix(data)
+
+    # Define a temporary filename
+    file_path = tmp_path / "test_matrix.pickle"
+    
+    matrix.save(str(file_path))
+    loaded_matrix = Matrix.load(str(file_path))
+    test = (matrix-loaded_matrix).norm()
+    assert test < TOLERANCE, "error load/save (1)"
+    
+    matrix.diagonalize()    
+    matrix.save(str(file_path))
+    loaded_matrix = Matrix.load(str(file_path))
+    test = (matrix-loaded_matrix).norm()
+    assert test < TOLERANCE, "error load/save (2)"
+    assert loaded_matrix.is_diagonalized(), "error load/save (3)"
+    test1 = matrix.test_eigensolution()
+    test2 = loaded_matrix.test_eigensolution()
+    test = (test1-test2).norm()
+    assert test < TOLERANCE, "error load/save (4)"
+    
+    
 
 if __name__ == "__main__":
     test_DiagonalBlockMatrix()
     test_inplace_div()
     test_inplace_mult()
+    test_matrix_save_load()
