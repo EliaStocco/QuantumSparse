@@ -8,13 +8,13 @@ from scipy import sparse
 from scipy.sparse import csr_matrix, csr_array, bmat
 from quantumsparse.bookkeeping import ImplErr
 from quantumsparse.tools import first_larger_than_N
+from quantumsparse.bookkeeping import TOLERANCE, NOISE
 
     
 T = TypeVar('T',bound="Matrix") 
 dtype = csr_matrix
 NoJacobi = 8
-TOLERANCE = 1e-10
-NOISE = 1e-12
+
 
 USE_COPY = True
 def my_copy(x):
@@ -1311,6 +1311,7 @@ def test_matrix_save_load(tmp_path):
     loaded_matrix = Matrix.load(str(file_path))
     test = (matrix-loaded_matrix).norm()
     assert test < TOLERANCE, "error load/save (1)"
+    assert type(matrix) == type(loaded_matrix), "error"
     
     matrix.diagonalize()    
     matrix.save(str(file_path))

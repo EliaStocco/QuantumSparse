@@ -3,6 +3,7 @@ from copy import copy, deepcopy
 from typing import TypeVar, Union, List
 from quantumsparse.matrix import Matrix
 from quantumsparse.tools.mathematics import unique_with_tolerance
+from quantumsparse.bookkeeping import TOLERANCE, NOISE
 
 T = TypeVar('T', bound='Operator')  # type of the class itself
 
@@ -370,6 +371,34 @@ class Operator(Matrix):
 
         return w, submatrices
         
+def test_operator_save_load(tmp_path):
+    """
+    Test that saving and loading a Matrix preserves its data.
+    """
+    # Create example data and Matrix instance
+    data = np.array([[1, 2], [3, 4]], dtype=float)
+    matrix = Operator(data)
 
+    # Define a temporary filename
+    file_path = tmp_path / "test_operator.pickle"
+    
+    matrix.save(str(file_path))
+    loaded_matrix = Operator.load(str(file_path))
+    test = (matrix-loaded_matrix).norm()
+    assert test < TOLERANCE, "error load/save (1)"
+    assert type(matrix) == type(loaded_matrix), "error"
+    
+    matrix.diagonalize()    
+    matrix.save(str(file_path))
+    loaded_matrix = Operator.load(str(file_path))
+    test = (matrix-loaded_matrix).norm()
+    assert test < TOLERANCE, "error load/save (2)"
+    assert loaded_matrix.is_diagonalized(), "error load/save (3)"
+    test1 = matrix.test_eigensolution()
+    test2 = loaded_matrix.test_eigensolution()
+    test = (test1-test2).norm()
+    assert test < TOLERANCE, "error load/save (4)"
+    
 
-
+if __name__ == "__main__":
+    test_operator_save_load()
