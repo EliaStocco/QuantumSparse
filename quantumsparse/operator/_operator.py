@@ -17,57 +17,57 @@ class Operator(Matrix):
     name:str
     
     
-    def __mul__(self: T, other: T) -> T:
-        """
-        Implements the left matrix multiplication operator (*) for the Operator class.
+    # def __mul__(self: T, other: T) -> T:
+    #     """
+    #     Implements the left matrix multiplication operator (*) for the Operator class.
 
-        Parameters
-        ----------
-        self : Operator
-            The Operator object to multiply.
-        other : Operator
-            The Operator object to multiply with.
+    #     Parameters
+    #     ----------
+    #     self : Operator
+    #         The Operator object to multiply.
+    #     other : Operator
+    #         The Operator object to multiply with.
 
-        Returns
-        -------
-        T
-            The result of the matrix multiplication.
-        """
-        return super().__mul__(other)
+    #     Returns
+    #     -------
+    #     T
+    #         The result of the matrix multiplication.
+    #     """
+    #     return super().__mul__(other)
     
-    def __rmul__(self: T, other: T) -> T:
-        """
-        Implements the right matrix multiplication operator (*) for the Operator class.
+    # def __rmul__(self: T, other: T) -> T:
+    #     """
+    #     Implements the right matrix multiplication operator (*) for the Operator class.
 
-        Parameters
-        ----------
-        self : Operator
-            The Operator object to multiply.
-        other : Operator
-            The Operator object to multiply with.
+    #     Parameters
+    #     ----------
+    #     self : Operator
+    #         The Operator object to multiply.
+    #     other : Operator
+    #         The Operator object to multiply with.
 
-        Returns
-        -------
-        T
-            The result of the matrix multiplication.
-        """
-        return super().__rmul__(other)
+    #     Returns
+    #     -------
+    #     T
+    #         The result of the matrix multiplication.
+    #     """
+    #     return super().__rmul__(other)
     
-    def __matmul__(self,other):
-        """
-        Implements the matrix multiplication operator (@) for the Operator class.
+    # def __matmul__(self,other):
+    #     """
+    #     Implements the matrix multiplication operator (@) for the Operator class.
 
-        Parameters
-        ----------
-        other : Operator
-            The Operator object to multiply with.
+    #     Parameters
+    #     ----------
+    #     other : Operator
+    #         The Operator object to multiply with.
 
-        Returns
-        -------
-        Operator
-            The result of the matrix multiplication.
-        """
-        return super().__matmul__(other)
+    #     Returns
+    #     -------
+    #     Operator
+    #         The result of the matrix multiplication.
+    #     """
+    #     return super().__matmul__(other)
 
     def __init__(self: T, *argc, **argv) -> None:
         """
