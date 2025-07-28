@@ -1,7 +1,8 @@
 import numpy as np
 from quantumsparse.spin import SpinOperators
 from quantumsparse.operator import Operator
-from quantumsparse.spin import Heisenberg, DM
+from quantumsparse.spin import Heisenberg
+from quantumsparse.spin import Dzyaloshinskii_Moriya as DM
 
 from scipy.sparse.linalg import eigsh, eigs
 
