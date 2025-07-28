@@ -59,7 +59,6 @@ class Matrix(csr_matrix):
     eigenvalues:np.ndarray 
     eigenstates:T
     is_adjacency:bool
-    extras:Dict[str,Any]
     
     
     #-----------------#
@@ -1112,13 +1111,86 @@ class Matrix(csr_matrix):
             raise ValueError("matrix is not square: __len__ is not well defined")
         return M
     
-    def __truediv__(self, other):
-        result = super().__truediv__(other)
-        return self.__class__(result)
+    def __truediv__(self: T, value):
+        """
+        Return a new instance resulting from true division by the given value.
 
-    def __itruediv__(self, other):
-        result = super().__truediv__(other)
-        return self.__class__(result)
+        Args:
+            value: The divisor (scalar or compatible object).
+
+        Returns:
+            A new instance representing self divided by value.
+
+        Example:
+            >>> obj = MyClass(10)
+            >>> result = obj / 2
+            >>> print(result)
+        """
+        result = self.copy()
+        result /= value
+        return result
+
+
+    def __itruediv__(self: T, value):
+        """
+        Perform in-place true division by the given value.
+
+        Args:
+            value: The divisor (scalar or compatible object).
+
+        Returns:
+            The modified instance after division.
+
+        Example:
+            >>> obj = MyClass(10)
+            >>> obj /= 2
+            >>> print(obj)
+        """
+        self.data /= value
+        if self.eigenvalues is not None:
+            self.eigenvalues /= value
+        return self
+    
+    def __mul__(self: T, value):
+        """
+        Return a new instance resulting from multiplication by the given value.
+
+        Args:
+            value: The multiplier (scalar or compatible object).
+
+        Returns:
+            A new instance representing self multiplied by value.
+
+        Example:
+            >>> obj = MyClass(10)
+            >>> result = obj * 3
+            >>> print(result)
+        """
+        result = self.copy()
+        result *= value
+        return result
+
+
+    def __imul__(self: T, value):
+        """
+        Perform in-place multiplication by the given value.
+
+        Args:
+            value: The multiplier (scalar or compatible object).
+
+        Returns:
+            The modified instance after multiplication.
+
+        Example:
+            >>> obj = MyClass(10)
+            >>> obj *= 3
+            >>> print(obj)
+        """
+        self.data *= value
+        if self.eigenvalues is not None:
+            self.eigenvalues *= value
+        return self
+
 
 @dataclass
 class DiagonalBlockMatrix(Matrix):
@@ -1181,10 +1253,7 @@ class DiagonalBlockMatrix(Matrix):
     #     return total_rows, total_cols
         
 def test_DiagonalBlockMatrix():
-    
-    import numpy as np
-    # from icecream import ic
-    
+        
     # Define individual block matrices
     A = np.array([[1, 2], [3, 4]])
     B = np.array([[5, 6],[7, 8]])
@@ -1198,13 +1267,36 @@ def test_DiagonalBlockMatrix():
     bm = DiagonalBlockMatrix(blocks=[block1, block2,block3])
     
     test = sparse.bmat([[A,None,None],[None,B,None],[None,None,C]],format="csr")# .toarray()
-    # ic(test)
     
     for i in range(test.shape[0]):
         for j in range(test.shape[1]):
             assert test[i,j] == bm[i,j], "error: block matrices do not match"
-               
+            
+def test_inplace_div():    
+    A = np.array([[1, 2], [3, 4]],dtype=float)
+    block = Matrix(A)
+    block.diagonalize()
+    eigvec = block.eigenstates.todense()
+    eigval = block.eigenvalues.copy()
+    block /= 2.
+    assert block.is_diagonalized(), "not diagonalized anymore"
+    assert np.allclose(block.eigenstates.todense(),eigvec), "changed eigenvectors"
+    assert np.allclose(block.eigenvalues*2.,eigval), "wrong eigenvalues"
+    
+    
+def test_inplace_mult():    
+    A = np.array([[1, 2], [3, 4]],dtype=float)
+    block = Matrix(A)
+    block.diagonalize()
+    eigvec = block.eigenstates.todense()
+    eigval = block.eigenvalues.copy()
+    block *= 2.
+    assert block.is_diagonalized(), "not diagonalized anymore"
+    assert np.allclose(block.eigenstates.todense(),eigvec), "changed eigenvectors"
+    assert np.allclose(block.eigenvalues/2.,eigval), "wrong eigenvalues"
     
 
 if __name__ == "__main__":
     test_DiagonalBlockMatrix()
+    test_inplace_div()
+    test_inplace_mult()
