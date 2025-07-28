@@ -1,19 +1,17 @@
-from scipy.linalg import eigh, eig
-from scipy import sparse
-from scipy.sparse import csr_matrix, csr_array
-from scipy.sparse.csgraph import connected_components
-# from scipy.sparse import issparse, diags, hstack
-from copy import copy, deepcopy
-from scipy.sparse import bmat
-import numpy as np
-# from quantumsparse.tools.optimize import jit
-from quantumsparse.bookkeeping import ImplErr, scalar
-from quantumsparse.tools import first_larger_than_N, get_deep_size
-from typing import TypeVar, Union, Type, List, Dict, Any, Optional
 import pickle
-from dataclasses import dataclass, field
+import numpy as np
 import concurrent.futures
+from copy import copy, deepcopy
+from typing import TypeVar, Union, Type, List, Dict, Any, Optional
 from tqdm import tqdm
+from dataclasses import dataclass, field
+from scipy import sparse
+from scipy.linalg import eigh, eig
+from scipy.sparse import csr_matrix, csr_array, bmat
+from scipy.sparse.csgraph import connected_components
+from quantumsparse.bookkeeping import ImplErr
+from quantumsparse.tools import first_larger_than_N, get_deep_size
+
     
 T = TypeVar('T',bound="Matrix") 
 dtype = csr_matrix
@@ -1169,8 +1167,7 @@ class DiagonalBlockMatrix(Matrix):
     #     total_cols = max(start_col + block.data.shape[1] for _, start_col in self.indices)
     #     return total_rows, total_cols
         
-
-def main():
+def test_DiagonalBlockMatrix():
     
     import numpy as np
     # from icecream import ic
@@ -1179,7 +1176,6 @@ def main():
     A = np.array([[1, 2], [3, 4]])
     B = np.array([[5, 6],[7, 8]])
     C = np.array([[9, 10,4],[11, 12,0],[11, 12,2]])
-    null = np.zeros((2,2))
     
     block1 = Matrix(A)
     block2 = Matrix(B)
@@ -1198,4 +1194,4 @@ def main():
     
 
 if __name__ == "__main__":
-    main()
+    test_DiagonalBlockMatrix()

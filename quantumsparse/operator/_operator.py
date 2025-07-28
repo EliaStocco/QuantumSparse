@@ -1,9 +1,8 @@
-# "operator" class
-
 import numpy as np
 from copy import copy, deepcopy
-from quantumsparse.matrix import Matrix
 from typing import TypeVar, Union, List
+from quantumsparse.matrix import Matrix
+from quantumsparse.tools.mathematics import unique_with_tolerance
 
 T = TypeVar('T', bound='Operator')  # type of the class itself
 
@@ -374,17 +373,3 @@ class Operator(Matrix):
 
 
 
-def unique_with_tolerance(arr, tol=1e-8):
-    """
-    Returns the unique elements of an array within a specified tolerance.
-
-    Parameters:
-    arr (array_like): The input array.
-    tol (float, optional): The tolerance for uniqueness. Defaults to 1e-8.
-
-    Returns:
-    tuple: A tuple containing the unique elements and their indices.
-    """
-    rounded_arr = np.round(arr, decimals=int(-np.log10(tol)))
-    unique_rounded,index = np.unique(rounded_arr,return_inverse=True)
-    return unique_rounded, index
