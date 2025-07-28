@@ -58,15 +58,13 @@ class Matrix(csr_matrix):
     n_blocks:int
     eigenvalues:np.ndarray 
     eigenstates:T
-    ##NEARLY_DIAG## nearly_diag:bool
     is_adjacency:bool
     extras:Dict[str,Any]
     
-    # def __new__(cls, arg1=None, shape=None, dtype=None, copy=False):
-    #     # Let scipy create the object safely
-    #     obj = super().__new__(cls)
-    #     super().__init__(obj, arg1, shape=shape, dtype=dtype, copy=copy)
-    #     return obj
+    
+    #-----------------#
+    # IO, construction, copy
+    #-----------------#
 
     def __init__(self: T, *argc, **argv) -> None:
         """
@@ -150,6 +148,10 @@ class Matrix(csr_matrix):
         with open(file, 'rb') as f:
             return pickle.load(f)
 
+    #-----------------#
+    # Utilities
+    #-----------------#
+    
     @classmethod
     def diags(cls,*argc,**argv):
         """
@@ -239,6 +241,10 @@ class Matrix(csr_matrix):
         """
         return self.clone(self.conjugate().transpose()) #type(self)(self.conjugate().transpose())
     
+    #-----------------#
+    # Linear Algebra
+    #-----------------#
+    
     def inv(self:T)->T:
         """
         Computes the inverse of the matrix.
@@ -261,6 +267,58 @@ class Matrix(csr_matrix):
             else:
                 raise ImplErr
 
+    @staticmethod
+    def anticommutator(A:T,B:T)->T:
+        """
+        Computes the anticommutator of two matrices A and B.
+
+        Args:
+            A (T): The first matrix.
+            B (T): The second matrix.
+
+        Returns:
+            T: The anticommutator of A and B.
+        """
+        return A @ B + B @ A 
+    
+    @staticmethod
+    def commutator(A:T,B:T)->T:
+        """
+        Computes the commutator of two matrices A and B.
+
+        The commutator is defined as the difference between the matrix product AB and BA.
+
+        Parameters:
+            A (T): The first matrix.
+            B (T): The second matrix.
+
+        Returns:
+            T: The commutator of A and B.
+        """
+        return A @ B - B @ A 
+    
+    def norm(self:T)->float:
+        """
+        Computes the Euclidean norm (magnitude) of the matrix.
+
+        Parameters:
+            self (Matrix): The matrix to compute the norm of.
+
+        Returns:
+            float: The Euclidean norm of the matrix.
+
+        Raises:
+            ImplErr: If the matrix module is not sparse.
+        """
+        if Matrix.module is sparse :
+            return sparse.linalg.norm(self)
+        else :
+            raise ImplErr
+
+    #-----------------#
+    # Boolean flags
+    #-----------------#
+    
     def is_symmetric(self:T,tolerance=TOLERANCE)->bool:
         """
         Checks if the matrix is symmetric.
@@ -342,36 +400,6 @@ class Matrix(csr_matrix):
             
         return self.is_adjacency
 
-    @staticmethod
-    def anticommutator(A:T,B:T)->T:
-        """
-        Computes the anticommutator of two matrices A and B.
-
-        Args:
-            A (T): The first matrix.
-            B (T): The second matrix.
-
-        Returns:
-            T: The anticommutator of A and B.
-        """
-        return A @ B + B @ A 
-    
-    @staticmethod
-    def commutator(A:T,B:T)->T:
-        """
-        Computes the commutator of two matrices A and B.
-
-        The commutator is defined as the difference between the matrix product AB and BA.
-
-        Parameters:
-            A (T): The first matrix.
-            B (T): The second matrix.
-
-        Returns:
-            T: The commutator of A and B.
-        """
-        return A @ B - B @ A 
-    
     def commute(self:T,A,tol=1e-6)->bool:
         """
         Checks if the matrix is commutative with another matrix A within a given tolerance.
@@ -385,25 +413,10 @@ class Matrix(csr_matrix):
         """
         return Matrix.commutator(self,A).norm() < tol
 
-    # @staticmethod 
-    def norm(self:T)->float:
-        """
-        Computes the Euclidean norm (magnitude) of the matrix.
-
-        Parameters:
-            self (Matrix): The matrix to compute the norm of.
-
-        Returns:
-            float: The Euclidean norm of the matrix.
-
-        Raises:
-            ImplErr: If the matrix module is not sparse.
-        """
-        if Matrix.module is sparse :
-            return sparse.linalg.norm(self)
-        else :
-            raise ImplErr
-
+    #-----------------#
+    # Inspection
+    #-----------------#
+    
     def adjacency(self:T)->T:
         """
         Computes the adjacency matrix of the given matrix.
@@ -539,62 +552,6 @@ class Matrix(csr_matrix):
         
         total_mem = data_mem + indices_mem + indptr_mem
         return total_mem
-    
-    def __repr__(self:T)->str:
-        """
-        Returns a string representation of the matrix object, including its type, shape, 
-        sparsity, number of elements, norms, and symmetry properties.
-        """
-        
-        string  = "{:>14s}: {} bytes\n".format('memory (csr)', str(get_deep_size(csr_matrix(self))))
-        string += "{:>14s}: {} bytes\n".format('memory (deep)', str(get_deep_size(self)))
-        string += "{:>14s}: {}\n".format('type', str(self.data.dtype))
-        string += "{:>14s}: {}\n".format('shape', str(self.shape))
-        string += "{:>14s}: {:6f}\n".format('sparsity', self.sparsity())
-        string += "{:>14s}: {}\n".format('# all', str(self.count("all")))
-        string += "{:>14s}: {}\n".format('#  on', str(self.count("diag")))
-        string += "{:>14s}: {}\n".format('# off', str(self.count("off")))
-        string += "{:>14s}: {:6f}\n".format('norm (all)', self.norm())
-        string += "{:>14s}: {:6f}\n".format('norm  (on)', self.as_diagonal().norm())
-        string += "{:>14s}: {:6f}\n".format('norm (off)', self.off_diagonal().norm())
-        string += "{:>14s}: {}\n".format('hermitean', str(self.is_hermitean()))
-        string += "{:>14s}: {}\n".format('symmetric', str(self.is_symmetric()))
-        
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(self.is_unitary)
-            timeout_duration = 1
-            try:
-                # Wait for the result with a timeout
-                is_unitary = future.result(timeout=timeout_duration)
-            except concurrent.futures.TimeoutError:
-                is_unitary = "unknown"  # Return the default value if the task times out
-                
-        string += "{:>14s}: {}\n".format('unitary', str(is_unitary))
-        
-        tmp = str(self.n_blocks) if self.n_blocks is not None else "unknown"
-        string += "{:>14s}: {}\n".format('n. blocks', tmp)
-        
-        tmp = "computed" if self.eigenvalues is not None else "unknown"
-        string += "{:>14s}: {}\n".format('eigenvalues', tmp)
-        tmp = "computed" if self.eigenstates is not None else "unknown"
-        string += "{:>14s}: {}\n".format('eigenstates', tmp)
-
-        return string
-    
-    def __len__(self:T)->int:
-        """
-        Returns the length of the matrix.
-
-        Returns:
-            int: The length of the matrix.
-
-        Raises:
-            ValueError: If the matrix is not square.
-        """
-        M,N = self.shape
-        if M != N :
-            raise ValueError("matrix is not square: __len__ is not well defined")
-        return M
     
     def empty(self:T)->T:
         """
@@ -791,7 +748,6 @@ class Matrix(csr_matrix):
             out = out[reverse_permutation][:, reverse_permutation]
         return out
 
-    # #@jit
     def diagonalize_each_block(self: T, labels: np.ndarray, original: bool, tol: float,
                                max_iter: int,**argv) -> Union[np.ndarray, T]:
         """
@@ -992,14 +948,6 @@ class Matrix(csr_matrix):
             self = out
         return out
     
-    def __truediv__(self, other):
-        result = super().__truediv__(other)
-        return self.__class__(result)
-
-    def __itruediv__(self, other):
-        result = super().__truediv__(other)
-        return self.__class__(result)
-
     def normalize_eigenvecs(self:T):
         """Normalize inplace the eigenvectors."""
         eigvecs_norm = self.eigenstates.column_norm()
@@ -1104,8 +1052,73 @@ class Matrix(csr_matrix):
         self.eliminate_zeros()
         return self
         
+    #-----------------#
+    # Operators overload
+    #-----------------#
+    
+    def __repr__(self:T)->str:
+        """
+        Returns a string representation of the matrix object, including its type, shape, 
+        sparsity, number of elements, norms, and symmetry properties.
+        """
         
+        string  = "{:>14s}: {} bytes\n".format('memory (csr)', str(get_deep_size(csr_matrix(self))))
+        string += "{:>14s}: {} bytes\n".format('memory (deep)', str(get_deep_size(self)))
+        string += "{:>14s}: {}\n".format('type', str(self.data.dtype))
+        string += "{:>14s}: {}\n".format('shape', str(self.shape))
+        string += "{:>14s}: {:6f}\n".format('sparsity', self.sparsity())
+        string += "{:>14s}: {}\n".format('# all', str(self.count("all")))
+        string += "{:>14s}: {}\n".format('#  on', str(self.count("diag")))
+        string += "{:>14s}: {}\n".format('# off', str(self.count("off")))
+        string += "{:>14s}: {:6f}\n".format('norm (all)', self.norm())
+        string += "{:>14s}: {:6f}\n".format('norm  (on)', self.as_diagonal().norm())
+        string += "{:>14s}: {:6f}\n".format('norm (off)', self.off_diagonal().norm())
+        string += "{:>14s}: {}\n".format('hermitean', str(self.is_hermitean()))
+        string += "{:>14s}: {}\n".format('symmetric', str(self.is_symmetric()))
         
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(self.is_unitary)
+            timeout_duration = 1
+            try:
+                # Wait for the result with a timeout
+                is_unitary = future.result(timeout=timeout_duration)
+            except concurrent.futures.TimeoutError:
+                is_unitary = "unknown"  # Return the default value if the task times out
+                
+        string += "{:>14s}: {}\n".format('unitary', str(is_unitary))
+        
+        tmp = str(self.n_blocks) if self.n_blocks is not None else "unknown"
+        string += "{:>14s}: {}\n".format('n. blocks', tmp)
+        
+        tmp = "computed" if self.eigenvalues is not None else "unknown"
+        string += "{:>14s}: {}\n".format('eigenvalues', tmp)
+        tmp = "computed" if self.eigenstates is not None else "unknown"
+        string += "{:>14s}: {}\n".format('eigenstates', tmp)
+
+        return string
+    
+    def __len__(self:T)->int:
+        """
+        Returns the length of the matrix.
+
+        Returns:
+            int: The length of the matrix.
+
+        Raises:
+            ValueError: If the matrix is not square.
+        """
+        M,N = self.shape
+        if M != N :
+            raise ValueError("matrix is not square: __len__ is not well defined")
+        return M
+    
+    def __truediv__(self, other):
+        result = super().__truediv__(other)
+        return self.__class__(result)
+
+    def __itruediv__(self, other):
+        result = super().__truediv__(other)
+        return self.__class__(result)
 
 @dataclass
 class DiagonalBlockMatrix(Matrix):
