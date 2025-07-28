@@ -117,35 +117,6 @@ class Matrix(csr_matrix):
         """
         return deepcopy(self)
 
-    # def save(self:T,file):
-    #     """Save a matrix in a file
-
-    #     Parameters
-    #     ----------
-    #     file : str
-    #         The name of the file to save the matrix
-    #     """
-    #     if Matrix.module is sparse :
-    #         sparse.save_npz(file,self)
-    #     else :
-    #         raise ImplErr
-    
-    # @staticmethod
-    # def load(file):
-    #     """
-    #     Load a matrix from a file.
-
-    #     Parameters:
-    #         file (str): The name of the file to load the matrix from.
-
-    #     Returns:
-    #         The loaded matrix if the module is 'sparse', otherwise raises ImplErr.
-    #     """
-    #     if Matrix.module is sparse :
-    #         return sparse.load_npz(file)
-    #     else :
-    #         raise ImplErr
-    
     def save(self: T, file: str) -> None:
         """
         Saves a Matrix object to a file.
