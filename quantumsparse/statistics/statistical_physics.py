@@ -47,8 +47,10 @@ def classical_thermal_average_value(T:np.ndarray,E:np.ndarray,Obs:np.ndarray)->n
         np.ndarray: The classical thermal average value of the observable.
     """
     beta = T2beta(T)
-    Z = partition_function(E,beta)
-    return (np.exp(-np.tensordot(beta,E-min(E),axes=0))*Obs).sum(axis=1)/Z
+    # Z = partition_function(E,beta)
+    w = np.exp(-np.tensordot(beta,E-min(E),axes=0))
+    Z = w.sum(axis=1) # sum over eigenstates
+    return w @ Obs/Z
 
 
 def quantum_thermal_average_value(T: np.ndarray,E: np.ndarray,Op:Operator,Psi:Matrix)->np.ndarray:
@@ -96,8 +98,6 @@ def correlation_function(T: np.ndarray, E: np.ndarray, OpA: Operator, Psi: Matri
     np.ndarray
         The correlation function of the system.
     """
-    # Calculate the number of temperature points
-    NT = len(T)
     
     # Compute the thermal averages for the operators
     meanA = quantum_thermal_average_value(T, E, OpA, Psi)

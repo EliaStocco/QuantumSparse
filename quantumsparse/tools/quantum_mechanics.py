@@ -5,8 +5,11 @@ from quantumsparse.matrix import Matrix
 
 #@jit
 def expectation_value(Op:Operator,Psi:Operator)->np.ndarray:
-    braket = Psi.dagger() @ Op @ Psi
-    return braket.real
+    OPsi = Op @ Psi
+    tmp = OPsi.multiply(Psi.dagger()).real
+    return np.asarray(tmp.sum(axis=0)).flatten()
+    # braket = Psi.dagger() @ Op @ Psi
+    # return braket.real
     # V  = sparse.csr_matrix(Psi)
     # Vc = V.conjugate(True)
     # return ((Op @ V).multiply(Vc)).toarray().real.sum(axis=0)
