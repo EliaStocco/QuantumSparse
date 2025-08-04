@@ -189,7 +189,7 @@ class Operator(Matrix):
         
     #     return self.eigenvalues,self.eigenstates
 
-    def change_basis(self:T,S:T,direction="forward"):
+    def change_basis(self:T,S:T,direction="forward")->T:
         """
         Changes the basis of the operator using the given symmetry operator.
 
