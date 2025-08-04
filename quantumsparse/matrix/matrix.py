@@ -226,16 +226,14 @@ class Matrix(csr_matrix):
     
     def dagger(self:T)->T:
         """
-        Returns the Hermitian conjugate (or adjoint) of the matrix.
-
-        The Hermitian conjugate of a matrix is obtained by taking the transpose of the matrix and then taking the complex conjugate of each entry.
-
-        Returns
-        -------
-        T
-            The Hermitian conjugate of the matrix.
+        Returns the Hermitian conjugate (adjoint) of the sparse matrix.
         """
-        return self.clone(self.conjugate().transpose()) #type(self)(self.conjugate().transpose())
+        dg = self.conjugate(copy=True).transpose().tocsr()
+        out = self.__class__(dg)  # Construct new Matrix instance from sparse matrix
+        if out.is_diagonalized():
+            out.eigenvalues = np.conjugate(self.eigenvalues)
+            out.eigenstates = self.eigenstates.dagger()
+        return out
     
     #-----------------#
     # Linear Algebra
@@ -489,7 +487,7 @@ class Matrix(csr_matrix):
         # from matplotlib.colors import ListedColormap
         # Create a figure and axis
         fig, ax = plt.subplots()  
-        M = self.todense()
+        M = abs(self.todense())
         C = copy(M).astype(float)
         C.fill(np.nan)
         if self.blocks is None and cb:
@@ -518,8 +516,10 @@ class Matrix(csr_matrix):
             custom_cmap = "binary"
         # colors = copy(M).astype(object).fill("red")
         ax.matshow(np.multiply(M,C), cmap=custom_cmap,origin='upper',extent=[0, M.shape[1], M.shape[0], 0]) # ,facecolors=colors)
-        ax.xaxis.set(ticks=np.arange(0.5, M.shape[1]), ticklabels=np.arange(0,M.shape[1], 1))
-        ax.yaxis.set(ticks=np.arange(0.5, M.shape[0]), ticklabels=np.arange(0,M.shape[0], 1))
+        # ax.xaxis.set(ticks=np.arange(0.5, M.shape[1]), ticklabels=np.arange(0,M.shape[1], 1))
+        # ax.yaxis.set(ticks=np.arange(0.5, M.shape[0]), ticklabels=np.arange(0,M.shape[0], 1))
+        ax.set_xticks([])
+        ax.set_yticks([])
         argv = {
             "linewidth":0.5,
             "linestyle":'--',
@@ -1049,6 +1049,10 @@ class Matrix(csr_matrix):
         self.indices = self.indices.astype(self.indices.dtype, copy=False)
 
         self.eliminate_zeros()
+        
+        if self.eigenstates is not None:
+            self.eigenstates.clean()
+                    
         return self
         
     #-----------------#
@@ -1075,14 +1079,15 @@ class Matrix(csr_matrix):
         string += "{:>14s}: {}\n".format('hermitean', str(self.is_hermitean()))
         string += "{:>14s}: {}\n".format('symmetric', str(self.is_symmetric()))
         
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(self.is_unitary)
-            timeout_duration = 1
-            try:
-                # Wait for the result with a timeout
-                is_unitary = future.result(timeout=timeout_duration)
-            except concurrent.futures.TimeoutError:
-                is_unitary = "unknown"  # Return the default value if the task times out
+        # with concurrent.futures.ThreadPoolExecutor() as executor:
+        #     future = executor.submit(self.is_unitary)
+        #     timeout_duration = 1
+        #     try:
+        #         # Wait for the result with a timeout
+        #         is_unitary = future.result(timeout=timeout_duration)
+        #     except concurrent.futures.TimeoutError:
+        #         is_unitary = "unknown"  # Return the default value if the task times out
+        is_unitary = self.is_unitary()
                 
         string += "{:>14s}: {}\n".format('unitary', str(is_unitary))
         
