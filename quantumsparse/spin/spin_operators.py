@@ -2,8 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import List
 from quantumsparse.operator import Operator, OpArr
-from quantumsparse.tools.functions import prepare_opts
-from typing import Tuple, Union, Any, TypeVar
+from typing import Tuple, Union, TypeVar
 
 
 T = TypeVar('T', bound='SpinOperators')
