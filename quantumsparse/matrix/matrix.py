@@ -937,14 +937,14 @@ class Matrix(csr_matrix):
 
     def sort(self:T,inplace=False)->T:
         """Sort the eigenvalues, and the eigenvectors acoordingly."""
-        out = self.copy()
         index = np.argsort(self.eigenvalues)
+        out = self[index][:, index].copy()
         out.eigenvalues = self.eigenvalues[index]
         out.eigenstates = self.eigenstates[index][:, index]
         ##NEARLY_DIAG## out.nearly_diag = self.nearly_diag[index][:, index]
-        out = self[index][:, index]
+        
         if inplace:
-            self = out
+            self = out.copy()
         return out
     
     def normalize_eigenvecs(self:T):
