@@ -1,24 +1,27 @@
 import numpy as np
-from quantumsparse.tools.optimize import jit
-from quantumsparse.operator import Operator
-from quantumsparse.matrix import Matrix
+from quantumsparse.operator import Operator, Matrix
 
-#@jit
-def expectation_value(Op:Operator,Psi:Operator)->np.ndarray:
-    OPsi = Op @ Psi
-    tmp = OPsi.multiply(Psi.dagger()).real
-    return np.asarray(tmp.sum(axis=0)).flatten()
-    # braket = Psi.dagger() @ Op @ Psi
-    # return braket.real
-    # V  = sparse.csr_matrix(Psi)
-    # Vc = V.conjugate(True)
-    # return ((Op @ V).multiply(Vc)).toarray().real.sum(axis=0)
+def expectation_value(Op: Operator, Psi: Matrix) -> np.ndarray:
+    """
+    Compute <psi_i|Op|psi_i> for each column vector psi_i in Psi.
 
-# # to be modified
-# def expectation_value(Op,Psi):
-#     V  = sparse.csr_matrix(Psi)
-#     Vc = V.conjugate(True)
-#     return ((Op @ V).multiply(Vc)).toarray().real.sum(axis=0)
+    Parameters
+    ----------
+    Op : csr_matrix
+        Hermitian operator matrix (d × d).
+    Psi : csr_matrix
+        Matrix of state vectors as columns (d × N).
+
+    Returns
+    -------
+    np.ndarray
+        Expectation values array of length N.
+    """
+    Y:Matrix = Op @ Psi
+    Y = Psi.conjugate().multiply(Y)
+    Y = Y.real
+    return np.array(Y.sum(axis=0)).flatten()
+
 
 #@jit
 def standard_deviation(Op:Operator,Psi:Operator,mean:np.ndarray=None)->np.ndarray:
