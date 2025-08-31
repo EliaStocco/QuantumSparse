@@ -48,6 +48,7 @@ def main():
     # Load the Hamiltonian
     logger.info("Loading Hamiltonian from file.")
     H = Operator.load(args.input)
+    H /= 1000 # meV -> eV
     logger.debug("Hamiltonian loaded successfully.")
 
     # Create spin operators
