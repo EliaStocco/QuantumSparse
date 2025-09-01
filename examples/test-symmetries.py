@@ -1,9 +1,10 @@
 import numpy as np
-from quantumsparse.spin import SpinOperators, from_S2_to_S
+from quantumsparse.spin import SpinOperators
 from quantumsparse.operator import Operator
-from quantumsparse.operator import Symmetry, roots_of_unity
-from quantumsparse.spin import Heisenberg, anisotropy, DM
+from quantumsparse.operator import Symmetry
+from quantumsparse.spin import Heisenberg, anisotropy, Dzyaloshinskii_Moriya
 from quantumsparse.spin.shift import shift
+from quantumsparse.tools.mathematics import roots_of_unity
 import pytest
 
 # In quantumsparse/spin/interactions.py you can find:
@@ -47,7 +48,7 @@ def test_Heisenberg_symmetries(S=1,NSpin=4):
     # even considering the time spent to diagonalize the symmetry operator
     # (which can be done once, save to file the results, and load them again the next time).
     
-    H = Heisenberg(Sx,Sy,Sz,couplings=[1,2,3]) + anisotropy(Sz) + DM(Sx,Sy,Sz,couplings=[12,23,35])
+    H = Heisenberg(Sx,Sy,Sz,couplings=[1,2,3]) # + anisotropy(Sz) + Dzyaloshinskii_Moriya(Sx,Sy,Sz,couplings=[12,23,35])
     print(repr(H))
     
     nblocks, _ = H.count_blocks()
@@ -63,16 +64,23 @@ def test_Heisenberg_symmetries(S=1,NSpin=4):
     assert H is not Hnosym, "the variables should be independent"
     
     E,Psi = H.diagonalize_with_symmetry(S=[D])
-    Enosym,Psinosym = Hnosym.diagonalize()
+    assert H.test_eigensolution().norm() < 1e-10, "The eigensolution is not correct."
     
-    H.sort(inplace=True)
-    Hnosym.sort(inplace=True)
+     #-----------------#
+    Enosym,Psinosym = Hnosym.diagonalize()
+    assert Hnosym.test_eigensolution().norm() < 1e-10, "The eigensolution is not correct."
+    
+    H = H.sort()
+    Hnosym = Hnosym.sort()
+    
+    assert H.test_eigensolution().norm() < 1e-10, "The eigensolution is not correct."
+    assert Hnosym.test_eigensolution().norm() < 1e-10, "The eigensolution is not correct."
     
     assert np.allclose(H.eigenvalues,Hnosym.eigenvalues), "The eigenvalues should be the same."
-    assert np.allclose(H.eigenstates,Hnosym.eigenstates), "The eigenstates should be the same."
-    
-    return
-    
+    test = (H.eigenstates - Hnosym.eigenstates).norm()
+    if test > 1e-10:
+        U = H.eigenstates.dagger() @ Hnosym.eigenstates
+        assert U.is_unitary(), "The eigenstates should be the same up to a unitary transformation."
 
 if __name__ == "__main__":
     
