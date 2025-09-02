@@ -91,7 +91,14 @@ def get_unitary_rotation_matrix(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.nd
         Ud[n] = U[n].dagger()
     return U, Ud
     
-
+def cylindrical_coordinates(spins:Tuple[OpArr,OpArr,OpArr])->Tuple[List[Matrix],List[Matrix]]:
+    Sx, Sy, Sz = spins
+    N = len(Sx)
+    EulerAngles = np.zeros((N, 3))
+    EulerAngles[:, 2] = np.linspace(0, 360, N, endpoint=False)
+    EulerAngles = np.pi * EulerAngles / 180
+    U, Ud = get_unitary_rotation_matrix(spins, EulerAngles)
+    return U, Ud
 
 def rotate_spins(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray,method:str="R")->Tuple[List[Matrix],List[Matrix],List[Matrix]]:
     Sx, Sy, Sz = spins
