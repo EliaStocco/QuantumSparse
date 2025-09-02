@@ -105,7 +105,7 @@ def anisotropy(Sz:np.ndarray,couplings=1,opts=None)->Operator:
     """
     return Ising(Sz,couplings,nn=0,opts=opts)
 
-def rhombicity(Sx:np.ndarray,Sy:np.ndarray,couplings,opts=None)->Operator:
+def rhombicity(Sx:np.ndarray,Sy:np.ndarray,couplings=1,opts=None)->Operator:
     """
     This function calculates the rhombicity term in a spin Hamiltonian.
     

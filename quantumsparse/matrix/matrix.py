@@ -1022,37 +1022,22 @@ class Matrix(csr_matrix):
             new.eigenstates = U @ self.eigenstates
         return new.clean()
         
-    def clean(self:T,noise=NOISE):
+    def clean(self: T, noise=NOISE):
         """
         Removes elements in the matrix with absolute value below `noise`.
 
         Parameters:
         - noise: float, threshold below which values are considered noise
         """
-        mask = np.abs(self.data) >= noise
+        # Zero out small entries
+        self.data[np.abs(self.data) < noise] = 0.0
 
-        self.data = self.data[mask]
-        self.indices = self.indices[mask]
-
-        # Reconstruct indptr safely
-        row_counts = np.diff(self.indptr)
-        kept_counts = np.add.reduceat(mask, np.cumsum(np.r_[0, row_counts[:-1]]))
-
-        # Ensure the correct dtype for indptr (usually int32)
-        new_indptr = np.empty_like(self.indptr)
-        np.cumsum(np.r_[0, kept_counts], out=new_indptr)
-
-        self.indptr = new_indptr
-
-        # Ensure correct dtype of data and indices if needed
-        self.data = self.data.astype(self.data.dtype, copy=False)
-        self.indices = self.indices.astype(self.indices.dtype, copy=False)
-
+        # Let SciPy handle removing zeros and fixing indptr
         self.eliminate_zeros()
-        
-        if self.eigenstates is not None:
+
+        if getattr(self, "eigenstates", None) is not None:
             self.eigenstates.clean()
-                    
+
         return self
         
     #-----------------#
