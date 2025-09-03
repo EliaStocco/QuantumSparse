@@ -25,3 +25,6 @@ def test_correlation_function_positive_when_OpB_none(dim, num_temps):
 
     Chi = correlation_function(T, E, OpA, Psi, OpB=None)
     assert np.all(Chi >= 0), "Correlation function should be non-negative when OpB is None"
+    
+if __name__ == "__main__":
+    pytest.main([__file__])

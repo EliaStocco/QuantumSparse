@@ -1,14 +1,31 @@
 import pickle
 import numpy as np
-import concurrent.futures
 from copy import copy, deepcopy
-from typing import TypeVar, Union, Type, List, Dict, Any, Optional
+from typing import TypeVar, Union, Type, List, Dict, Any, Optional, Callable
+from functools import wraps
 from dataclasses import dataclass, field
 from scipy import sparse
+from scipy.sparse import spmatrix
 from scipy.sparse import csr_matrix, csr_array, bmat
 from quantumsparse.bookkeeping import ImplErr
 from quantumsparse.tools import first_larger_than_N
 from quantumsparse.bookkeeping import TOLERANCE, NOISE
+
+
+def preserve_type(method: Callable[..., spmatrix]) -> Callable[..., Any]:
+    """Decorator to ensure operator results are of subclass type."""
+    @wraps(method)
+    def wrapper(self: T, other: spmatrix, *args, **kwargs) -> T:
+        result = method(self, other, *args, **kwargs)
+
+        if isinstance(other, sparse.spmatrix) and not isinstance(result, type(self)):
+            raise TypeError(
+                f"Error: output should be of type '{type(self)}' "
+                f"but got '{type(result)}'"
+            )
+    
+        return result
+    return wrapper
 
     
 T = TypeVar('T',bound="Matrix") 
@@ -1121,7 +1138,6 @@ class Matrix(csr_matrix):
         result /= value
         return result
 
-
     def __itruediv__(self: T, value)->T:
         """
         Perform in-place true division by the given value.
@@ -1161,7 +1177,6 @@ class Matrix(csr_matrix):
         result *= value
         return result
 
-
     def __imul__(self: T, value)->T:
         """
         Perform in-place multiplication by the given value.
@@ -1182,22 +1197,18 @@ class Matrix(csr_matrix):
             self.eigenvalues *= value
         return self
 
-    def __matmul__(self:T, other: sparse.spmatrix)->T:
-        a = super().__matmul__(other)
-        assert type(a) == type(self), f"Error: output quantity should be of type '{type(self)}' but it is '{type(a)}'"
-        return a
+    @preserve_type
+    def __matmul__(self:T, other: spmatrix) -> T:
+        return super().__matmul__(other)
+
+    @preserve_type
+    def __rmatmul__(self:T, other: spmatrix) -> T:
+        return super().__rmatmul__(other)
+
+    @preserve_type
+    def __imatmul__(self:T, other: spmatrix) -> T:
+        return super().__imatmul__(other)
     
-    def __rmatmul__(self:T, other: sparse.spmatrix)->T:
-        a = super().__rmatmul__(other)
-        assert type(a) == type(self), f"Error: output quantity should be of type '{type(self)}' but it is '{type(a)}'"
-        return a
-
-    def __imatmul__(self:T, other: sparse.spmatrix)->T:
-        a = super().__imatmul__(other)
-        assert type(a) == type(self), f"Error: output quantity should be of type '{type(self)}' but it is '{type(a)}'" 
-        return a
-
-
 @dataclass
 class DiagonalBlockMatrix(Matrix):
     

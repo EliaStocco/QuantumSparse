@@ -24,3 +24,4 @@ def compare_eigensolutions(H1:Operator, H2:Operator, atol:float=1e-10,tol:float=
     if diff > tol:
         U = _H1.eigenstates.dagger() @ _H2.eigenstates
         assert U.is_unitary(), "Eigenstates should match up to a unitary transformation"
+        

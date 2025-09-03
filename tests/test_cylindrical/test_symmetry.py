@@ -73,19 +73,9 @@ def test_hamiltonian(N: int, S: float,method:str,interaction:str):
     Hcylsym.diagonalize_with_symmetry([Dcyl])
     compare_eigensolutions(Hcyl, Hcylsym)
     
+
 if __name__ == "__main__":
-    test_hamiltonian(4, 0.5, method="R", interaction="heisenberg")
-    test_hamiltonian(4, 0.5, method="U", interaction="heisenberg")
-    test_hamiltonian(4, 1.0, method="R", interaction="heisenberg")
-    test_hamiltonian(4, 1.0, method="U", interaction="heisenberg")
-    test_hamiltonian(3, 0.5, method="R", interaction="DM")
-    test_hamiltonian(3, 0.5, method="U", interaction="DM")
-    test_hamiltonian(4, 0.5, method="R", interaction="biquadratic")
-    test_hamiltonian(4, 0.5, method="U", interaction="biquadratic")
-    test_hamiltonian(4, 1.0, method="R", interaction="anisotropy")
-    test_hamiltonian(4, 1.0, method="U", interaction="anisotropy")
-    test_hamiltonian(4, 1.0, method="R", interaction="rhombicity")
-    test_hamiltonian(4, 1.0, method="U", interaction="rhombicity")
+    pytest.main([__file__])
     
     
     
