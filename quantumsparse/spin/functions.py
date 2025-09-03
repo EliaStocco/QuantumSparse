@@ -25,15 +25,15 @@ def magnetic_moments(Sx=None,Sy=None,Sz=None,opts=None)->Tuple[Operator,Operator
 
 # https://www.meccanismocomplesso.org/en/3d-rotations-and-euler-angles-in-python/
 def Rx(phi):
-  return np.asarray([[ 1, 0           , 0           ],
+  return np.matrix([[ 1, 0           , 0           ],
                    [ 0, np.cos(phi),-np.sin(phi)],
                    [ 0, np.sin(phi), np.cos(phi)]])  
 def Ry(theta):
-  return np.asarray([[ np.cos(theta), 0, np.sin(theta)],
+  return np.matrix([[ np.cos(theta), 0, np.sin(theta)],
                    [ 0           , 1, 0           ],
                    [-np.sin(theta), 0, np.cos(theta)]])  
 def Rz(psi):
-  return np.asarray([[ np.cos(psi), -np.sin(psi), 0 ],
+  return np.matrix([[ np.cos(psi), -np.sin(psi), 0 ],
                    [ np.sin(psi), np.cos(psi) , 0 ],
                    [ 0           , 0            , 1 ]])
 
@@ -52,7 +52,7 @@ def euler_to_axis_angle(phi: float, theta: float, psi: float) -> Tuple[float, np
     """
     # Use existing Rx, Ry, Rz functions (assume already defined)
     R = Rz(psi) @ Ry(theta) @ Rx(phi)
-    R = np.asarray(R)  # convert from np.asarray to ndarray
+    R = np.asarray(R)  # convert from np.matrix to ndarray
 
     # Compute the rotation angle θ from the trace
     trace = np.trace(R)

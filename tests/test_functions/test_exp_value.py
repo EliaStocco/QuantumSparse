@@ -34,3 +34,6 @@ def test_expectation_value_random_operator_and_vectors(dim, N):
     eigvals = np.linalg.eigvalsh(Op_dense)
     assert np.all(ev >= eigvals.min() - 1e-12) and np.all(ev <= eigvals.max() + 1e-12), \
         "Expectation values should be within eigenvalue range."
+
+if __name__ == "__main__":
+    pytest.main([__file__])

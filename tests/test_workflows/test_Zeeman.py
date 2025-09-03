@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from quantumsparse.operator import Operator
 from quantumsparse.spin import SpinOperators
 from quantumsparse.spin.functions import magnetic_moments
@@ -33,3 +32,6 @@ def test_spin_system_diagonalization(N, S):
     # Ensure eigenvalues exist and have correct length
     assert H.eigenvalues is not None
     assert len(H.eigenvalues) == int(2*S+1)**N
+
+if __name__ == "__main__":
+    pytest.main([__file__])

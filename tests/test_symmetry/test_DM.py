@@ -39,3 +39,6 @@ def test_dm_with_vs_without_symmetry(S, NSpin):
     
     # test
     compare_eigensolutions(H, Hnosym)
+
+if __name__ == "__main__":
+    pytest.main([__file__])

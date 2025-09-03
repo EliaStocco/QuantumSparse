@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from quantumsparse.matrix.matrix import Matrix
 
 def make_matrix():
@@ -57,3 +58,6 @@ def test_clean_does_not_break_eigenstates(monkeypatch):
     m.clean(noise=1e-10)
 
     assert DummyEigen.called
+
+if __name__ == "__main__":
+    pytest.main([__file__])

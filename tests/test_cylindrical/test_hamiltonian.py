@@ -59,7 +59,8 @@ def test_hamiltonian(N: int, S: float,method:str,interaction:str):
     test = (Hcyl - H).norm()
     assert test < TOLERANCE, f"Heisenberg Hamiltonian mismatch in cylindrical coordinates (N={N}, S={S}): {test}"
     
-    
+if __name__ == "__main__":
+    pytest.main([__file__])
     
     
     
