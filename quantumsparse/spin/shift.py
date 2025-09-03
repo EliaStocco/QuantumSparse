@@ -2,7 +2,6 @@ from quantumsparse.operator import Operator, Symmetry
 from quantumsparse.spin import SpinOperators
 from quantumsparse.tools.mathematics import roots_of_unity
 import numpy as np
-import numpy as np
 
 def shift_foundamental(N:int):
     T = np.zeros((N,N))
@@ -35,10 +34,12 @@ def shift(ops: SpinOperators, parallel: bool = True) -> Operator:
     Operator
         The shift/translation operator for the spin system.
     """
+    from scipy.sparse import lil_matrix
     basis = np.asarray(ops.basis)
     N = len(basis)
     basis_lookup = {tuple(b): i for i, b in enumerate(basis)}
-    D = ops.empty()
+    # D = ops.empty()
+    D = lil_matrix((N, N))
 
     def process_state(c):
         right = basis[c]
