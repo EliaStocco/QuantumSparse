@@ -25,15 +25,15 @@ def magnetic_moments(Sx=None,Sy=None,Sz=None,opts=None)->Tuple[Operator,Operator
 
 # https://www.meccanismocomplesso.org/en/3d-rotations-and-euler-angles-in-python/
 def Rx(phi):
-  return np.matrix([[ 1, 0           , 0           ],
+  return np.asarray([[ 1, 0           , 0           ],
                    [ 0, np.cos(phi),-np.sin(phi)],
                    [ 0, np.sin(phi), np.cos(phi)]])  
 def Ry(theta):
-  return np.matrix([[ np.cos(theta), 0, np.sin(theta)],
+  return np.asarray([[ np.cos(theta), 0, np.sin(theta)],
                    [ 0           , 1, 0           ],
                    [-np.sin(theta), 0, np.cos(theta)]])  
 def Rz(psi):
-  return np.matrix([[ np.cos(psi), -np.sin(psi), 0 ],
+  return np.asarray([[ np.cos(psi), -np.sin(psi), 0 ],
                    [ np.sin(psi), np.cos(psi) , 0 ],
                    [ 0           , 0            , 1 ]])
 
@@ -121,7 +121,7 @@ def rotate_spins(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray,method:st
             # v = np.asarray([Sx[n],Sy[n],Sz[n]],dtype=object)
             v[0], v[1], v[2] = Sx[n],Sy[n],Sz[n]
             temp = R @ v
-            SxR[n],SyR[n], SzR[n] = temp[0,0], temp[0,1], temp[0,2]
+            SxR[n],SyR[n], SzR[n] = temp[0], temp[1], temp[2]
     elif method == "U":
         # rotation in Hilbert space
         from quantumsparse.matrix import Matrix
