@@ -85,11 +85,11 @@ def get_Euler_angles(N:int):
     EulerAngles = np.pi * EulerAngles / 180
     return EulerAngles
 
-def get_unitary_rotation_matrix(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray)->Tuple[List[Matrix],List[Matrix]]:
+def get_unitary_rotation_matrix(spins:Tuple[List[Operator],List[Operator],List[Operator]],EulerAngles:np.ndarray)->Tuple[List[Operator],List[Operator]]:
     Sx, Sy, Sz = spins
     N = len(Sx)
-    U:List[Matrix]  = [None]*N # np.full(N,1.,dtype=object)
-    Ud:List[Matrix] = [None]*N # np.full(N,1.,dtype=object)
+    U:List[Operator]  = [None]*N # np.full(N,1.,dtype=object)
+    Ud:List[Operator] = [None]*N # np.full(N,1.,dtype=object)
     for n in range(N):
         phi, theta, psi = EulerAngles[n,:]
         # theta,n = euler_to_axis_angle(phi, theta, psi)
@@ -97,7 +97,7 @@ def get_unitary_rotation_matrix(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.nd
         Ud[n] = U[n].dagger()
     return U, Ud
     
-def cylindrical_coordinates(spins:Tuple[OpArr,OpArr,OpArr])->Matrix:
+def cylindrical_coordinates(spins:Tuple[List[Operator],List[Operator],List[Operator]])->Matrix:
     from quantumsparse.tools.mathematics import product
     Sx, Sy, Sz = spins
     N = len(Sx)
@@ -126,8 +126,8 @@ def rotate_spins(spins:Tuple[OpArr,OpArr,OpArr],EulerAngles:np.ndarray,method:st
         # rotation in Hilbert space
         from quantumsparse.matrix import Matrix
         # or annotate explicitly:
-        U: List[Matrix]
-        Ud: List[Matrix]
+        U: List[Operator]
+        Ud: List[Operator]
         U, Ud = get_unitary_rotation_matrix(spins, EulerAngles)
         for n in range(N):
             SxR[n] = U[n]@Sx[n]@Ud[n]

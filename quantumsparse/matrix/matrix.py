@@ -974,7 +974,7 @@ class Matrix(csr_matrix):
         func = lambda x: np.log(x)
         return self._eigenvalues_wise_operation(func)
     
-    def _eigenvalues_wise_operation(self,func,diag_inplace:bool=True,tol:float=1e-8,*argv,**kwargs):
+    def _eigenvalues_wise_operation(self:T,func,diag_inplace:bool=True,tol:float=1e-8,*argv,**kwargs)->T:
         """General function to apply function to a matrix via diagonalization, e.g. exp, ln, sqrt."""
         if diag_inplace:
             if not self.is_diagonalized():
@@ -985,8 +985,9 @@ class Matrix(csr_matrix):
             if not new.is_diagonalized():
                 new.diagonalize(*argv,**kwargs)
         eigenvalues = func(new.eigenvalues)
-        eigenstates:Matrix = new.eigenstates
-        new = Matrix(eigenstates@Matrix.diags(eigenvalues)@eigenstates.inv())
+        eigenstates:T = new.eigenstates
+        cls = type(self)
+        new = cls(eigenstates@cls.diags(eigenvalues)@eigenstates.inv())
         new.eigenvalues = eigenvalues
         new.eigenstates = eigenstates
         # test = new.test_eigensolution()
@@ -1181,14 +1182,20 @@ class Matrix(csr_matrix):
             self.eigenvalues *= value
         return self
 
-    # def __matmul__(self:T, other: sparse.spmatrix)->T:
-    #     ...
-        
-    # def __rmatmul__(self:T, other: sparse.spmatrix)->T:
-    #     ...
+    def __matmul__(self:T, other: sparse.spmatrix)->T:
+        a = super().__matmul__(other)
+        assert type(a) == type(self), f"Error: output quantity should be of type '{type(self)}' but it is '{type(a)}'"
+        return a
+    
+    def __rmatmul__(self:T, other: sparse.spmatrix)->T:
+        a = super().__rmatmul__(other)
+        assert type(a) == type(self), f"Error: output quantity should be of type '{type(self)}' but it is '{type(a)}'"
+        return a
 
-    # def __imatmul__(self:T, other: sparse.spmatrix)->T:
-    #     ...
+    def __imatmul__(self:T, other: sparse.spmatrix)->T:
+        a = super().__imatmul__(other)
+        assert type(a) == type(self), f"Error: output quantity should be of type '{type(self)}' but it is '{type(a)}'" 
+        return a
 
 
 @dataclass
