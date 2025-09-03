@@ -1101,7 +1101,7 @@ class Matrix(csr_matrix):
             raise ValueError("matrix is not square: __len__ is not well defined")
         return M
     
-    def __truediv__(self: T, value):
+    def __truediv__(self: T, value)->T:
         """
         Return a new instance resulting from true division by the given value.
 
@@ -1121,7 +1121,7 @@ class Matrix(csr_matrix):
         return result
 
 
-    def __itruediv__(self: T, value):
+    def __itruediv__(self: T, value)->T:
         """
         Perform in-place true division by the given value.
 
@@ -1141,7 +1141,7 @@ class Matrix(csr_matrix):
             self.eigenvalues /= value
         return self
     
-    def __mul__(self: T, value):
+    def __mul__(self: T, value)->T:
         """
         Return a new instance resulting from multiplication by the given value.
 
@@ -1161,7 +1161,7 @@ class Matrix(csr_matrix):
         return result
 
 
-    def __imul__(self: T, value):
+    def __imul__(self: T, value)->T:
         """
         Perform in-place multiplication by the given value.
 
@@ -1180,6 +1180,15 @@ class Matrix(csr_matrix):
         if self.eigenvalues is not None:
             self.eigenvalues *= value
         return self
+
+    # def __matmul__(self:T, other: sparse.spmatrix)->T:
+    #     ...
+        
+    # def __rmatmul__(self:T, other: sparse.spmatrix)->T:
+    #     ...
+
+    # def __imatmul__(self:T, other: sparse.spmatrix)->T:
+    #     ...
 
 
 @dataclass

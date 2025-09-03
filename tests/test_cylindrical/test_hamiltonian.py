@@ -49,7 +49,7 @@ def test_hamiltonian(N: int, S: float,method:str,interaction:str):
 
     # Spin operators in cartesian frame --> Heisenberg Hamiltonian in cartesian frame --> rotation to cylindrical frame
     H = get_H(Sx=Sx, Sy=Sy, Sz=Sz)
-    H = H.unitary_transformation(U).clean()
+    H = H.unitary_transformation(U)
     
     # Spin operators in cartesian frame --> rotation to cylindrical frame --> Hamiltonian in cylindrical frame
     EulerAngles = get_Euler_angles(N)

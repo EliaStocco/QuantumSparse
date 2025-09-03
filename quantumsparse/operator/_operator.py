@@ -15,6 +15,7 @@ class Operator(Matrix):
     """
     
     name:str
+    eigenstates:T
     
     
     # def __mul__(self: T, other: T) -> T:

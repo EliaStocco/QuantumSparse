@@ -4,6 +4,7 @@ from quantumsparse.spin import SpinOperators, rhombicity
 from quantumsparse.operator import Operator, Symmetry
 from quantumsparse.tools.mathematics import roots_of_unity
 from quantumsparse.spin.shift import shift
+from quantumsparse.tools.debug import compare_eigensolutions
 
 
 @pytest.mark.parametrize("S,NSpin", [(0.5, 3), (1, 3), (1, 4)])
@@ -31,18 +32,10 @@ def test_anisotropy_with_vs_without_symmetry(S, NSpin):
     Hnosym = Operator(H.copy())
 
     # with symmetry
-    E_sym, Psi_sym = H.diagonalize_with_symmetry(S=[D])
-    assert H.test_eigensolution().norm() < 1e-10
-
+    H.diagonalize_with_symmetry(S=[D])
+    
     # without symmetry
-    E_plain, Psi_plain = Hnosym.diagonalize()
-    assert Hnosym.test_eigensolution().norm() < 1e-10
-
-    # compare eigenvalues
-    assert np.allclose(np.sort(E_sym.real), np.sort(E_plain.real), atol=1e-10)
-
-    # eigenstates: should agree up to a unitary
-    diff = (H.eigenstates - Hnosym.eigenstates).norm()
-    if diff > 1e-10:
-        U = H.eigenstates.dagger() @ Hnosym.eigenstates
-        assert U.is_unitary()
+    Hnosym.diagonalize()
+    
+    # test
+    compare_eigensolutions(H, Hnosym)

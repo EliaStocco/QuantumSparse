@@ -4,6 +4,7 @@ from quantumsparse.spin import SpinOperators, Heisenberg
 from quantumsparse.operator import Operator, Symmetry
 from quantumsparse.tools.mathematics import roots_of_unity
 from quantumsparse.spin.shift import shift
+from quantumsparse.tools.debug import compare_eigensolutions
 
 @pytest.mark.parametrize("N, S", [
     (2, 0.5),
@@ -71,22 +72,10 @@ def test_heisenberg_with_vs_without_symmetry(S, NSpin):
     assert H is not Hnosym, "Copies should be independent objects"
 
     # with symmetry
-    E_sym, Psi_sym = H.diagonalize_with_symmetry(S=[D])
-    assert H.test_eigensolution().norm() < 1e-10, "Symmetry eigensolution not correct"
-
+    H.diagonalize_with_symmetry(S=[D])
+    
     # without symmetry
-    E_plain, Psi_plain = Hnosym.diagonalize()
-    assert Hnosym.test_eigensolution().norm() < 1e-10, "Plain eigensolution not correct"
-
-    # sort eigenpairs
-    H = H.sort()
-    Hnosym = Hnosym.sort()
-
-    assert np.allclose(H.eigenvalues, Hnosym.eigenvalues, atol=1e-10), \
-        "Eigenvalues should be identical with and without symmetry"
-
-    # eigenstates can differ by a unitary transform (degenerate subspaces)
-    diff = (H.eigenstates - Hnosym.eigenstates).norm()
-    if diff > 1e-10:
-        U = H.eigenstates.dagger() @ Hnosym.eigenstates
-        assert U.is_unitary(), "Eigenstates should match up to a unitary transformation"
+    Hnosym.diagonalize()
+    
+    # test
+    compare_eigensolutions(H, Hnosym)
