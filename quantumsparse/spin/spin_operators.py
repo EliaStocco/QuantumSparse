@@ -275,11 +275,11 @@ def single_Szpm(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr]:
         acting on the local (only one site) Hilbert space
     """
     NSpin = len(spin_values)
-    Sx = np.zeros(NSpin,dtype=object) # s x
-    Sy = np.zeros(NSpin,dtype=object) # s y
-    Sz = np.zeros(NSpin,dtype=object) # s z
-    Sp = np.zeros(NSpin,dtype=object) # s plus
-    Sm = np.zeros(NSpin,dtype=object) # s minus
+    Sx:List[Operator] = np.zeros(NSpin,dtype=object) # s x
+    Sy:List[Operator] = np.zeros(NSpin,dtype=object) # s y
+    Sz:List[Operator] = np.zeros(NSpin,dtype=object) # s z
+    Sp:List[Operator] = np.zeros(NSpin,dtype=object) # s plus
+    Sm:List[Operator] = np.zeros(NSpin,dtype=object) # s minus
     dimensions = spin2dim(spin_values)  
     
     for i,s,deg in zip(range(NSpin),spin_values,dimensions):
