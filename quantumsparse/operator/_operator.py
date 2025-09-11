@@ -320,14 +320,17 @@ class Operator(Matrix):
         return self.eigenvalues, self.eigenstates
         # return copy(self.eigenvalues),copy(self.eigenstates)
     
-    def energy_levels(self,tol=1e-8):
+    def energy_levels(self,tol=1e-8,return_indices=False):
         
         if self.eigenvalues is None:
             raise ValueError("The operator has not been diagonalized yet.")
         
         w,index = unique_with_tolerance(self.eigenvalues,tol)
 
-        return w,np.asarray([ (index==a).sum() for a in range(len(w)) ])
+        if return_indices:
+            return w,np.asarray([ (index==a).sum() for a in range(len(w)) ]), index
+        else:
+            return w,np.asarray([ (index==a).sum() for a in range(len(w)) ])
     
     def band_diagram(self:T,sym:T):
         
