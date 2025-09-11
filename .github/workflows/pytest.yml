@@ -28,7 +28,25 @@ jobs:
       #   run: |
       #     flake8 . --exclude=examples --count --select=E9,F63,F7,F82 --show-source --statistics
       #     flake8 . --exclude=examples --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      
+      - name: Run tests (quantumsparse)
+        run: pytest quantumsparse
 
-      - name: Run tests with pytest
-        run: |
-          pytest
+      - name: Run tests (cylindrical)
+        run: pytest tests/test_cylindrical
+      
+      - name: Run tests (diagonalization)
+        run: pytest tests/test_diagonalization
+
+      - name: Run tests (functions)
+        run: pytest tests/test_functions
+      
+      - name: Run tests (methods)
+        run: pytest tests/test_methods
+      
+      - name: Run tests (symmetry)
+        run: pytest tests/test_symmetry
+      
+      - name: Run tests (workflows)
+        run: pytest tests/test_workflows
+    
