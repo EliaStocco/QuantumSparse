@@ -5,7 +5,12 @@ A `scipy.sparse` based package to represent quantum spin operators and exact dia
 ## Installation
 You can install this package in *editable* mode using
 ```bash
+pyenv virtualenv 3.9 qs
+pyenv activate qs 
+# pyenv local qs
 pip install -e .
+# if you want pytest
+# python -m pip install -e .[dev]
 ```
 
 ## Example
