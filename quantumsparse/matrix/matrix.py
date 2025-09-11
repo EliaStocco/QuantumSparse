@@ -1209,6 +1209,9 @@ class Matrix(csr_matrix):
     def __imatmul__(self:T, other: spmatrix) -> T:
         return super().__imatmul__(other)
     
+    def todense(self:T,*argv,**kwargs)->np.ndarray:
+        return np.asarray(super().todense(*argv,**kwargs))
+    
 @dataclass
 class DiagonalBlockMatrix(Matrix):
     
