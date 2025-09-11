@@ -6,15 +6,10 @@ from quantumsparse.tools.mathematics import roots_of_unity
 from quantumsparse.spin.shift import shift
 from quantumsparse.spin.functions import cylindrical_coordinates, rotate_spins, get_unitary_rotation_matrix, get_Euler_angles
 from quantumsparse.tools.mathematics import product
+from quantumsparse.conftest import *
 
-TOLERANCE = 1e-10
-
-@pytest.mark.parametrize("N, S", [
-    (2, 0.5),
-    (3, 0.5),
-    (4, 0.5),
-    (4, 1.0),
-])
+@parametrize_N
+@parametrize_S
 def test_rotation_method(N: int, S: float):
        
     spin_values = np.full(N, S)
@@ -31,13 +26,9 @@ def test_rotation_method(N: int, S: float):
         assert (SrR[n] - SrU[n]).norm() < TOLERANCE, "Sr rotation mismatch"
         assert (SzR[n] - SzU[n]).norm() < TOLERANCE, "Sz rotation mismatch"
 
-@pytest.mark.parametrize("method", ["R", "U"])
-@pytest.mark.parametrize("N, S", [
-    (2, 0.5),
-    (3, 0.5),
-    (4, 0.5),
-    (4, 1.0),
-])
+@parametrize_method
+@parametrize_N
+@parametrize_S
 def test_heisenberg_hamiltonian(N: int, S: float,method:str):
     """
     Build a Heisenberg Hamiltonian for a ring of N spins of spin-S.

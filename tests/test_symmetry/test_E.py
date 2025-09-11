@@ -5,15 +5,16 @@ from quantumsparse.operator import Operator, Symmetry
 from quantumsparse.tools.mathematics import roots_of_unity
 from quantumsparse.spin.shift import shift
 from quantumsparse.tools.debug import compare_eigensolutions
+from quantumsparse.conftest import *
 
-
-@pytest.mark.parametrize("S,NSpin", [(0.5, 3), (1, 3), (1, 4)])
-def test_anisotropy_with_vs_without_symmetry(S, NSpin):
+@parametrize_N
+@parametrize_S
+def test_anisotropy_with_vs_without_symmetry(S, N):
     """
     Test that adding anisotropy to a Heisenberg Hamiltonian
     yields consistent results with and without symmetry diagonalization.
     """
-    spin_values = np.full(NSpin, S)
+    spin_values = np.full(N, S)
 
     # spin operators
     SpinOp = SpinOperators(spin_values)
@@ -22,8 +23,10 @@ def test_anisotropy_with_vs_without_symmetry(S, NSpin):
     # symmetry operator (shift)
     D: Symmetry = shift(SpinOp)
     D.diagonalize(method="dense")
-    l, N = D.energy_levels()
-    assert np.allclose(np.sort(l), np.sort(roots_of_unity(NSpin)))
+    l, n = D.energy_levels()
+    assert len(l) == N, "wrong number of energy levels for shift symmetry"
+    assert np.allclose(np.sort(l), np.sort(roots_of_unity(N))), "The eigenvalues should be the roots of unity."
+
 
     # Hamiltonian with anisotropy
     H = rhombicity(Sx,Sy,couplings=1)  # easy-axis term

@@ -5,13 +5,10 @@ from quantumsparse.operator import Operator, Symmetry
 from quantumsparse.tools.mathematics import roots_of_unity
 from quantumsparse.spin.shift import shift
 from quantumsparse.tools.debug import compare_eigensolutions
+from quantumsparse.conftest import *
 
-@pytest.mark.parametrize("N, S", [
-    (2, 0.5),
-    (3, 0.5),
-    (4, 0.5),
-    (4, 1.0),
-])
+@parametrize_N
+@parametrize_S
 def test_heisenberg_hamiltonian(N: int, S: float) -> Operator:
     """
     Build a Heisenberg Hamiltonian for a ring of N spins of spin-S.
@@ -37,8 +34,9 @@ def test_heisenberg_hamiltonian(N: int, S: float) -> Operator:
     H_lib = Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz)
     assert np.allclose(H_lib.todense(), H_manual.todense()), "Mismatch in Heisenberg Hamiltonian construction"
     
-@pytest.mark.parametrize("S,NSpin", [(0.5, 3), (1, 4), (1.5, 2)])
-def test_heisenberg_with_vs_without_symmetry(S, NSpin):
+@parametrize_N
+@parametrize_S
+def test_heisenberg_with_vs_without_symmetry(S, N):
     """
     Compare Heisenberg diagonalization with and without symmetries.
 
@@ -47,7 +45,7 @@ def test_heisenberg_with_vs_without_symmetry(S, NSpin):
       - Diagonalize Heisenberg Hamiltonian with symmetry and without.
       - Ensure eigenvalues agree, and eigenstates match up to a unitary transformation.
     """
-    spin_values = np.full(NSpin, S)
+    spin_values = np.full(N, S)
 
     # construct the spin operators
     SpinOp = SpinOperators(spin_values)
@@ -57,11 +55,11 @@ def test_heisenberg_with_vs_without_symmetry(S, NSpin):
     # symmetry operator (translation / shift)
     D: Symmetry = shift(SpinOp)
     D.diagonalize(method="dense")
-    l, N = D.energy_levels()
+    l, n = D.energy_levels()
 
-    assert len(l) == NSpin, "wrong number of energy levels for shift symmetry"
-    ru = np.sort(roots_of_unity(len(spin_values)))
-    assert np.allclose(np.sort(l), ru), "The eigenvalues should be the roots of unity."
+    assert len(l) == N, "wrong number of energy levels for shift symmetry"
+    assert np.allclose(np.sort(l), np.sort(roots_of_unity(N))), "The eigenvalues should be the roots of unity."
+
 
     #-----------------#
     # Heisenberg Hamiltonian with some couplings

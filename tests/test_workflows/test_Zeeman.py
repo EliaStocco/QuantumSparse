@@ -3,14 +3,10 @@ import pytest
 from quantumsparse.operator import Operator
 from quantumsparse.spin import SpinOperators
 from quantumsparse.spin.functions import magnetic_moments
+from quantumsparse.conftest import *
 
-
-@pytest.mark.parametrize("N,S", [
-    (4, 0.5),
-    (2, 0.5),
-    (2, 1.0),
-    (3, 0.5),
-])
+@parametrize_N
+@parametrize_S
 def test_spin_system_diagonalization(N, S):
     """Smoke test: construct spin operators, Zeeman Hamiltonian, and diagonalize."""
     spins = np.full(N,S)

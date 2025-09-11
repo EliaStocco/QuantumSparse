@@ -4,15 +4,12 @@ from quantumsparse.spin import SpinOperators
 from quantumsparse.operator import Operator
 from quantumsparse.spin import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg, anisotropy, rhombicity
 from quantumsparse.tools.debug import compare_eigensolutions_dense_real
+from quantumsparse.conftest import *
 
-@pytest.mark.parametrize("interaction", ["heisenberg", "DM","biquadratic","anisotropy","rhombicity"])
-@pytest.mark.parametrize("N, S", [
-    (2, 0.5),
-    (3, 0.5),
-    (4, 0.5),
-    (4, 1.0),
-])
-def test_heisenberg_hamiltonian_with_vs_without_blocks(N: int, S: float,interaction:str) -> Operator:
+@parametrize_interaction
+@parametrize_N
+@parametrize_S
+def test_hamiltonian_with_vs_without_blocks(N: int, S: float,interaction:str) -> Operator:
     """
     Build a Hamiltonian for a ring of N spins of spin-S.
     """
@@ -44,7 +41,7 @@ def test_heisenberg_hamiltonian_with_vs_without_blocks(N: int, S: float,interact
     # test
     compare_eigensolutions_dense_real(eigenvalues,eigenvalues_dense,
                                  eigenvectors.todense(),eigenvectors_dense,
-                                 Hdense)
+                                 Hdense,TOLERANCE)
     
 if __name__ == "__main__":
     pytest.main([__file__])

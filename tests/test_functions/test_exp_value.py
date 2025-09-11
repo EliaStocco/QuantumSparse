@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
-from scipy.sparse import csr_matrix, eye
-
+from scipy.sparse import csr_matrix
 from quantumsparse.tools.quantum_mechanics import expectation_value
 
 @pytest.mark.parametrize("dim,N", [

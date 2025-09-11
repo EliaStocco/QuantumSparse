@@ -5,18 +5,12 @@ from quantumsparse.spin import SpinOperators, Heisenberg, Dzyaloshinskii_Moriya,
 from quantumsparse.spin.functions import cylindrical_coordinates, rotate_spins, get_Euler_angles
 from quantumsparse.spin.shift import shift
 from quantumsparse.tools.debug import compare_eigensolutions
+from quantumsparse.conftest import *
 
-TOLERANCE = 1e-10
-
-#  "heisenberg", "DM","biquadratic","anisotropy","rhombicity"
-@pytest.mark.parametrize("interaction", ["heisenberg", "DM","biquadratic","anisotropy","rhombicity"])
-@pytest.mark.parametrize("method", ["R", "U"])
-@pytest.mark.parametrize("N, S", [
-    (2, 0.5),
-    (3, 0.5),
-    (4, 0.5),
-    (4, 1.0),
-])
+@parametrize_interaction
+@parametrize_method
+@parametrize_N
+@parametrize_S
 def test_hamiltonian(N: int, S: float,method:str,interaction:str):
     """
     Build a Heisenberg Hamiltonian for a ring of N spins of spin-S.
