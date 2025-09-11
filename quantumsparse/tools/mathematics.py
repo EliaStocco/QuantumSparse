@@ -75,5 +75,55 @@ def unique_with_tolerance(arr, tol=1e-8):
     unique_rounded,index = np.unique(rounded_arr,return_inverse=True)
     return unique_rounded, index
 
+# #----------------------------------#
+# def align_eigenvectors(eigvec1: np.ndarray, eigvec2: np.ndarray, atol: float = 1e-10):
+#     """
+#     Align eigvec1 to eigvec2 using Procrustes analysis.
+#     Returns the optimal orthogonal matrix U such that eigvec1 @ U ~ eigvec2
+#     """
+#     # eigvec1, eigvec2 should be 2D (columns = eigenvectors)
+#     assert eigvec1.shape == eigvec2.shape
+    
+#     from scipy.linalg import orthogonal_procrustes
 
-        
+#     # Compute the orthogonal Procrustes solution
+#     U, scale = orthogonal_procrustes(eigvec1, eigvec2)
+    
+#     # Apply U to eigvec1
+#     aligned = eigvec1 @ U
+    
+#     # Compute difference
+#     diff = np.linalg.norm(aligned - eigvec2) / eigvec1.shape[0]
+#     assert diff < atol, f"Eigenvectors should match after alignment (diff={diff})"
+    
+#     return U, aligned, diff
+
+def align_eigenvectors(vecs1: np.ndarray, vecs2: np.ndarray):
+    """
+    Find optimal unitary/orthogonal U so that vecs1 @ U ~ vecs2
+    Works for degenerate eigenvectors.
+    """
+    from scipy.linalg import svd
+    M = vecs1.conj().T @ vecs2
+    U, _, Vh = svd(M)
+    return vecs1 @ (U @ Vh)
+
+def is_unitary(U, atol=1e-10):
+    """
+    Check if a dense matrix U is unitary.
+    
+    Parameters
+    ----------
+    U : np.ndarray
+        Square matrix to check
+    atol : float
+        Absolute tolerance for numerical comparison
+    
+    Returns
+    -------
+    bool
+        True if U is unitary within tolerance
+    """
+    U = np.asarray(U)
+    assert U.shape[0] == U.shape[1], "Matrix must be square"
+    return np.allclose(U.conj().T @ U, np.eye(U.shape[0]), atol=atol)
