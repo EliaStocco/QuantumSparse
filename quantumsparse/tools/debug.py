@@ -16,10 +16,10 @@ def compare_eigensolutions(H1:Operator, H2:Operator, atol:float=1e-10)->None:
     N = N*M
     
     test = H1.test_eigensolution().norm() / N 
-    assert test < atol, "Eigensolution of H1 not correct"
+    assert test < atol, "Eigensolution of H1 is not correct"
     
     test = H2.test_eigensolution().norm() / N 
-    assert test < atol, "Eigensolution of H2 not correct"
+    assert test < atol, "Eigensolution of H2 is not correct"
     
     
     # ------------------------- # 
@@ -35,49 +35,15 @@ def compare_eigensolutions(H1:Operator, H2:Operator, atol:float=1e-10)->None:
     # eigenstates can differ by a unitary transform (degenerate subspaces)
     diff = (_H1.eigenstates - _H2.eigenstates).norm() / N
     if diff > atol:
-        U = _H1.eigenstates.dagger() @ _H2.eigenstates
+        U:Operator = _H2.eigenstates @ _H1.eigenstates.dagger()
         assert U.is_unitary(), "U should be a unitary transformation" # of course by construction
         
-        diff = (_H1.eigenstates@U - _H2.eigenstates).norm() / N
+        diff = (U@_H1.eigenstates - _H2.eigenstates).norm() / N
         assert diff < atol, "Eigenstates should match up to a unitary transformation"
         
-    return 
-        
-    l,n,i = _H1.energy_levels(return_indices=True)
-    assert np.allclose(l[i],_H1.eigenvalues), "Error in energy levels"
-    
-    l,n,i = _H2.energy_levels(return_indices=True)
-    assert np.allclose(l[i],_H2.eigenvalues), "Error in energy levels"
-
-    # eigenstates can differ by a unitary transform (degenerate subspaces)
-    
-    diff = (_H1.eigenstates - _H2.eigenstates).norm() / N
-    if diff > atol:
-        
-        U = align_eigenvectors(_H1.eigenstates.todense(),_H2.eigenstates.todense())
-        
-        assert is_unitary(U), "U is not unitary"
-        
-        tmp = _H1.eigenstates.todense() @ U - _H2.eigenstates.todense()
-        assert np.linalg.norm(tmp)/N < atol , "error"
-        
-        # Check that U does not mix states with different labels
-        # For example, if l[i] is your label vector:
-        assert no_mixing(U != 0, l[i]), "bleah"
-        
-        # U:Operator = _H1.eigenstates.dagger() @ _H2.eigenstates
-        # assert U.is_unitary(), "Eigenstates should match up to a unitary transformation"
-        
-        # tmp:Operator = _H1.eigenstates@U
-        # diff = (tmp - _H2.eigenstates).norm() / N
-        # assert diff < atol, "Eigenvectors should be identical"
-        
-        # assert check_no_mixing(U.adjacency().todense(),l[i]), "bleah"
-        
-        # if not np.all(U.adjacency().todense().sum(axis=0) >= l[i]):
-        #     print("hello")
-        
-        # pass
+        _H2.eigenstates = U@_H1.eigenstates
+        test = _H2.test_eigensolution().norm() / N 
+        assert test < atol, "Eigensolution of _H1 is not correct"
         
 def compare_eigensolutions_dense_real(
     eigval1: np.ndarray,
