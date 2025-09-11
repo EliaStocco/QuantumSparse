@@ -131,7 +131,7 @@ class Operator(Matrix):
 
     
     @staticmethod
-    def identity(dimensions)->T:
+    def identity(dimensions)->Union[T,List[T]]:
         """
         Parameters
         ----------
@@ -149,7 +149,7 @@ class Operator(Matrix):
             return iden
         else :            
             N = len(dimensions)
-            iden = np.zeros(N,dtype=object)
+            iden:List[T] = np.zeros(N,dtype=object)
             for i,dim in zip(range(N),dimensions):
                 iden[i] = Matrix.identity(dim,dtype=int)  
             return iden
