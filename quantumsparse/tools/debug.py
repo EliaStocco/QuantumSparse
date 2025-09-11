@@ -1,6 +1,5 @@
 import numpy as np
 from quantumsparse.operator import Operator
-from quantumsparse.tools.mathematics import align_eigenvectors, is_unitary
 
 def compare_eigensolutions(H1:Operator, H2:Operator, atol:float=1e-10)->None:
     
@@ -44,81 +43,88 @@ def compare_eigensolutions(H1:Operator, H2:Operator, atol:float=1e-10)->None:
         _H2.eigenstates = U@_H1.eigenstates
         test = _H2.test_eigensolution().norm() / N 
         assert test < atol, "Eigensolution of _H1 is not correct"
-        
+
 def compare_eigensolutions_dense_real(
     eigval1: np.ndarray,
     eigval2: np.ndarray,
     eigvec1: np.ndarray,
     eigvec2: np.ndarray,
+    H: np.ndarray,
     atol: float = 1e-10,
 ) -> None:
     """
     Compare two eigensolutions (eigenvalues and eigenvectors) for real dense matrices.
+
+    Eigenvectors are considered equal up to an orthogonal/unitary transformation
+    within degenerate subspaces.
+
+    Also verifies that the provided eigenvectors are indeed eigenvectors of H.
 
     Parameters
     ----------
     eigval1, eigval2 : np.ndarray
         Eigenvalue arrays (1D).
     eigvec1, eigvec2 : np.ndarray
-        Eigenvector arrays (2D, column-wise).
+        Eigenvector arrays (2D, columns are eigenvectors).
+    H : np.ndarray
+        Hamiltonian matrix (square, real/complex).
     atol : float
-        Absolute tolerance for comparison.
+        Absolute tolerance for comparisons.
     """
-    # sanity checks
+    
+    eigval1 = np.asarray(eigval1)
+    eigval2 = np.asarray(eigval2)
+    eigvec1 = np.asarray(eigvec1)
+    eigvec2 = np.asarray(eigvec2)
+    H = np.asarray(H)
+    
+    # ------------------------- #
+    # Sanity checks
     assert eigval1.shape == eigval2.shape, "Eigenvalue arrays must have same shape"
     assert eigvec1.shape == eigvec2.shape, "Eigenvector arrays must have same shape"
-    assert np.allclose(eigval1.imag, 0, atol=atol), "eigval1 must be real"
-    assert np.allclose(eigval2.imag, 0, atol=atol), "eigval2 must be real"
+    assert H.shape[0] == H.shape[1], "H must be square"
+    assert eigvec1.shape[0] == H.shape[0], "Eigenvectors must match H dimensions"
 
-    # sort eigenpairs by eigenvalues
-    idx1 = np.argsort(eigval1.real)
-    idx2 = np.argsort(eigval2.real)
-    eigval1_sorted = eigval1[idx1].real
-    eigval2_sorted = eigval2[idx2].real
+    N = eigvec1.shape[0]
+
+    # ------------------------- #
+    # Check that each set of eigenvectors is indeed eigenvectors of H
+    for vals, vecs, name in [(eigval1, eigvec1, "eigvec1"), (eigval2, eigvec2, "eigvec2")]:
+        residual = np.linalg.norm(H @ vecs - vecs * vals[None, :]) / N
+        assert residual < atol, f"{name} is not a valid eigenvector set (residual={residual})"
+
+    # ------------------------- #
+    # Sort eigenvalues and reorder eigenvectors accordingly
+    idx1 = np.argsort(eigval1)
+    idx2 = np.argsort(eigval2)
+    eigval1_sorted = eigval1[idx1]
+    eigval2_sorted = eigval2[idx2]
     eigvec1_sorted = eigvec1[:, idx1]
     eigvec2_sorted = eigvec2[:, idx2]
 
-    # compare eigenvalues
+    # ------------------------- #
+    # Compare eigenvalues
     assert np.allclose(eigval1_sorted, eigval2_sorted, atol=atol), \
         "Eigenvalues should be identical"
-
-    # compare eigenvectors (up to a unitary / orthogonal transform)
-    N = eigvec1.shape[0]
-    diff = np.linalg.norm(eigvec1_sorted - eigvec2_sorted) / N
-    if diff > atol:
-        # check if they differ by an orthogonal matrix
-        U = eigvec1_sorted.T @ eigvec2_sorted
-        if not np.allclose(U @ U.T, np.eye(U.shape[0]), atol=atol):
-            raise AssertionError("Eigenvectors should match up to an orthogonal transformation")
-
-        tmp = eigvec1_sorted @ U
-        diff = np.linalg.norm(tmp - eigvec2_sorted) / N
-        assert diff < atol, "Eigenvectors should be identical up to an orthogonal transform"
-
-def no_mixing(M: np.ndarray, v: np.ndarray):
-    """
-    Check that a 0-1 square matrix M does not connect states with different values in v.
-    
-    Parameters
-    ----------
-    M : np.ndarray
-        Square matrix (0/1 entries).
-    v : np.ndarray
-        Vector of values/labels for each state.
         
-    Raises
-    ------
-    AssertionError
-        If any nonzero entry in M connects states with different labels.
-    """
-    assert M.shape[0] == M.shape[1], "Matrix must be square"
-    assert M.shape[0] == v.shape[0], "Vector length must match matrix size"
+    # ------------------------- #
+    # Check that each set of eigenvectors is indeed eigenvectors of H
+    for vals, vecs, name in [(eigval1_sorted, eigvec1_sorted, "eigvec1_sorted"), (eigval2_sorted, eigvec2_sorted, "eigvec2_sorted")]:
+        residual = np.linalg.norm(H @ vecs - vecs * vals[None, :]) / N
+        assert residual < atol, f"{name} is not a valid eigenvector set (residual={residual})"
 
-    # Make a matrix of label comparisons
-    same_label = v[:, None] == v[None, :]  # True if labels match
+    # ------------------------- #
+    # Compare eigenvectors
+    diff = np.linalg.norm(eigvec1_sorted - eigvec2_sorted) / N
 
-    # Check if any 1 in M connects different labels
-    if np.any(M & (~same_label)):
-        return False
-    
-    return True
+    if diff > atol:
+        # Compute unitary/orthogonal alignment
+        U = eigvec2_sorted @ eigvec1_sorted.conj().T
+        assert np.allclose(U.conj().T @ U, np.eye(U.shape[0]), atol=atol), \
+            "U should be unitary"
+        aligned = U @ eigvec1_sorted
+        diff = np.linalg.norm(aligned - eigvec2_sorted) / N
+        assert diff < atol, "Eigenvectors should match up to a unitary transformation"
+
+        residual = np.linalg.norm(H @ aligned - aligned * eigval2_sorted[None, :]) / N
+        assert residual < atol, f"Problem"
