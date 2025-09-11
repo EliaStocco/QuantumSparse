@@ -240,7 +240,7 @@ def system_Sxypm_operators(dimensions,sx,sy,sz,sp,sm)->Tuple[OpArr,OpArr,OpArr,O
     Sy = np.zeros(NSpin,dtype=object) # S y
     Sp = np.zeros(NSpin,dtype=object) # S plus
     Sm = np.zeros(NSpin,dtype=object) # S minus
-    iden = Operator.identity(dimensions)
+    iden:List[Operator] = Operator.identity(dimensions)
     for i in iden:
         i.diagonalize()
     
