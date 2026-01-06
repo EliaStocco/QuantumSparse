@@ -128,7 +128,7 @@ D
 # %%
 if not D.is_diagonalized():
     logger.info("Diagonalizing shift operator.")
-    D.diagonalize(method="dense")
+    D.diagonalize()
 
 if DEBUG:
     logger.debug("Testing symmetry operator diagonalization.")

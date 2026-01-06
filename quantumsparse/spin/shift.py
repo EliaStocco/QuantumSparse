@@ -97,7 +97,7 @@ def shift(ops: SpinOperators, parallel: bool = True) -> Operator:
             D = P @ M
 
     # D.visualize()
-    w,f = D.diagonalize(method="dense")
+    w,f = D.diagonalize()
 
     phi = 1 #2*np.pi/N
     ew = np.exp(1.j*w*phi)

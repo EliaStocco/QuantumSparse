@@ -20,7 +20,7 @@ def test_dm_with_vs_without_symmetry(S, N):
 
     # symmetry operator (shift)
     D: Symmetry = shift(SpinOp)
-    D.diagonalize(method="dense")
+    D.diagonalize()
     l, n = D.energy_levels()
     assert len(l) == N, "wrong number of energy levels for shift symmetry"
     assert np.allclose(np.sort(l), np.sort(roots_of_unity(N))), "The eigenvalues should be the roots of unity."

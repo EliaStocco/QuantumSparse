@@ -67,7 +67,7 @@ def main(S=0.5,NSpin=3):
     print(repr(D))
     nblocks, _ = D.count_blocks()
     print("\tnblocks:",nblocks)
-    D.diagonalize(method="dense") # 'dense' is smuch better than 'jacobi'
+    D.diagonalize() # 'dense' is smuch better than 'jacobi'
     # D.eigenvalues.sort()
     # print(D.eigenvalues)
     l,N = D.energy_levels()

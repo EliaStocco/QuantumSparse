@@ -88,11 +88,6 @@ class Operator(Matrix):
         super().__init__(*argc, **argv)
         self.name = None
         pass
-
-    def __repr__(self: T) -> str:
-        string = "{:>14s}: {}\n".format('name', str(self.name))
-        string += super().__repr__()
-        return string
         
     # def save(self: T, file: str) -> None:
     #     """
