@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from quantumsparse.spin import SpinOperators
 from quantumsparse.spin.functions import cylindrical_coordinates, rotate_spins, get_Euler_angles
 from quantumsparse.conftest import *
 
