@@ -4,10 +4,10 @@ from quantumsparse.spin.shift import shift
 from quantumsparse.tools.debug import compare_eigensolutions
 from quantumsparse.conftest import *
 
-@parametrize_interaction
-@parametrize_method
 @parametrize_N
 @parametrize_S
+@parametrize_method
+@parametrize_interaction
 def test_symmetry(N: int, S: float,method:str,interaction:str):
     """
     Build a Hamiltonian for a ring of N spins of spin-S.
