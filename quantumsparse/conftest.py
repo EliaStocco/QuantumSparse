@@ -12,12 +12,13 @@ from quantumsparse.operator import Operator
 from quantumsparse.spin import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg, anisotropy, rhombicity
 
 def get_H(Sx:List[Operator],Sy:List[Operator],Sz:List[Operator],interaction:str)->Operator:
+    COUPLINGS = [1.0,2.1,3.5] # just some numbers
     if interaction == "heisenberg":
-        H = Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=[1,2,3])
+        H = Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)
     elif interaction == "DM":
-        H = Dzyaloshinskii_Moriya(Sx=Sx, Sy=Sy, Sz=Sz,couplings=[1,2,3])
+        H = Dzyaloshinskii_Moriya(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)
     elif interaction == "biquadratic":
-        H = biquadratic_Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=[1,2,3])
+        H = biquadratic_Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)
     elif interaction == "anisotropy":
         H = anisotropy(Sz=Sz)
     elif interaction == "rhombicity":
