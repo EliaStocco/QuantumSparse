@@ -28,7 +28,7 @@ def test_dm_with_vs_without_symmetry(S, N):
     assert np.allclose(np.sort(l), np.sort(roots_of_unity(N))), "The eigenvalues should be the roots of unity."
 
     # Hamiltonian with Dzyaloshinskii–Moriya interaction
-    H = Dzyaloshinskii_Moriya(Sx, Sy, Sz, couplings=[1,2,3])
+    H = Dzyaloshinskii_Moriya(Sx, Sy, Sz, couplings=COUPLINGS)
 
     # independent copy
     Hnosym = Operator(H.copy())

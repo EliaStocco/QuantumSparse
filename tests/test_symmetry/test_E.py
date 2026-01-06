@@ -29,7 +29,7 @@ def test_anisotropy_with_vs_without_symmetry(S, N):
 
 
     # Hamiltonian with anisotropy
-    H = rhombicity(Sx,Sy,couplings=1)  # easy-axis term
+    H = rhombicity(Sx,Sy,couplings=COUPLINGS[0])  # easy-axis term
 
     # make independent copy
     Hnosym = Operator(H.copy())

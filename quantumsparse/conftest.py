@@ -6,13 +6,13 @@ parametrize_N           = pytest.mark.parametrize("N", [2, 3, 4])
 parametrize_S           = pytest.mark.parametrize("S", [0.5, 1.0, 1.5, 2.0])
 
 TOLERANCE = 1e-10
+COUPLINGS = [1.0,2.1,3.5] # just some numbers
 
 from typing import List
 from quantumsparse.operator import Operator
 from quantumsparse.spin import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg, anisotropy, rhombicity
 
 def get_H(Sx:List[Operator],Sy:List[Operator],Sz:List[Operator],interaction:str)->Operator:
-    COUPLINGS = [1.0,2.1,3.5] # just some numbers
     H = 0 
     if interaction == "heisenberg":
         H += Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)

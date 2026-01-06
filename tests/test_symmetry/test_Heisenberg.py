@@ -63,7 +63,7 @@ def test_heisenberg_with_vs_without_symmetry(S, N):
 
     #-----------------#
     # Heisenberg Hamiltonian with some couplings
-    H = Heisenberg(Sx, Sy, Sz, couplings=[1, 2, 3])
+    H = Heisenberg(Sx, Sy, Sz, couplings=COUPLINGS)
     Hnosym = Operator(H.copy())  # independent copy
 
     assert np.all(H.data == Hnosym.data), "The Hamiltonians must match initially"

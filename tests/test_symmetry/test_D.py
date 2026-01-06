@@ -28,7 +28,7 @@ def test_anisotropy_with_vs_without_symmetry(S, N):
     assert np.allclose(np.sort(l), np.sort(roots_of_unity(N))), "The eigenvalues should be the roots of unity."
 
     # Hamiltonian with anisotropy
-    H = anisotropy(Sz, couplings=1)  # easy-axis term
+    H = anisotropy(Sz, couplings=COUPLINGS[0])  # easy-axis term
 
     # make independent copy
     Hnosym = Operator(H.copy())
