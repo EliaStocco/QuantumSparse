@@ -66,7 +66,7 @@ class Matrix(csr_matrix):
     Class to handle matrices in different form, i.e. dense, sparse, with 'numpy', 'scipy', or 'torch'
     """
     
-    module = sparse
+    # module = sparse
     
     blocks:list
     n_blocks:int
@@ -168,21 +168,21 @@ class Matrix(csr_matrix):
     @classmethod
     def diags(cls,*argc,**argv):
         """
-        Creates a diagonal matrix using the module's diags function.
+        Creates a diagonal matrix using the scipy.sparse diags function.
 
         Parameters
         ----------
         *argc : variable number of positional arguments
-            Positional arguments to be passed to the module's diags function.
+            Positional arguments to be passed to the scipy.sparse diags function.
         **argv : variable number of keyword arguments
-            Keyword arguments to be passed to the module's diags function.
+            Keyword arguments to be passed to the scipy.sparse diags function.
 
         Returns
         -------
         Matrix
             A new Matrix instance representing the diagonal matrix.
         """
-        return cls(Matrix.module.diags(*argc,**argv))
+        return cls(sparse.diags(*argc,**argv))
 
     @classmethod
     def kron(cls,*argc,**argv):
@@ -196,7 +196,26 @@ class Matrix(csr_matrix):
         Returns:
             Matrix: A new Matrix instance representing the Kronecker product of the given matrices.
         """
-        return cls(Matrix.module.kron(*argc,**argv))
+        return cls(sparse.kron(*argc,**argv))
+    
+    @classmethod
+    def identity(cls,*argc,**argv):
+        """
+        Creates an identity matrix using the scipy.sparse identity function.
+
+        Parameters
+        ----------
+        *argc : variable number of positional arguments
+            Positional arguments to be passed to the scipy.sparse identity function.
+        **argv : variable number of keyword arguments
+            Keyword arguments to be passed to the scipy.sparse identity function.
+
+        Returns
+        -------
+        Matrix
+            A new Matrix instance representing the identity matrix.
+        """
+        return cls(sparse.identity(*argc,**argv))
 
     def kronecker(self:T,A:T)->T:
         """
@@ -217,25 +236,6 @@ class Matrix(csr_matrix):
             new.eigenvalues = w.diagonal()
             new.eigenstates = type(self).kron(self.eigenstates,A.eigenstates)
         return new
-    
-    @classmethod
-    def identity(cls,*argc,**argv):
-        """
-        Creates an identity matrix using the module's identity function.
-
-        Parameters
-        ----------
-        *argc : variable number of positional arguments
-            Positional arguments to be passed to the module's identity function.
-        **argv : variable number of keyword arguments
-            Keyword arguments to be passed to the module's identity function.
-
-        Returns
-        -------
-        Matrix
-            A new Matrix instance representing the identity matrix.
-        """
-        return cls(Matrix.module.identity(*argc,**argv))
     
     def iden(self:T)->T:
         assert self.shape[0] == self.shape[1], "The matrix must be square to return the identity matrix."
@@ -264,19 +264,11 @@ class Matrix(csr_matrix):
         -------
         T
             The inverse of the matrix.
-
-        Raises
-        ------
-        ImplErr
-            If the matrix module is not sparse.
         """
         if self.is_unitary():
             return self.dagger()
         else:
-            if Matrix.module is sparse :
-                return self.clone(sparse.linalg.inv(self))
-            else:
-                raise ImplErr
+            return self.clone(sparse.linalg.inv(self))
 
     @staticmethod
     def anticommutator(A:T,B:T)->T:
@@ -318,13 +310,8 @@ class Matrix(csr_matrix):
         Returns:
             float: The Euclidean norm of the matrix.
 
-        Raises:
-            ImplErr: If the matrix module is not sparse.
         """
-        if Matrix.module is sparse :
-            return sparse.linalg.norm(self)
-        else :
-            raise ImplErr
+        return sparse.linalg.norm(self)
 
     #-----------------#
     # Boolean flags
@@ -341,11 +328,7 @@ class Matrix(csr_matrix):
         Returns:
             bool: True if the matrix is symmetric, False otherwise.
         """
-        if Matrix.module is sparse :
-            # tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
-            return (self - self.transpose()).norm() < tolerance
-        else :
-            raise ImplErr
+        return (self - self.transpose()).norm() < tolerance
         
     def is_hermitean(self:T,tolerance=TOLERANCE)->bool:
         """
@@ -358,11 +341,8 @@ class Matrix(csr_matrix):
         Returns:
             bool: True if the matrix is Hermitian, False otherwise.
         """
-        if Matrix.module is sparse :
-            # tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
-            return (self - self.dagger()).norm() < tolerance
-        else :
-            raise ImplErr
+        # tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
+        return (self - self.dagger()).norm() < tolerance
         
     def is_unitary(self:T,tolerance=TOLERANCE)->bool:
         """
@@ -376,15 +356,8 @@ class Matrix(csr_matrix):
 
         Returns:
             bool: True if the matrix is unitary, False otherwise.
-
-        Raises:
-            ImplErr: If the matrix module is not sparse.
         """
-        if Matrix.module is sparse :
-             #tolerance = 1e-10 if "tolerance" not in argv else argv["tolerance"]
-            return (self @ self.dagger() - self.identity(len(self)) ).norm() < tolerance
-        else :
-            raise ImplErr
+        return (self @ self.dagger() - self.identity(len(self)) ).norm() < tolerance
         
     def is_diagonalized(self:T)->bool:
         """
@@ -439,25 +412,20 @@ class Matrix(csr_matrix):
 
         Returns:
             T: The adjacency matrix of the given matrix.
-
-        Raises:
-            ImplErr: If the matrix module is not sparse.
         """
-        if Matrix.module is sparse :
-            data    = self.data
-            indices = self.indices
-            indptr  = self.indptr
-            data = data.real.astype(int)
-            data.fill(1)
-            out = self.clone((data, indices, indptr),self.shape)
-            if self.blocks is not None:
-                out.blocks = self.blocks
-            if self.n_blocks is not None:
-                out.n_blocks = self.n_blocks
-            out.is_adjacency = True
-            return out # type(self)(dtype((data, indices, indptr),self.shape))
-        else :
-            raise ImplErr
+        data    = self.data
+        indices = self.indices
+        indptr  = self.indptr
+        data = data.real.astype(int)
+        data.fill(1)
+        out = self.clone((data, indices, indptr),self.shape)
+        if self.blocks is not None:
+            out.blocks = self.blocks
+        if self.n_blocks is not None:
+            out.n_blocks = self.n_blocks
+        out.is_adjacency = True
+        return out # type(self)(dtype((data, indices, indptr),self.shape))
+
     
     def sparsity(self:T)->float:
         """
@@ -471,18 +439,10 @@ class Matrix(csr_matrix):
         Returns:
             float: The sparsity of the given matrix.
 
-        Raises:
-            ImplErr: If the matrix module is not sparse.
         """
-        if Matrix.module is sparse :
-            rows, cols = self.nonzero()
-            shape = self.shape
-            return float(len(rows)) / float(shape[0]*shape[1])
-        else :
-            raise ImplErr
-        # adjacency = self.adjacency()
-        # v = adjacency.flatten()
-        # return float(matrix.norm(v)) / float(len(v))
+        rows, cols = self.nonzero()
+        shape = self.shape
+        return float(len(rows)) / float(shape[0]*shape[1])
 
     def visualize(self:T,adjacency=True,tab='tab10',cb=True,file=None)->None:
         """
@@ -650,10 +610,8 @@ class Matrix(csr_matrix):
         tmp = np.full((N,N),None,dtype=object)
         for n in range(N):
             tmp[n,n] = blocks[n]
-        if Matrix.module is sparse : 
-            return cls(sparse.bmat(tmp))
-        else :
-            raise ValueError("error")
+        return cls(sparse.bmat(tmp))
+        
 
     def count_blocks(self:T, inplace=True):
         """
@@ -664,20 +622,14 @@ class Matrix(csr_matrix):
 
         Returns:
             tuple: A tuple containing the number of connected components and the labels of the connected components.
-
-        Raises:
-            ImplErr: If the matrix module is not sparse.
         """
         adjacency = self.adjacency()
-        if Matrix.module is sparse:
-            from scipy.sparse.csgraph import connected_components
-            n_components, labels = connected_components(adjacency, directed=False, return_labels=True)
-            if inplace:
-                self.blocks = labels
-                self.n_blocks = len(np.unique(labels))
-            return n_components, labels
-        else:
-            raise ImplErr
+        from scipy.sparse.csgraph import connected_components
+        n_components, labels = connected_components(adjacency, directed=False, return_labels=True)
+        if inplace:
+            self.blocks = labels
+            self.n_blocks = len(np.unique(labels))
+        return n_components, labels
         
     def block_summary(self):
         """
