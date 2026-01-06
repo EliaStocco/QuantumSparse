@@ -1,11 +1,7 @@
 import numpy as np
 import pytest
-from quantumsparse.spin import SpinOperators, Heisenberg
-from quantumsparse.operator import Operator, Symmetry
-from quantumsparse.tools.mathematics import roots_of_unity
-from quantumsparse.spin.shift import shift
-from quantumsparse.spin.functions import cylindrical_coordinates, rotate_spins, get_unitary_rotation_matrix, get_Euler_angles
-from quantumsparse.tools.mathematics import product
+from quantumsparse.spin import SpinOperators
+from quantumsparse.spin.functions import get_Euler_angles, rotate_spins
 from quantumsparse.conftest import *
 
 @parametrize_N
