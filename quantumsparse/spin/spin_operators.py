@@ -37,7 +37,6 @@ class SpinOperators:
         # https://realpython.com/python-super/
         # super().__init__(**argv)
         
-        # print("\n\tconstructor of \"SpinSystem\" class")     
         # opts = prepare_opts(opts)
         if spin_values is not None:
             self.spin_values = spin_values

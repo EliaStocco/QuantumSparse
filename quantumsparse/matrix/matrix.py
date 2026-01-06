@@ -6,11 +6,12 @@ from functools import wraps
 from dataclasses import dataclass, field
 from scipy import sparse
 from scipy.sparse import spmatrix
-from scipy.sparse import csr_matrix, csr_array, bmat
+from scipy.sparse import csr_matrix, bmat
 from quantumsparse.bookkeeping import ImplErr
 from quantumsparse.tools import first_larger_than_N
 from quantumsparse.bookkeeping import TOLERANCE, NOISE
 
+T = TypeVar('T',bound="Matrix") 
 
 def preserve_type(method: Callable[..., spmatrix]) -> Callable[..., Any]:
     """Decorator to ensure operator results are of subclass type."""
@@ -26,44 +27,10 @@ def preserve_type(method: Callable[..., spmatrix]) -> Callable[..., Any]:
     
         return result
     return wrapper
-
-    
-T = TypeVar('T',bound="Matrix") 
-dtype = csr_matrix
-NoJacobi = 8
-
-
-USE_COPY = True
-def my_copy(x):
-    if USE_COPY:
-        return copy(x)
-    else:
-        return x
-
-class State(csr_array):
-    
-    
-    @staticmethod
-    def one_hot(dim:int,i:int,*argc,**argv)->T:
-        """
-        Creates a one-hot matrix of the same shape and with the same dtype as the original matrix.
-        
-        Parameters:
-            i (int): The row index of the one-hot element.
-            j (int): The column index of the one-hot element.
-        
-        Returns:
-            T: A new Matrix instance representing a one-hot matrix.
-        """
-        # Create an empty sparse array
-        empty = State((dim,), *argc, **argv)
-        # Set the one-hot element
-        empty[i] = 1
-        return empty
     
 class Matrix(csr_matrix):
     """
-    Class to handle matrices in different form, i.e. dense, sparse, with 'numpy', 'scipy', or 'torch'
+    Class to handle sparse matrices.
     """
     
     # module = sparse
@@ -424,7 +391,7 @@ class Matrix(csr_matrix):
         if self.n_blocks is not None:
             out.n_blocks = self.n_blocks
         out.is_adjacency = True
-        return out # type(self)(dtype((data, indices, indptr),self.shape))
+        return out
 
     
     def sparsity(self:T)->float:
@@ -533,7 +500,7 @@ class Matrix(csr_matrix):
         Returns:
             T: A new Matrix instance representing an empty matrix.
         """
-        return self.clone(self.shape,dtype=self.dtype) # type(self)(self.shape,dtype=self.dtype)
+        return self.clone(self.shape,dtype=self.dtype)
     
     @classmethod
     def one_hot(cls,dim:int,i:int,j:int,*argc,**argv)->T:

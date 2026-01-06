@@ -3,7 +3,7 @@ from copy import copy, deepcopy
 from typing import TypeVar, Union, List
 from quantumsparse.matrix import Matrix
 from quantumsparse.tools.mathematics import unique_with_tolerance
-from quantumsparse.bookkeeping import TOLERANCE, NOISE
+from quantumsparse.bookkeeping import TOLERANCE
 
 T = TypeVar('T', bound='Operator')  # type of the class itself
 
