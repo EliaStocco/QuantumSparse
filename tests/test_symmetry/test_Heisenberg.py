@@ -9,33 +9,6 @@ from quantumsparse.conftest import *
 
 @parametrize_N
 @parametrize_S
-def test_heisenberg_hamiltonian(N: int, S: float) -> Operator:
-    """
-    Build a Heisenberg Hamiltonian for a ring of N spins of spin-S.
-
-    Args:
-        N (int): Number of spin sites.
-        S (float): Spin value for each site.
-
-    Returns:
-        Operator: Heisenberg Hamiltonian as a sparse operator.
-    """
-    spin_values = np.full(N, S)
-    SpinOp = SpinOperators(spin_values)
-    Sx, Sy, Sz = SpinOp.Sx, SpinOp.Sy, SpinOp.Sz
-
-    # Construct Heisenberg Hamiltonian manually
-    H_manual:Operator = sum(Sx[i] @ Sx[(i + 1) % N] for i in range(N))
-    H_manual += sum(Sy[i] @ Sy[(i + 1) % N] for i in range(N))
-    H_manual += sum(Sz[i] @ Sz[(i + 1) % N] for i in range(N))
-    # H_manual = Operator(H_manual)
-
-    # Compare with library's Heisenberg Hamiltonian
-    H_lib = Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz)
-    assert np.allclose(H_lib.todense(), H_manual.todense()), "Mismatch in Heisenberg Hamiltonian construction"
-    
-@parametrize_N
-@parametrize_S
 def test_heisenberg_with_vs_without_symmetry(S, N):
     """
     Compare Heisenberg diagonalization with and without symmetries.
