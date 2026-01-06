@@ -19,11 +19,14 @@ from quantumsparse.spin import SpinOperators
 from quantumsparse.operator import Operator
 from quantumsparse.spin import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg, anisotropy, rhombicity
 
-def random_couplings()->List[float]:
-    return np.random.rand(3)
-
 def get_H(Sx:List[Operator],Sy:List[Operator],Sz:List[Operator],interaction:str)->Operator:
+    
     H = 0 
+    
+    np.random.seed(42)
+    def random_couplings()->List[float]:
+        return np.random.rand(3).tolist()
+    
     if "heisenberg" in interaction:
         H += Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=random_couplings())
     if "DM" in interaction:
@@ -34,6 +37,7 @@ def get_H(Sx:List[Operator],Sy:List[Operator],Sz:List[Operator],interaction:str)
         H += anisotropy(Sz=Sz)
     if "rhombicity" in interaction:
         H += rhombicity(Sx=Sx, Sy=Sy)
+        
     return H
 
 def NS2Ops(N:int,S:float)->Tuple[List[Operator],List[Operator],List[Operator],SpinOperators]:
