@@ -11,6 +11,7 @@ pyenv activate qs
 pip install -e .
 # if you want pytest
 # python -m pip install -e .[dev]
+source env.sh
 ```
 
 ## Example
