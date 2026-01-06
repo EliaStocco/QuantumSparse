@@ -1,7 +1,4 @@
-import numpy as np
 import pytest
-from quantumsparse.operator import Operator
-from quantumsparse.spin import SpinOperators, Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg, anisotropy, rhombicity
 from quantumsparse.spin.functions import cylindrical_coordinates, rotate_spins, get_Euler_angles
 from quantumsparse.spin.shift import shift
 from quantumsparse.tools.debug import compare_eigensolutions
@@ -22,10 +19,8 @@ def test_hamiltonian(N: int, S: float,method:str,interaction:str):
     Returns:
         Operator: Heisenberg Hamiltonian as a sparse operator.
     """
-    spin_values = np.full(N, S)
-    SpinOp = SpinOperators(spin_values)
-    spins = SpinOp.Sx, SpinOp.Sy, SpinOp.Sz
-    Sx, Sy, Sz = spins
+    Sx, Sy, Sz, SpinOp = NS2Ops(N, S)
+    spins = (Sx, Sy, Sz)
     
     U = cylindrical_coordinates(spins)
 

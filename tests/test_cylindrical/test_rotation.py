@@ -1,6 +1,4 @@
-import numpy as np
 import pytest
-from quantumsparse.spin import SpinOperators
 from quantumsparse.spin.functions import get_Euler_angles, rotate_spins
 from quantumsparse.conftest import *
 
@@ -8,9 +6,8 @@ from quantumsparse.conftest import *
 @parametrize_S
 def test_rotation_method(N: int, S: float):
        
-    spin_values = np.full(N, S)
-    SpinOp = SpinOperators(spin_values)
-    spins = SpinOp.Sx, SpinOp.Sy, SpinOp.Sz
+    Sx, Sy, Sz, SpinOp = NS2Ops(N, S)
+    spins = (Sx, Sy, Sz)
     
     EulerAngles = get_Euler_angles(N)
     
