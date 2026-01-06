@@ -425,7 +425,7 @@ class Matrix(csr_matrix):
             None
         """
         if adjacency:
-            return self.adjacency().visualize(False)
+            return self.adjacency().visualize(adjacency=False,tab=tab,cb=cb,file=file)
         
         import matplotlib.pyplot as plt  
         # from matplotlib.colors import ListedColormap
