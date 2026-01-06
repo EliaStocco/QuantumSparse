@@ -13,16 +13,17 @@ from quantumsparse.spin import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_He
 
 def get_H(Sx:List[Operator],Sy:List[Operator],Sz:List[Operator],interaction:str)->Operator:
     COUPLINGS = [1.0,2.1,3.5] # just some numbers
+    H = 0 
     if interaction == "heisenberg":
-        H = Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)
+        H += Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)
     elif interaction == "DM":
-        H = Dzyaloshinskii_Moriya(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)
+        H += Dzyaloshinskii_Moriya(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)
     elif interaction == "biquadratic":
-        H = biquadratic_Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)
+        H += biquadratic_Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)
     elif interaction == "anisotropy":
-        H = anisotropy(Sz=Sz)
+        H += anisotropy(Sz=Sz)
     elif interaction == "rhombicity":
-        H = rhombicity(Sx=Sx, Sy=Sy)
+        H += rhombicity(Sx=Sx, Sy=Sy)
     else:
         raise ValueError(f"Unknown interaction: {interaction}")
     return H
