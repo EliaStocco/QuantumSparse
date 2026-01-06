@@ -8,7 +8,10 @@ parametrize_S           = pytest.mark.parametrize("S", [0.5, 1.0, 1.5, 2.0])
 TOLERANCE = 1e-10
 COUPLINGS = [1.0,2.1,3.5] # just some numbers
 
-from typing import List
+
+from typing import List, Tuple
+import numpy as np
+from quantumsparse.spin import SpinOperators
 from quantumsparse.operator import Operator
 from quantumsparse.spin import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg, anisotropy, rhombicity
 
@@ -27,3 +30,9 @@ def get_H(Sx:List[Operator],Sy:List[Operator],Sz:List[Operator],interaction:str)
     else:
         raise ValueError(f"Unknown interaction: {interaction}")
     return H
+
+def NS2Ops(N:int,S:float)->Tuple[List[Operator],List[Operator],List[Operator],SpinOperators]:
+    spin_values = np.full(N, S)
+    SpinOp = SpinOperators(spin_values)
+    Sx, Sy, Sz = SpinOp.Sx, SpinOp.Sy, SpinOp.Sz
+    return Sx,Sy,Sz, SpinOp

@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from quantumsparse.spin import SpinOperators, Heisenberg
+from quantumsparse.spin import Heisenberg
 from quantumsparse.operator import Operator, Symmetry
 from quantumsparse.tools.mathematics import roots_of_unity
 from quantumsparse.spin.shift import shift
@@ -18,11 +18,9 @@ def test_heisenberg_with_vs_without_symmetry(S, N):
       - Diagonalize Heisenberg Hamiltonian with symmetry and without.
       - Ensure eigenvalues agree, and eigenstates match up to a unitary transformation.
     """
-    spin_values = np.full(N, S)
 
     # construct the spin operators
-    SpinOp = SpinOperators(spin_values)
-    Sx, Sy, Sz = SpinOp.Sx, SpinOp.Sy, SpinOp.Sz
+    Sx, Sy, Sz, SpinOp = NS2Ops(N, S)
 
     #-----------------#
     # symmetry operator (translation / shift)

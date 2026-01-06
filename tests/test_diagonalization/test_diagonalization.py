@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from quantumsparse.spin import SpinOperators
 from quantumsparse.operator import Operator
 from quantumsparse.tools.debug import compare_eigensolutions_dense_real
 from quantumsparse.conftest import *
@@ -12,9 +11,7 @@ def test_hamiltonian_with_vs_without_blocks(N: int, S: float,interaction:str) ->
     """
     Build a Hamiltonian for a ring of N spins of spin-S.
     """
-    spin_values = np.full(N, S)
-    SpinOp = SpinOperators(spin_values)
-    Sx, Sy, Sz = SpinOp.Sx, SpinOp.Sy, SpinOp.Sz
+    Sx, Sy, Sz, SpinOp = NS2Ops(N, S)
 
     H = get_H(Sx=Sx, Sy=Sy, Sz=Sz, interaction=interaction)
     eigenvalues, eigenvectors = H.diagonalize()

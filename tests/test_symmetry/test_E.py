@@ -14,11 +14,9 @@ def test_anisotropy_with_vs_without_symmetry(S, N):
     Test that adding anisotropy to a Heisenberg Hamiltonian
     yields consistent results with and without symmetry diagonalization.
     """
-    spin_values = np.full(N, S)
 
     # spin operators
-    SpinOp = SpinOperators(spin_values)
-    Sx, Sy, Sz = SpinOp.Sx, SpinOp.Sy, SpinOp.Sz
+    Sx, Sy, Sz, SpinOp = NS2Ops(N, S)
 
     # symmetry operator (shift)
     D: Symmetry = shift(SpinOp)
