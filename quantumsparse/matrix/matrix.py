@@ -237,8 +237,8 @@ class Matrix(csr_matrix):
         else:
             return self.clone(sparse.linalg.inv(self))
 
-    @staticmethod
-    def anticommutator(A:T,B:T)->T:
+    # @staticmethod
+    def anticommutator(self:T,B:T)->T:
         """
         Computes the anticommutator of two matrices A and B.
 
@@ -249,10 +249,10 @@ class Matrix(csr_matrix):
         Returns:
             T: The anticommutator of A and B.
         """
-        return A @ B + B @ A 
+        return self @ B + B @ self 
     
-    @staticmethod
-    def commutator(A:T,B:T)->T:
+    # @staticmethod
+    def commutator(self:T,B:T)->T:
         """
         Computes the commutator of two matrices A and B.
 
@@ -265,7 +265,7 @@ class Matrix(csr_matrix):
         Returns:
             T: The commutator of A and B.
         """
-        return A @ B - B @ A 
+        return self @ B - B @ self 
     
     def norm(self:T)->float:
         """
