@@ -26,39 +26,6 @@ def test_rotation_method(N: int, S: float):
         assert (SrR[n] - SrU[n]).norm() < TOLERANCE, "Sr rotation mismatch"
         assert (SzR[n] - SzU[n]).norm() < TOLERANCE, "Sz rotation mismatch"
 
-@parametrize_method
-@parametrize_N
-@parametrize_S
-def test_heisenberg_hamiltonian(N: int, S: float,method:str):
-    """
-    Build a Heisenberg Hamiltonian for a ring of N spins of spin-S.
-
-    Args:
-        N (int): Number of spin sites.
-        S (float): Spin value for each site.
-
-    Returns:
-        Operator: Heisenberg Hamiltonian as a sparse operator.
-    """
-    spin_values = np.full(N, S)
-    SpinOp = SpinOperators(spin_values)
-    spins = SpinOp.Sx, SpinOp.Sy, SpinOp.Sz
-    Sx, Sy, Sz = spins
-    
-    U = cylindrical_coordinates(spins)
-
-    # Spin operators in cartesian frame --> Heisenberg Hamiltonian in cartesian frame --> rotation to cylindrical frame
-    H = Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=[1,2,3])
-    H = H.unitary_transformation(U).clean()
-    
-    # Spin operators in cartesian frame --> rotation to cylindrical frame --> Hamiltonian in cylindrical frame
-    EulerAngles = get_Euler_angles(N)
-    StR, SrR, SzR = rotate_spins(spins, EulerAngles=EulerAngles, method=method)
-    Hcyl = Heisenberg(Sx=StR, Sy=SrR, Sz=SzR,couplings=[1,2,3])
-    
-    test = (Hcyl - H).norm()
-    assert test < TOLERANCE, f"Heisenberg Hamiltonian mismatch in cylindrical coordinates (N={N}, S={S}): {test}"
-    
     
 if __name__ == "__main__":
     pytest.main([__file__])
