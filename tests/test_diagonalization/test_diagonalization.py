@@ -16,7 +16,7 @@ def test_hamiltonian_with_vs_without_blocks(N: int, S: float,interaction:str) ->
     SpinOp = SpinOperators(spin_values)
     Sx, Sy, Sz = SpinOp.Sx, SpinOp.Sy, SpinOp.Sz
 
-    H = get_H(Sx=Sx, Sy=Sy, Sz=Sz,interaction=interaction)
+    H = get_H(Sx=Sx, Sy=Sy, Sz=Sz, interaction=interaction)
     eigenvalues, eigenvectors = H.diagonalize()
     
     Hdense = H.todense()
