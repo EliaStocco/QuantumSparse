@@ -8,26 +8,28 @@ from quantumsparse.conftest import *
 @parametrize_method
 @parametrize_N
 @parametrize_S
-def test_hamiltonian(N: int, S: float,method:str,interaction:str):
+def test_symmetry(N: int, S: float,method:str,interaction:str):
     """
-    Build a Heisenberg Hamiltonian for a ring of N spins of spin-S.
+    Build a Hamiltonian for a ring of N spins of spin-S.
 
     Args:
         N (int): Number of spin sites.
         S (float): Spin value for each site.
 
     Returns:
-        Operator: Heisenberg Hamiltonian as a sparse operator.
+        Operator: Hamiltonian as a sparse operator.
     """
     Sx, Sy, Sz, SpinOp = NS2Ops(N, S)
     spins = (Sx, Sy, Sz)
     
     U = cylindrical_coordinates(spins)
 
-    # Spin operators in cartesian frame --> Heisenberg Hamiltonian in cartesian frame --> rotation to cylindrical frame
+    # Spin operators in cartesian frame --> Hamiltonian in cartesian frame --> rotation to cylindrical frame
     H = get_H(Sx=Sx, Sy=Sy, Sz=Sz, interaction=interaction)
     D = shift(SpinOp)
     D.diagonalize()
+    assert H.commute(D), "Hamiltonian does not commute with shift symmetry."
+    assert D.commute(H), "Hamiltonian does not commute with shift symmetry."
     H.diagonalize_with_symmetry([D])    
     H = H.unitary_transformation(U)
     
@@ -38,12 +40,14 @@ def test_hamiltonian(N: int, S: float,method:str,interaction:str):
     Hcyl.diagonalize()
     
     test = (Hcyl - H).norm()
-    assert test < TOLERANCE, f"Heisenberg Hamiltonian mismatch in cylindrical coordinates (N={N}, S={S}): {test}"
+    assert test < TOLERANCE, f"Hamiltonian mismatch in cylindrical coordinates (N={N}, S={S}): {test}"
     
     compare_eigensolutions(H, Hcyl)
     
     Hcylsym = get_H(Sx=StR, Sy=SrR, Sz=SzR,interaction=interaction)
     Dcyl = D.unitary_transformation(U)
+    assert Hcylsym.commute(Dcyl), "Hamiltonian does not commute with shift symmetry."
+    assert Dcyl.commute(Hcylsym), "Hamiltonian does not commute with shift symmetry."
     Hcylsym.diagonalize_with_symmetry([Dcyl])
     compare_eigensolutions(Hcyl, Hcylsym)
     
