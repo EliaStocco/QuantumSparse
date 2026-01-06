@@ -1,7 +1,6 @@
 import numpy as np
 from quantumsparse.operator import Operator
 from quantumsparse.matrix import Matrix, State
-from quantumsparse.global_variables import NDArray
 from typing import List, Union, Optional
 from copy import deepcopy
 OpArr = Union[List[Operator],np.ndarray]

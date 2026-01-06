@@ -2,7 +2,6 @@
 import numpy as np
 from quantumsparse.operator import Operator
 from quantumsparse.matrix import Matrix, State
-from quantumsparse.global_variables import NDArray
 from typing import List, Union, Optional
 from .tools import embed_operators, embed_states, check_orthogonality, Hilbert_Schmidt
 from warnings import warn
