@@ -1,9 +1,6 @@
 import argparse
 import json
 from quantumsparse.operator import Operator
-from quantumsparse.tools.mathematics import roots_of_unity
-from quantumsparse.spin.shift import shift
-from quantumsparse.conftest import NS2Ops
 
 def main(args):
     
