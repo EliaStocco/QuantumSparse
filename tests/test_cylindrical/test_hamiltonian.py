@@ -2,10 +2,10 @@ import pytest
 from quantumsparse.spin.functions import cylindrical_coordinates, rotate_spins, get_Euler_angles
 from quantumsparse.conftest import *
 
-@parametrize_method
-@parametrize_interaction
 @parametrize_N
 @parametrize_S
+@parametrize_method
+@parametrize_interaction
 def test_hamiltonian(N: int, S: float,method:str,interaction:str):
     """
     Build a Heisenberg Hamiltonian for a ring of N spins of spin-S.
