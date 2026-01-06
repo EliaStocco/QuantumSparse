@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from quantumsparse.spin import SpinOperators, Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg, anisotropy, rhombicity
 from quantumsparse.spin.functions import cylindrical_coordinates, rotate_spins, get_Euler_angles
 from quantumsparse.conftest import *
 
@@ -25,24 +24,9 @@ def test_hamiltonian(N: int, S: float,method:str,interaction:str):
     Sx, Sy, Sz = spins
     
     U = cylindrical_coordinates(spins)
-    
-    def get_H(Sx,Sy,Sz):
-        if interaction == "heisenberg":
-            H = Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=[1,2,3])
-        elif interaction == "DM":
-            H = Dzyaloshinskii_Moriya(Sx=Sx, Sy=Sy, Sz=Sz,couplings=[1,2,3])
-        elif interaction == "biquadratic":
-            H = biquadratic_Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=[1,2,3])
-        elif interaction == "anisotropy":
-            H = anisotropy(Sz=Sz)
-        elif interaction == "rhombicity":
-            H = rhombicity(Sx=Sx, Sy=Sy)
-        else:
-            raise ValueError(f"Unknown interaction: {interaction}")
-        return H
 
     # Spin operators in cartesian frame --> Heisenberg Hamiltonian in cartesian frame --> rotation to cylindrical frame
-    H = get_H(Sx=Sx, Sy=Sy, Sz=Sz)
+    H = get_H(Sx=Sx, Sy=Sy, Sz=Sz,interaction=interaction)
     H = H.unitary_transformation(U)
     
     # Spin operators in cartesian frame --> rotation to cylindrical frame --> Hamiltonian in cylindrical frame

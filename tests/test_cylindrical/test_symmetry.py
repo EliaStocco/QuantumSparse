@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from quantumsparse.operator import Operator, Symmetry
+from quantumsparse.operator import Operator
 from quantumsparse.spin import SpinOperators, Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg, anisotropy, rhombicity
 from quantumsparse.spin.functions import cylindrical_coordinates, rotate_spins, get_Euler_angles
 from quantumsparse.spin.shift import shift
@@ -28,24 +28,9 @@ def test_hamiltonian(N: int, S: float,method:str,interaction:str):
     Sx, Sy, Sz = spins
     
     U = cylindrical_coordinates(spins)
-    
-    def get_H(Sx,Sy,Sz)->Operator:
-        if interaction == "heisenberg":
-            H = Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=[1,2,3])
-        elif interaction == "DM":
-            H = Dzyaloshinskii_Moriya(Sx=Sx, Sy=Sy, Sz=Sz,couplings=[1,2,3])
-        elif interaction == "biquadratic":
-            H = biquadratic_Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=[1,2,3])
-        elif interaction == "anisotropy":
-            H = anisotropy(Sz=Sz)
-        elif interaction == "rhombicity":
-            H = rhombicity(Sx=Sx, Sy=Sy)
-        else:
-            raise ValueError(f"Unknown interaction: {interaction}")
-        return H
 
     # Spin operators in cartesian frame --> Heisenberg Hamiltonian in cartesian frame --> rotation to cylindrical frame
-    H = get_H(Sx=Sx, Sy=Sy, Sz=Sz)
+    H = get_H(Sx=Sx, Sy=Sy, Sz=Sz,interaction=interaction)
     D = shift(SpinOp)
     D.diagonalize()
     H.diagonalize_with_symmetry([D])    
@@ -62,7 +47,7 @@ def test_hamiltonian(N: int, S: float,method:str,interaction:str):
     
     compare_eigensolutions(H, Hcyl)
     
-    Hcylsym = get_H(Sx=StR, Sy=SrR, Sz=SzR)
+    Hcylsym = get_H(Sx=StR, Sy=SrR, Sz=SzR,interaction=interaction)
     Dcyl = D.unitary_transformation(U)
     Hcylsym.diagonalize_with_symmetry([Dcyl])
     compare_eigensolutions(Hcyl, Hcylsym)
