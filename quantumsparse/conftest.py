@@ -1,7 +1,12 @@
 import pytest
 
 parametrize_method      = pytest.mark.parametrize("method", ["R", "U"])
-parametrize_interaction = pytest.mark.parametrize("interaction", ["heisenberg", "DM", "biquadratic", "anisotropy", "rhombicity"])
+parametrize_interaction = pytest.mark.parametrize("interaction",  [
+                             "heisenberg", "DM", "biquadratic", "anisotropy", "rhombicity",
+                             "heisenberg DM", 
+                             "heisenberg biquadratic", 
+                             "heisenberg DM biquadratic",
+                         ])
 parametrize_N           = pytest.mark.parametrize("N", [2, 3, 4])
 parametrize_S           = pytest.mark.parametrize("S", [0.5, 1.0, 1.5, 2.0])
 
@@ -17,18 +22,16 @@ from quantumsparse.spin import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_He
 
 def get_H(Sx:List[Operator],Sy:List[Operator],Sz:List[Operator],interaction:str)->Operator:
     H = 0 
-    if interaction == "heisenberg":
+    if "heisenberg" in interaction:
         H += Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)
-    elif interaction == "DM":
+    if "DM" in interaction:
         H += Dzyaloshinskii_Moriya(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)
-    elif interaction == "biquadratic":
+    if "biquadratic" in interaction:
         H += biquadratic_Heisenberg(Sx=Sx, Sy=Sy, Sz=Sz,couplings=COUPLINGS)
-    elif interaction == "anisotropy":
+    if "anisotropy" in interaction:
         H += anisotropy(Sz=Sz)
-    elif interaction == "rhombicity":
+    if "rhombicity" in interaction:
         H += rhombicity(Sx=Sx, Sy=Sy)
-    else:
-        raise ValueError(f"Unknown interaction: {interaction}")
     return H
 
 def NS2Ops(N:int,S:float)->Tuple[List[Operator],List[Operator],List[Operator],SpinOperators]:
