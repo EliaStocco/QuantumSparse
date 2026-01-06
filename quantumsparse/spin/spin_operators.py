@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from typing import List
 from quantumsparse.operator import Operator, OpArr
-from typing import Tuple, Union, TypeVar
-
+from typing import Tuple, Union, TypeVar, Type
 
 T = TypeVar('T', bound='SpinOperators')
 
@@ -14,9 +14,68 @@ class SpinOperators:
     Sx:List[Operator]
     Sy:List[Operator]
     Sz:List[Operator]
-    Sp:List[Operator]
-    Sm:List[Operator]
     basis:pd.DataFrame
+    
+    def save(self: T, folder: Union[str, Path]) -> None:
+        """
+        Saves a Matrix object to a folder.
+
+        Parameters
+        ----------
+        folder : str or Path
+            The folder to save the data to.
+        """
+        folder = Path(folder)
+        folder.mkdir(parents=True, exist_ok=True)
+
+        np.savetxt(folder / "spin_values.txt", self.spin_values)
+        self.basis.to_csv(folder / "basis.csv", index=False)
+
+        for n in range(len(self.spin_values)):
+            self.Sx[n].save(folder / f"Sx_{n}.pickle")
+            self.Sy[n].save(folder / f"Sy_{n}.pickle")
+            self.Sz[n].save(folder / f"Sz_{n}.pickle")
+
+
+    @classmethod
+    def load(cls: Type[T], folder: Union[str, Path]) -> T:
+        """
+        Loads a Matrix object from a folder.
+
+        Parameters
+        ----------
+        folder : str or Path
+            The folder to load the object from.
+
+        Returns
+        -------
+        T
+            The loaded Matrix object.
+        """
+        folder = Path(folder)
+
+        spin_values = np.loadtxt(folder / "spin_values.txt")
+        basis = pd.read_csv(folder / "basis.csv")
+
+        N = len(spin_values)
+        Sx: List[Operator] = [None] * N
+        Sy: List[Operator] = [None] * N
+        Sz: List[Operator] = [None] * N
+
+        for n in range(N):
+            Sx[n] = Operator.load(folder / f"Sx_{n}.pickle")
+            Sy[n] = Operator.load(folder / f"Sy_{n}.pickle")
+            Sz[n] = Operator.load(folder / f"Sz_{n}.pickle")
+
+        obj = cls.__new__(cls)
+        obj.spin_values = spin_values
+        obj.Sx = Sx
+        obj.Sy = Sy
+        obj.Sz = Sz
+        obj.basis = basis
+
+        return obj
+
 
     def __init__(self:T,spin_values:np.ndarray=None,N:int=1,S:Union[int,float]=0.5,test:bool=False,**argv):
         """
@@ -51,12 +110,12 @@ class SpinOperators:
             print("\n\terror: not all spin values are integer or semi-integer: ",self.spin_values)
             raise() 
             
-        Sx,Sy,Sz,Sp,Sm = compute_spin_operators(self.spin_values)
+        Sx,Sy,Sz = compute_spin_operators(self.spin_values)
         self.Sx = Sx
         self.Sy = Sy
         self.Sz = Sz  
-        self.Sp = Sp 
-        self.Sm = Sm 
+        # self.Sp = Sp 
+        # self.Sm = Sm 
         
         if test:
             for n in range(len(self.spin_values)):
@@ -203,7 +262,7 @@ def compute_sy(p:Operator,m:Operator)->Operator:
     Sy = -1.j/2.0*(p-m) 
     return Sy
     
-def system_Sxypm_operators(dimensions,sx,sy,sz,sp,sm)->Tuple[OpArr,OpArr,OpArr,OpArr,OpArr]:
+def system_Sxyz_operators(dimensions,sx,sy,sz)->Tuple[OpArr,OpArr,OpArr,OpArr,OpArr]:
     """
     Parameters
     ----------
@@ -211,12 +270,6 @@ def system_Sxypm_operators(dimensions,sx,sy,sz,sp,sm)->Tuple[OpArr,OpArr,OpArr,O
         numpy.array of integer numbers representing the Hilbert space dimension of each site 
     sz : numpy.array of scipy.sparse
         array of Sz operators for each site,
-        acting on the local (only one site) Hilbert space
-    sp : numpy.array of scipy.sparse
-        array of the raising S+ operators for each site,
-        acting on the local (only one site) Hilbert space
-    sm : numpy.array of scipy.sparse
-        array of lowering S- operators for each site,
         acting on the local (only one site) Hilbert space
 
     Returns
@@ -232,18 +285,18 @@ def system_Sxypm_operators(dimensions,sx,sy,sz,sp,sm)->Tuple[OpArr,OpArr,OpArr,O
         acting on the system Hilbert space
     """
     NSpin= len(sz)
-    if NSpin != len(sp) or NSpin != len(sm) or NSpin != len(dimensions):
+    if NSpin != len(sx) or NSpin != len(sy) or NSpin != len(sz) or NSpin != len(dimensions):
         raise ValueError("Arrays of different length in 'compute_Sxy_operators'")
     Sz = np.zeros(NSpin,dtype=object) # S z
     Sx = np.zeros(NSpin,dtype=object) # S x
     Sy = np.zeros(NSpin,dtype=object) # S y
-    Sp = np.zeros(NSpin,dtype=object) # S plus
-    Sm = np.zeros(NSpin,dtype=object) # S minus
+    # Sp = np.zeros(NSpin,dtype=object) # S plus
+    # Sm = np.zeros(NSpin,dtype=object) # S minus
     iden:List[Operator] = Operator.identity(dimensions)
     for i in iden:
         i.diagonalize()
     
-    for zpm,out in zip([sx,sy,sz,sp,sm],[Sx,Sy,Sz,Sp,Sm]):
+    for zpm,out in zip([sx,sy,sz],[Sx,Sy,Sz]):
         for i in range(NSpin):
             Ops = iden.copy()
             Ops[i] = zpm[i]
@@ -252,9 +305,9 @@ def system_Sxypm_operators(dimensions,sx,sy,sz,sp,sm)->Tuple[OpArr,OpArr,OpArr,O
                 # out[i] = Operator.kron(out[i],Ops[j]) 
                 out[i] = out[i].kronecker(Ops[j])
         
-    return Sx,Sy,Sz,Sp,Sm       
+    return Sx,Sy,Sz# ,Sp,Sm       
 
-def single_Szpm(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr]:
+def single_Sxyz(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr]:
     """
     Parameters
     ----------
@@ -298,7 +351,7 @@ def single_Szpm(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr]:
         Sy[i].diagonalize()
         Sz[i].diagonalize()
 
-    return Sx,Sy,Sz,Sp,Sm
+    return Sx,Sy,Sz# ,Sp,Sm
 
 def compute_spin_operators(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr,OpArr,OpArr]:
     """
@@ -327,6 +380,6 @@ def compute_spin_operators(spin_values:np.ndarray)->Tuple[OpArr,OpArr,OpArr,OpAr
     """
     spin_values = np.asarray(spin_values)    
     dimensions = spin2dim(spin_values)
-    sx,sy,sz,sp,sm = single_Szpm(spin_values)
-    Sx,Sy,Sz,Sp,Sm = system_Sxypm_operators(dimensions,sx,sy,sz,sp,sm)
-    return Sx,Sy,Sz,Sp,Sm
+    sx,sy,sz = single_Sxyz(spin_values)
+    Sx,Sy,Sz = system_Sxyz_operators(dimensions,sx,sy,sz)
+    return Sx,Sy,Sz# ,Sp,Sm
