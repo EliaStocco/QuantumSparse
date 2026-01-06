@@ -4,7 +4,6 @@ from quantumsparse.operator import Operator
 from quantumsparse.operator import Symmetry, roots_of_unity
 from quantumsparse.spin import Heisenberg, anisotropy, spin2dim
 from quantumsparse.spin.shift import shift
-from quantumsparse.symmetry import Translation
 import pytest
 
 # In quantumsparse/spin/interactions.py you can find:
@@ -26,8 +25,6 @@ def test_Heisenberg_symmetries(S=0.5,NSpin=3,use_symmetries=True):
     # unpack the operators
     Sx,Sy,Sz = SpinOp.Sx,SpinOp.Sy,SpinOp.Sz
     
-    #-----------------#
-    T = Translation.from_dims(NSpin,2*S+1)
     
     
     #-----------------#
