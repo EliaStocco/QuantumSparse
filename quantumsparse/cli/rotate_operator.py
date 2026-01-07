@@ -1,4 +1,5 @@
 import argparse
+from quantumsparse.spin import SpinOperators
 from quantumsparse.operator import Operator, Symmetry
 from quantumsparse.spin.functions import cylindrical_coordinates
 
@@ -13,6 +14,14 @@ def main():
     
     print(f"\n=== {description} ===\n")
     
+    print(f"Reading spins from folder '{args.input}' ... ", end="")
+    SpinOp = SpinOperators.load(args.input_spins)
+    print("done.")
+    
+    print("Preparing cylindrical coordinates ... ", end="")
+    U = cylindrical_coordinates(SpinOp.spins)
+    print("done.")
+    
     print(f"Reading operator from file '{args.input}' ... ", end="")
     H = Operator.load(args.input_operator)
     print("done.")
@@ -20,22 +29,12 @@ def main():
     print("\nSummary:")
     print(repr(H))
     
-    if args.symmetry is not None:
-        print(f"\nReading symmetry operator from file '{args.symmetry}' ... ", end="")
-        S = Symmetry.load(args.symmetry)
-        print("done.")
-        
-        print("Diagonalizing operator in the symmetry-adapted basis ... ", end="")
-        H.diagonalize_with_symmetry(S=S)
-        print("done.")
+    print("Rotating operator to cylindrical basis ... ", end="")
+    H = H.unitary_transformation(U)
+    print("done.")
     
-    else:
-        print("Diagonalizing operator ... ", end="")
-        H.diagonalize()
-        print("done.")
-        
     print("\nSummary:")
-    print(repr(H))   
+    print(repr(H))
     
     print(f"Saving operator to file '{args.output}' ... ", end="")
     H.save(args.output)
