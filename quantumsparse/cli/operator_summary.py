@@ -1,5 +1,6 @@
 import argparse
 import json
+import numpy as np
 from quantumsparse.operator import Operator
 
 def main():
@@ -9,6 +10,7 @@ def main():
     parser.add_argument("-io", "--input_operator"   , type=str, required=True , help="pickle input file with the operator.")
     parser.add_argument("-p", "--plot"    , type=str, required=False, help="output plot file (default: %(default)s).", default=None)
     parser.add_argument("-o", "--options" , type=str, required=False, help="JSON formatted options (default: %(default)s).", default=None)
+    parser.add_argument("-e", "--eigenvalues" , type=str, required=False, help="txt file where to save the eigenvalues (default: %(default)s).", default=None)
     args = parser.parse_args()
     
     print(f"\n=== {description} ===\n")
@@ -26,6 +28,14 @@ def main():
         print(f"Plotting operator to file '{args.plot}' ... ", end="")
         print(options)
         H.visualize(**options)
+        print("done.")
+        
+    if args.eigenvalues is not None:
+        assert H.is_diagonalized(), "The operator must be diagonalized to extract the eigenvalues."
+        H = H.sort()
+        print(f"Saving eigenvalues to file '{args.eigenvalues}' ... ", end="")
+        w = H.eigenvalues.astype(np.complex128)
+        np.savetxt(args.eigenvalues, w)
         print("done.")
     
     print("Job done :)\n")

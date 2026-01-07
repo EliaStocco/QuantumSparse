@@ -76,8 +76,8 @@ def main(S=0.5,NSpin=2):
     E,Psi = H.diagonalize_with_symmetry(S=[D])
     Enosym,Psinosym = Hnosym.diagonalize()
     
-    H.sort(inplace=True)
-    Hnosym.sort(inplace=True)
+    H = H.sort()
+    Hnosym = Hnosym.sort()
     
     assert np.allclose(H.eigenvalues,Hnosym.eigenvalues), "The eigenvalues should be the same."
     # assert np.allclose(H.eigenstates.todense(),Hnosym.eigenstates.todense()), "The eigenstates should be the same."
