@@ -7,12 +7,13 @@ from quantumsparse.spin.shift import shift
 
 def main():
     
-    parser = argparse.ArgumentParser(description="Diagonalize the shift operator.")
+    description = "Diagonalize the shift operator."
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-i", "--input"   , type=str, required=True , help="folder with the spin information.")
     parser.add_argument("-o", "--output", type=str  , required=True, help="pickle output file to save the operator.")
     args = parser.parse_args()
     
-    print("\n=== Diagonalize the shift operator ===\n")
+    print(f"\n=== {description} ===\n")
     
     print(f"Reading spins from folder '{args.input}' ... ", end="")
     SpinOp = SpinOperators.load(args.input)

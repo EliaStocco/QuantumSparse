@@ -3,11 +3,12 @@ from quantumsparse.spin import SpinOperators
 
 def main():
     
-    parser = argparse.ArgumentParser(description="Diagonalize the shift operator.")
+    description = "Summarize the spin operators information."
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-i", "--input"   , type=str, required=True , help="folder with the spin information.")
     args = parser.parse_args()
     
-    print("\n=== Summary of an operator ===\n")
+    print(f"\n=== {description} ===\n")
     
     print(f"Reading spins from folder '{args.input}' ... ", end="")
     SpinOp = SpinOperators.load(args.input)

@@ -4,14 +4,14 @@ from quantumsparse.spin.functions import get_Euler_angles, rotate_spins
 from quantumsparse.tools.debug import check_commutation_relations
 
 def main():
-    
-    parser = argparse.ArgumentParser(description="Diagonalize the shift operator.")
+    description = "Rotate the spins (form cartesian to cylindrical coordinates)."
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-i", "--input"   , type=str, required=True , help="folder with the spin information.")
     parser.add_argument("-o", "--output", type=str  , required=True, help="folder with the rotated spin information.")
     parser.add_argument("-m", "--method"   , type=str, required=False , help="folder with the spin information (default: %(default)s).", default="R")
     args = parser.parse_args()
     
-    print("\n=== Diagonalize the shift operator ===\n")
+    print(f"\n=== {description}  ===\n")
     
     print(f"Reading spins from folder '{args.input}' ... ", end="")
     SpinOp = SpinOperators.load(args.input)
@@ -19,17 +19,18 @@ def main():
     
     check_commutation_relations(*SpinOp.spins, tolerance=1e-10)
     
+    print("Rotating spins ... ", end="")
     N = SpinOp.nsites
     EulerAngles = get_Euler_angles(N)
     StR, SrR, SzR = rotate_spins(SpinOp.spins, EulerAngles=EulerAngles, method=args.method)
-    
     SpinOp.Sx = StR
     SpinOp.Sy = SrR
     SpinOp.Sz = SzR
+    print("done.")
     
     check_commutation_relations(*SpinOp.spins, tolerance=1e-10)
     
-    print(f"Saving shift operator to '{args.output}' ... ", end="")
+    print(f"Saving spins to folder '{args.output}' ... ", end="")
     SpinOp.save(args.output)
     print("done.")
     

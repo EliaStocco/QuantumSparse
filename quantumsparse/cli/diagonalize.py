@@ -3,12 +3,13 @@ from quantumsparse.operator import Operator
 
 def main():
     
-    parser = argparse.ArgumentParser(description="Diagonalize the shift operator.")
+    description = "Diagonalize an operator."
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-i", "--input"   , type=str, required=True , help="pickle input file.")
     parser.add_argument("-o", "--output"  , type=str, required=False, help="pickle output file (default: %(default)s).", default=None)
     args = parser.parse_args()
     
-    print("\n=== Diagonalize an operator ===\n")
+    print(f"\n=== {description} ===\n")
     
     print(f"Reading operator from file '{args.input}' ... ", end="")
     H = Operator.load(args.input)

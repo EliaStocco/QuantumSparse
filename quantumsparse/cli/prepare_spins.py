@@ -3,13 +3,14 @@ from quantumsparse.conftest import NS2Ops
 
 def main():
     
-    parser = argparse.ArgumentParser(description="Diagonalize the shift operator.")
+    description = "Prepare the spin operators for a chain of N spins S."
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-N", "--number", type=int  , required=True, help="Number of spins sites in the chain.")
     parser.add_argument("-S", "--spin"  , type=float, required=True, help="Spin quantum number.")
     parser.add_argument("-o", "--output", type=str  , required=True, help="output folder to save the operators.")
     args = parser.parse_args()
     
-    print("\n=== Diagonalize the shift operator ===\n")
+    print(f"\n=== {description} ===\n")
     
     N = args.number
     S = args.spin

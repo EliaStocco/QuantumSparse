@@ -4,13 +4,14 @@ from quantumsparse.operator import Operator
 
 def main():
     
-    parser = argparse.ArgumentParser(description="Diagonalize the shift operator.")
+    description = "Summarize the operator information."
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-i", "--input"   , type=str, required=True , help="pickle input file.")
     parser.add_argument("-p", "--plot"    , type=str, required=False, help="output plot file (default: %(default)s).", default=None)
     parser.add_argument("-o", "--options" , type=str, required=False, help="JSON formatted options (default: %(default)s).", default=None)
     args = parser.parse_args()
     
-    print("\n=== Summary of an operator ===\n")
+    print(f"\n=== {description} ===\n")
     
     print(f"Reading operator from file '{args.input}' ... ", end="")
     H = Operator.load(args.input)
