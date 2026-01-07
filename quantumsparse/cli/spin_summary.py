@@ -24,5 +24,5 @@ if __name__ == "__main__":
     main()
     
 def test_script():
-    from quantumsparse.conftest import test_script_template
-    test_script_template("spin_summary")
+    from quantumsparse.conftest import template_test_script
+    template_test_script("spin_summary")

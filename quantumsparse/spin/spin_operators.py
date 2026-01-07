@@ -206,8 +206,13 @@ class SpinOperators:
                     norm = comm.norm()
                     assert norm < tolerance, f"The operator {op[0]}[{i}] does not commute with the operator {op[0]}[{j}]: {norm}"
                     
+    @property
     def nsites(self)->int:
         return len(self.spin_values)
+    
+    @property
+    def spins(self):
+        return self.Sx, self.Sy, self.Sz
             
 def spin2dim(spin_values: np.ndarray)->np.ndarray:
     """

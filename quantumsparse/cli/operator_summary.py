@@ -6,8 +6,8 @@ def main():
     
     parser = argparse.ArgumentParser(description="Diagonalize the shift operator.")
     parser.add_argument("-i", "--input"   , type=str, required=True , help="pickle input file.")
-    parser.add_argument("-p", "--plot"    , type=str, required=False, help="output plot file.", default=None)
-    parser.add_argument("-o", "--options" , type=str, required=False, help="JSON formatted options.", default=None)
+    parser.add_argument("-p", "--plot"    , type=str, required=False, help="output plot file (default: %(default)s).", default=None)
+    parser.add_argument("-o", "--options" , type=str, required=False, help="JSON formatted options (default: %(default)s).", default=None)
     args = parser.parse_args()
     
     print("\n=== Summary of an operator ===\n")
@@ -34,5 +34,5 @@ if __name__ == "__main__":
     main()
     
 def test_script():
-    from quantumsparse.conftest import test_script_template
-    test_script_template("operator_summary")
+    from quantumsparse.conftest import template_test_script
+    template_test_script("operator_summary")

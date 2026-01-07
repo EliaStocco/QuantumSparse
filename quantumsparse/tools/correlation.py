@@ -1,6 +1,4 @@
-s# some function recalling statistical physics results
-import numpy as np
-# from scipy import sparse
+# some function recalling statistical physics results
 from .quantum_mechanics import expectation_value
 
 def correlation(OpA,OpB,Psi):

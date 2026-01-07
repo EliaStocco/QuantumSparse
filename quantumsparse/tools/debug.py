@@ -1,3 +1,4 @@
+from typing import List
 import numpy as np
 from quantumsparse.operator import Operator
 
@@ -128,3 +129,16 @@ def compare_eigensolutions_dense_real(
 
         residual = np.linalg.norm(H @ aligned - aligned * eigval2_sorted[None, :]) / N
         assert residual < atol, f"Problem"
+        
+def check_commutation_relations(Sx:List[Operator],Sy:List[Operator],Sz:List[Operator],tolerance:float):
+    N = len(Sx)
+    for n in range(N):
+        for m in range(N):
+            if n != m:
+                assert ( Sx[n].commutator(Sy[m]) ).norm() < tolerance, f"Commutation relation [Sx_n, Sy_m] != 0 failed at sites {n}, {m}"
+                assert ( Sy[n].commutator(Sz[m]) ).norm() < tolerance, f"Commutation relation [Sy_n, Sz_m] != 0 failed at sites {n}, {m}"
+                assert ( Sz[n].commutator(Sx[m]) ).norm() < tolerance, f"Commutation relation [Sz_n, Sx_m] != 0 failed at sites {n}, {m}"
+            else:
+                assert ( Sx[n].commutator(Sy[n]) - 1.j * Sz[n]).norm() < tolerance, f"Commutation relation [Sx, Sy] != i Sz failed at site {n}"
+                assert ( Sy[n].commutator(Sz[n]) - 1.j * Sx[n]).norm() < tolerance, f"Commutation relation [Sy, Sz] != i Sx failed at site {n}"
+                assert ( Sz[n].commutator(Sx[n]) - 1.j * Sy[n]).norm() < tolerance, f"Commutation relation [Sz, Sx] != i Sy failed at site {n}"

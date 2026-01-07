@@ -5,7 +5,7 @@ def main():
     
     parser = argparse.ArgumentParser(description="Diagonalize the shift operator.")
     parser.add_argument("-i", "--input"   , type=str, required=True , help="pickle input file.")
-    parser.add_argument("-o", "--output"  , type=str, required=False, help="pickle output file.", default=None)
+    parser.add_argument("-o", "--output"  , type=str, required=False, help="pickle output file (default: %(default)s).", default=None)
     args = parser.parse_args()
     
     print("\n=== Diagonalize an operator ===\n")
@@ -33,5 +33,5 @@ if __name__ == "__main__":
     main()
     
 def test_script():
-    from quantumsparse.conftest import test_script_template
-    test_script_template("diagonalize")
+    from quantumsparse.conftest import template_test_script
+    template_test_script("diagonalize")

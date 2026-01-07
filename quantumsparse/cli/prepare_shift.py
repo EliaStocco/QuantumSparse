@@ -32,7 +32,7 @@ def main():
     
     print("Checking consistency of the energy levels of the shift operator ... ", end="")
     l, n = D.energy_levels()
-    N = SpinOp.nsites()
+    N = SpinOp.nsites
     assert len(l) == N, "wrong number of energy levels for shift symmetry"
     assert np.allclose(np.sort(l), np.sort(roots_of_unity(N))), "The eigenvalues should be the roots of unity."
     print("done.")
@@ -48,5 +48,5 @@ if __name__ == "__main__":
     main()
     
 def test_script():
-    from quantumsparse.conftest import test_script_template
-    test_script_template("prepare_shift")
+    from quantumsparse.conftest import template_test_script
+    template_test_script("prepare_shift")
