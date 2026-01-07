@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 import numpy as np
 from quantumsparse.operator import Symmetry
@@ -6,7 +5,13 @@ from quantumsparse.tools.mathematics import roots_of_unity
 from quantumsparse.spin.shift import shift
 from quantumsparse.conftest import NS2Ops
 
-def main(args):
+def main():
+    
+    parser = argparse.ArgumentParser(description="Diagonalize the shift operator.")
+    parser.add_argument("-N", "--number", type=int  , required=True, help="Number of spins sites in the chain.")
+    parser.add_argument("-S", "--spin"  , type=float, required=True, help="Spin quantum number.")
+    parser.add_argument("-o", "--output", type=str  , required=True, help="pickle output file to save the operator.")
+    args = parser.parse_args()
     
     print("\n=== Diagonalize the shift operator ===\n")
     
@@ -46,9 +51,8 @@ def main(args):
     
     
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Diagonalize the shift operator.")
-    parser.add_argument("-N", "--number", type=int  , required=True, help="Number of spins sites in the chain.")
-    parser.add_argument("-S", "--spin"  , type=float, required=True, help="Spin quantum number.")
-    parser.add_argument("-o", "--output", type=str  , required=True, help="pickle output file to save the operator.")
-    args = parser.parse_args()
-    main(args)
+    main()
+    
+def test_script():
+    from quantumsparse.conftest import test_script_template
+    test_script_template("prepare_shift")

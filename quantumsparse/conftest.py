@@ -45,3 +45,18 @@ def NS2Ops(N:int,S:float)->Tuple[List[Operator],List[Operator],List[Operator],Sp
     SpinOp = SpinOperators(spin_values)
     Sx, Sy, Sz = SpinOp.Sx, SpinOp.Sy, SpinOp.Sz
     return Sx,Sy,Sz, SpinOp
+
+def test_script_template(script_name:str):
+    import subprocess
+    result = subprocess.run(
+        [script_name, "-h"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    # Command should exit successfully
+    assert result.returncode == 0
+
+    # Help text should contain usage
+    assert "usage" in result.stdout.lower()
