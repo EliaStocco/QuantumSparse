@@ -369,6 +369,27 @@ class Operator(Matrix):
         assert len(submatrices) == len(w), "coding error"
 
         return w, submatrices
+    
+    def thermal_average(self:T,operator:T,temperatures:np.ndarray)->np.ndarray:
+        """
+        Calculate the thermal average of an operator at a given temperature.
+
+        Parameters
+        ----------
+        operator : T
+            The operator for which to calculate the thermal average.
+        temperature : float
+            The temperature at which to calculate the thermal average.
+
+        Returns
+        -------
+        T
+            The thermal average of the operator.
+        """
+        from quantumsparse.statistics.statistical_physics import quantum_thermal_average_value
+        if not self.is_diagonalized():
+            raise ValueError("The operator has not been diagonalized yet.")        
+        return quantum_thermal_average_value(temperatures,self.eigenvalues,operator,self.eigenstates)
         
 def test_operator_save_load(tmp_path):
     """

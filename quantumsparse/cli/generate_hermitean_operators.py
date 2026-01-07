@@ -1,4 +1,5 @@
 import argparse
+import os
 from typing import List
 from quantumsparse.operator import Operator
 from quantumsparse.spin import SpinOperators
@@ -53,7 +54,7 @@ def main():
     description = "Generate (possibly) all hermitean operators of a Hilbert space."
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-is", "--input_spins"   , type=str, required=True , help="folder with the spin information.")
-    parser.add_argument("-N", "--max_N"  , type=str, required=False , help="maximum number of operators to consider (default: %(default)s).", default=100)
+    parser.add_argument("-N", "--max_N"  , type=int, required=False , help="maximum number of operators to consider (default: %(default)s).", default=100)
     parser.add_argument("-o", "--output_folder"  , type=str, required=False , help="output folder with the hermitean operators (default: %(default)s).", default=None)
     args = parser.parse_args()
     
@@ -65,6 +66,8 @@ def main():
     
     if args.output_folder is None:
         args.output_folder = f"{args.input_spins}/hermitean-operators"
+    
+    os.makedirs(args.output_folder, exist_ok=True)
         
     print(f"Generating hermitean operators (max {args.max_N}) ... ", end="")
     operators = hermitian_basis(SpinOp.Hilbert_space_dimension,args.max_N)

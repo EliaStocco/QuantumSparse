@@ -32,6 +32,7 @@ spins_summary                = "quantumsparse.cli.spins_summary:main"
 construct_hamiltonian        = "quantumsparse.cli.construct_hamiltonian:main"
 rotate_operator              = "quantumsparse.cli.rotate_operator:main"
 generate_hermitean_operators = "quantumsparse.cli.generate_hermitean_operators:main"
+test_eigenstates             = "quantumsparse.cli.test_eigenstates:main"
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
