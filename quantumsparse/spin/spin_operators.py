@@ -28,7 +28,7 @@ class SpinOperators:
         folder = Path(folder)
         folder.mkdir(parents=True, exist_ok=True)
 
-        np.savetxt(folder / "spin_values.txt", self.spin_values)
+        np.savetxt(folder / "spin_values.txt", self.spin_values, fmt="%.1f")
         self.basis.to_csv(folder / "basis.csv", index=False)
 
         for n in range(len(self.spin_values)):
