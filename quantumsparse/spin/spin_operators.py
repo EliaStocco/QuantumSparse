@@ -205,6 +205,9 @@ class SpinOperators:
                     comm:Operator = Operator.commutator(OpA[i],OpB[j])
                     norm = comm.norm()
                     assert norm < tolerance, f"The operator {op[0]}[{i}] does not commute with the operator {op[0]}[{j}]: {norm}"
+                    
+    def nsites(self)->int:
+        return len(self.spin_values)
             
 def spin2dim(spin_values: np.ndarray)->np.ndarray:
     """

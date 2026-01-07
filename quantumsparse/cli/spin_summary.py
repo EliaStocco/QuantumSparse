@@ -1,11 +1,10 @@
 import argparse
-import json
 from quantumsparse.spin import SpinOperators
 
 def main():
     
     parser = argparse.ArgumentParser(description="Diagonalize the shift operator.")
-    parser.add_argument("-i", "--input"   , type=str, required=True , help="pickle input file.")
+    parser.add_argument("-i", "--input"   , type=str, required=True , help="folder with the spin information.")
     args = parser.parse_args()
     
     print("\n=== Summary of an operator ===\n")
