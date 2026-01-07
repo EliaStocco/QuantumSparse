@@ -23,14 +23,15 @@ dependencies = [
 dev = ["pytest"]
 
 [project.scripts]
-diagonalize           = "quantumsparse.cli.diagonalize:main"
-prepare_shift         = "quantumsparse.cli.prepare_shift:main"
-prepare_spins         = "quantumsparse.cli.prepare_spins:main"
-rotate_spins          = "quantumsparse.cli.rotate_spins:main"
-operator_summary      = "quantumsparse.cli.operator_summary:main"
-spins_summary         = "quantumsparse.cli.spins_summary:main"
-construct_hamiltonian = "quantumsparse.cli.construct_hamiltonian:main"
-rotate_operator       = "quantumsparse.cli.rotate_operator:main"
+diagonalize                  = "quantumsparse.cli.diagonalize:main"
+prepare_shift                = "quantumsparse.cli.prepare_shift:main"
+prepare_spins                = "quantumsparse.cli.prepare_spins:main"
+rotate_spins                 = "quantumsparse.cli.rotate_spins:main"
+operator_summary             = "quantumsparse.cli.operator_summary:main"
+spins_summary                = "quantumsparse.cli.spins_summary:main"
+construct_hamiltonian        = "quantumsparse.cli.construct_hamiltonian:main"
+rotate_operator              = "quantumsparse.cli.rotate_operator:main"
+generate_hermitean_operators = "quantumsparse.cli.generate_hermitean_operators:main"
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

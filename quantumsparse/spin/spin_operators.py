@@ -103,7 +103,7 @@ class SpinOperators:
             self.spin_values = np.full(N,S)
 
         # self.degeneracies = (2*self.spin_values+1).astype(int)
-        self.degeneracies = spin2dim(self.spin_values)
+        # self.degeneracies = spin2dim(self.spin_values)
      
         check = [ not (i%1) for i in self.spin_values*2 ]
         if not np.all(check):
@@ -146,8 +146,9 @@ class SpinOperators:
         index = np.arange(int(self.Sz[0].shape[0]))
         basis = pd.DataFrame(columns=Nsites,index=index)
         m = [None]*len(Nsites)
+        deg = self.degeneracies
         for n in Nsites:
-            m[n] = np.linspace(self.spin_values[n],-self.spin_values[n],self.degeneracies[n]) #[ j for j in range(-self.spin_values[n],self.spin_values[n]+1) ]
+            m[n] = np.linspace(self.spin_values[n],-self.spin_values[n],deg[n]) #[ j for j in range(-self.spin_values[n],self.spin_values[n]+1) ]
 
         tmp = list(product(*m))
 
@@ -213,6 +214,14 @@ class SpinOperators:
     @property
     def spins(self):
         return self.Sx, self.Sy, self.Sz
+    
+    @property
+    def degeneracies(self)->np.ndarray:
+        return spin2dim(self.spin_values)
+    
+    @property
+    def Hilbert_space_dimension(self)->int:
+        return np.prod(self.degeneracies)
             
 def spin2dim(spin_values: np.ndarray)->np.ndarray:
     """
