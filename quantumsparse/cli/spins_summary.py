@@ -25,4 +25,4 @@ if __name__ == "__main__":
     
 def test_script():
     from quantumsparse.conftest import template_test_script
-    template_test_script("spin_summary")
+    template_test_script("spins_summary")
