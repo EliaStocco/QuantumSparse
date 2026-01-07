@@ -40,6 +40,9 @@ jobs:
 
       - name: Run tests (functions)
         run: pytest tests/test_functions
+
+      - name: Run tests (mathematics)
+        run: pytest tests/test_mathematics
       
       - name: Run tests (methods)
         run: pytest tests/test_methods
