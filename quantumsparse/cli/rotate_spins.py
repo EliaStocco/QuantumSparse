@@ -6,8 +6,8 @@ from quantumsparse.tools.debug import check_commutation_relations
 def main():
     description = "Rotate the spins (form cartesian to cylindrical coordinates)."
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("-i", "--input"   , type=str, required=True , help="folder with the spin information.")
-    parser.add_argument("-o", "--output", type=str  , required=True, help="folder with the rotated spin information.")
+    parser.add_argument("-is", "--input_spins"   , type=str, required=True , help="folder with the spin information.")
+    parser.add_argument("-os", "--output_spins", type=str  , required=True, help="folder with the rotated spin information.")
     parser.add_argument("-m", "--method"   , type=str, required=False , help="folder with the spin information (default: %(default)s).", default="R")
     args = parser.parse_args()
     

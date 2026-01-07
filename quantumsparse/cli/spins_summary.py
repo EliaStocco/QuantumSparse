@@ -5,7 +5,7 @@ def main():
     
     description = "Summarize the spin operators information."
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("-i", "--input"   , type=str, required=True , help="folder with the spin information.")
+    parser.add_argument("-is", "--input_spins"   , type=str, required=True , help="folder with the spin information.")
     args = parser.parse_args()
     
     print(f"\n=== {description} ===\n")

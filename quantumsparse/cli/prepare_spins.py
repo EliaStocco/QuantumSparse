@@ -7,7 +7,7 @@ def main():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-N", "--number", type=int  , required=True, help="Number of spins sites in the chain.")
     parser.add_argument("-S", "--spin"  , type=float, required=True, help="Spin quantum number.")
-    parser.add_argument("-o", "--output", type=str  , required=True, help="output folder to save the operators.")
+    parser.add_argument("-o", "--output"      , type=str, required=True, help="pickle output file with the operator.")
     args = parser.parse_args()
     
     print(f"\n=== {description} ===\n")

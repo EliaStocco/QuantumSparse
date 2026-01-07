@@ -9,8 +9,8 @@ def main():
     
     description = "Diagonalize the shift operator."
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("-i", "--input"   , type=str, required=True , help="folder with the spin information.")
-    parser.add_argument("-o", "--output", type=str  , required=True, help="pickle output file to save the operator.")
+    parser.add_argument("-is", "--input_spins"   , type=str, required=True , help="folder with the spin information.")
+    parser.add_argument("-o", "--output"      , type=str, required=True, help="pickle output file with the operator.")
     args = parser.parse_args()
     
     print(f"\n=== {description} ===\n")
