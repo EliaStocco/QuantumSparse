@@ -26,7 +26,8 @@ dev = ["pytest"]
 diagonalize           = "quantumsparse.cli.diagonalize:main"
 prepare_shift         = "quantumsparse.cli.prepare_shift:main"
 prepare_spins         = "quantumsparse.cli.prepare_spins:main"
-summary               = "quantumsparse.cli.summary:main"
+operator_summary      = "quantumsparse.cli.operator_summary:main"
+spin_summary          = "quantumsparse.cli.spin_summary:main"
 construct_hamiltonian = "quantumsparse.cli.construct_hamiltonian:main"
 
 [build-system]
