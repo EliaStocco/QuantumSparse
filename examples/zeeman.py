@@ -47,7 +47,7 @@ def main():
 
     # Load the Hamiltonian
     logger.info("Loading Hamiltonian from file.")
-    H0 = Operator.load(args.input)
+    H0 = Operator.load(args.input_operator)
     H0.eigenvalues = False
     H0.eigenstates = False
     H0 /= 1000  # meV -> eV

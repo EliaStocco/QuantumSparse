@@ -9,15 +9,15 @@ def main():
     
     description = "Diagonalize an operator."
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("-i", "--input"         , type=str, required=True , help="folder with the spin information.")
+    parser.add_argument("-is", "--input_spins"   , type=str, required=True , help="folder with the spin information.")
     parser.add_argument("-j", "--interactions"   , type=str, required=True , help="JSON file with the interactions.")
-    parser.add_argument("-o", "--output"      , type=str, required=False, help="pickle output file (default: %(default)s).", default=None)
+    parser.add_argument("-o", "--output"      , type=str, required=True, help="pickle output file with the operator.")
     args = parser.parse_args()
     
     print(f"\n=== {description} ===\n")
     
     print(f"Reading spins from folder '{args.input}' ... ", end="")
-    SpinOp = SpinOperators.load(args.input)
+    SpinOp = SpinOperators.load(args.input_spins)
     print("done.")  
     
     print(f"Reading interactions from file '{args.interactions}' ... ", end="")

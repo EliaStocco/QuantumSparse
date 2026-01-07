@@ -16,7 +16,7 @@ def main():
     print(f"\n=== {description} ===\n")
     
     print(f"Reading spins from folder '{args.input}' ... ", end="")
-    SpinOp = SpinOperators.load(args.input)
+    SpinOp = SpinOperators.load(args.input_spins)
     print("done.")
 
     # symmetry operator (shift)
