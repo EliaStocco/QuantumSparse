@@ -12,7 +12,7 @@ def main():
     
     print(f"\n=== {description} ===\n")
     
-    print(f"Reading operator from file '{args.input}' ... ", end="")
+    print(f"Reading operator from file '{args.input_operator}' ... ", end="")
     H = Operator.load(args.input_operator)
     print("done.")
     

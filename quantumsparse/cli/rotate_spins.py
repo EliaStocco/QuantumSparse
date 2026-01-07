@@ -13,7 +13,7 @@ def main():
     
     print(f"\n=== {description}  ===\n")
     
-    print(f"Reading spins from folder '{args.input}' ... ", end="")
+    print(f"Reading spins from folder '{args.input_spins}' ... ", end="")
     SpinOp = SpinOperators.load(args.input_spins)
     print("done.")
     
@@ -30,8 +30,8 @@ def main():
     
     check_commutation_relations(*SpinOp.spins, tolerance=1e-10)
     
-    print(f"Saving spins to folder '{args.output}' ... ", end="")
-    SpinOp.save(args.output)
+    print(f"Saving spins to folder '{args.output_spins}' ... ", end="")
+    SpinOp.save(args.output_spins)
     print("done.")
     
     print("Job done :)\n")

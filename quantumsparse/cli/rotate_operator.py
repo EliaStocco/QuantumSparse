@@ -1,20 +1,20 @@
 import argparse
 from quantumsparse.spin import SpinOperators
-from quantumsparse.operator import Operator, Symmetry
+from quantumsparse.operator import Operator
 from quantumsparse.spin.functions import cylindrical_coordinates
 
 def main():
     
     description = "Diagonalize an operator."
     parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("-is", "--input_spins"   , type=str, required=True , help="folder with the spin information.")
     parser.add_argument("-io", "--input_operator"   , type=str, required=True , help="pickle input file with the operator.")
-    parser.add_argument("-s", "--symmetry", type=str, required=False, help="pickle input file of the symmetry operator (default: %(default)s).", default=None)
     parser.add_argument("-o", "--output"      , type=str, required=True, help="pickle output file with the operator.")
     args = parser.parse_args()
     
     print(f"\n=== {description} ===\n")
     
-    print(f"Reading spins from folder '{args.input}' ... ", end="")
+    print(f"Reading spins from folder '{args.input_spins}' ... ", end="")
     SpinOp = SpinOperators.load(args.input_spins)
     print("done.")
     
@@ -22,7 +22,7 @@ def main():
     U = cylindrical_coordinates(SpinOp.spins)
     print("done.")
     
-    print(f"Reading operator from file '{args.input}' ... ", end="")
+    print(f"Reading operator from file '{args.input_operator}' ... ", end="")
     H = Operator.load(args.input_operator)
     print("done.")
     
