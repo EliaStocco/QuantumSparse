@@ -345,7 +345,7 @@ class Matrix(csr_matrix):
     # Inspection
     #-----------------#
     
-    def adjacency(self):
+    def adjacency(self:T)->T:
         """
         Computes the adjacency matrix of the given matrix.
 
