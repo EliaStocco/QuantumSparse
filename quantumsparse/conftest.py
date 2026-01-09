@@ -10,7 +10,6 @@ parametrize_interaction = pytest.mark.parametrize("interaction",  [
 parametrize_N           = pytest.mark.parametrize("N", [2, 3, 4])
 parametrize_S           = pytest.mark.parametrize("S", [0.5, 1.0, 1.5, 2.0])
 
-TOLERANCE = 1e-10
 COUPLINGS = [1.0,2.1,3.5] # just some numbers
 
 from typing import List, Tuple
