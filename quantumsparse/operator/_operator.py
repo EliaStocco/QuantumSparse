@@ -1,6 +1,7 @@
 import numpy as np
 from copy import copy, deepcopy
 from typing import TypeVar, Union, List
+from typing_extensions import Self
 from quantumsparse.matrix import Matrix
 from quantumsparse.tools.mathematics import unique_with_tolerance
 
@@ -59,19 +60,33 @@ class Operator(Matrix):
         
         if direction == "forward":
             dagger = S.eigenstates.dagger()
-            out = self.clone(dagger @ self @ S.eigenstates)
+            out = Operator(dagger @ self @ S.eigenstates)
             if self.is_diagonalized():
-                out.eigenvalues = copy(self.eigenvalues)
                 out.eigenstates = dagger @ self.eigenstates
         
-        elif direction == "backward":
-            out = self.clone(S.eigenstates @ self @ S.eigenstates.dagger())
+        elif direction in ["backward","backward-optimized"]:
+            
+            if direction == "backward":
+                out = Operator(S.eigenstates @ self @ S.eigenstates.dagger()) 
+            elif direction == "backward-optimized":
+                # you should be knowing what you are doing
+                out = self.clone()
+            
             if self.is_diagonalized():
-                out.eigenvalues = copy(self.eigenvalues)
-                out.eigenstates = S.eigenstates @ self.eigenstates
-
+                from quantumsparse import get_memory_saving
+                if get_memory_saving():
+                    out.eigenstates = self.eigenstates
+                    out.extras["memory-saving"] = True
+                    out.extras["memory-saving-matrix"] = S.eigenstates.copy()
+                else: # default
+                    out.eigenstates = S.eigenstates @ self.eigenstates
+                
         else:
             raise ValueError("'direction' can be only 'forward' or 'backward'")
+        
+        # this is the same in all the cases
+        if self.is_diagonalized():
+            out.eigenvalues = copy(self.eigenvalues)
         
         try:
             out.extras = deepcopy(self.extras)
@@ -147,10 +162,10 @@ class Operator(Matrix):
             # I should diagonalize the matrix at first, and then call diagonalize_with_symmetry
             # to_diag.diagonalize_with_symmetry(S[1:],use_block_form,test,**argv)
 
-        to_diag = to_diag.change_basis(sym,direction="backward")
+        to_diag = to_diag.change_basis(sym,direction="backward-optimized")
         
         self.eigenvalues = to_diag.eigenvalues
-        self.eigenstates = to_diag.eigenstates # @ to_diag.eigenstates
+        self._eigenstates = to_diag._eigenstates
         self.extras      = to_diag.extras
 
         if test:
@@ -236,6 +251,36 @@ class Operator(Matrix):
         if not self.is_diagonalized():
             raise ValueError("The operator has not been diagonalized yet.")        
         return quantum_thermal_average_value(T=temperatures,E=self.eigenvalues,Op=operator,Psi=self.eigenstates)
+    
+    @property
+    def eigenstates(self)->Self:
+        if self.extras.get("memory-saving",False):
+            return self.extras["memory-saving-matrix"] @ self._eigenstates
+        else:
+            return super().eigenstates
+    
+    @eigenstates.setter
+    def eigenstates(self,value:Self):
+        if self.extras.get("memory-saving",False):
+            raise ValueError("You can not modify the eigenstates of an Operator in memory-saving mode.")
+        self._eigenstates = value  # call parent setter
+        
+    def test_eigensolution(self:T)->T:
+        """
+        Test the eigensolution and return the norm of the error.
+
+        Returns
+        -------
+        norm : float
+            The norm of the error.
+        """
+        assert self.is_diagonalized(), "The matrix should be already diagonalized."
+        if isinstance(self.eigenstates,np.ndarray):
+            eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
+        else:
+            eigvecs_norm = np.asarray([ self.eigenstates[:,n].norm() for n in range(self.eigenstates.shape[0])])
+        assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
+        return Matrix(self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues))
          
 def test_operator_save_load(tmp_path):
     """

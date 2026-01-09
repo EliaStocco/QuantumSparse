@@ -69,7 +69,7 @@ class Matrix(csr_matrix):
     def eigenstates(self,value:Self):
         self._eigenstates = value
     
-    def clone(self:T,*argc,**argv)->T:
+    def clone(self:T)->T:
         """Clone a matrix
 
         Returns
@@ -77,7 +77,7 @@ class Matrix(csr_matrix):
         Matrix
             A new instance of the same matrix
         """
-        return type(self)(*argc,**argv)
+        return copy(self)
     
     def copy(self:T)->T:
         """
@@ -232,7 +232,7 @@ class Matrix(csr_matrix):
         if self.is_unitary():
             return self.dagger()
         else:
-            return self.clone(sparse.linalg.inv(self))
+            return type(self)(sparse.linalg.inv(self))
 
     # @staticmethod
     def anticommutator(self:T,B:T)->T:
@@ -370,7 +370,7 @@ class Matrix(csr_matrix):
         indptr  = self.indptr
         data = data.real.astype(int)
         data.fill(1)
-        out = self.clone((data, indices, indptr),self.shape)
+        out = type(self)((data, indices, indptr),self.shape)
         if self.blocks is not None:
             out.blocks = self.blocks
         if self.n_blocks is not None:
@@ -484,7 +484,7 @@ class Matrix(csr_matrix):
         Returns:
             T: A new Matrix instance representing an empty matrix.
         """
-        return self.clone(self.shape,dtype=self.dtype)
+        return type(self)(self.shape,dtype=self.dtype)
     
     @classmethod
     def one_hot(cls,dim:int,i:int,j:int,*argc,**argv)->T:
@@ -658,7 +658,7 @@ class Matrix(csr_matrix):
             
     def clean_block_form(self: T, labels: np.ndarray, sort=True) -> T:
         submatrices, permutation, reverse_permutation, _ = self.divide_into_blocks(labels)
-        out = self.clone(bmat(submatrices))
+        out = type(self)(bmat(submatrices))
         if sort:
             out = out[reverse_permutation][:, reverse_permutation]
         return out
