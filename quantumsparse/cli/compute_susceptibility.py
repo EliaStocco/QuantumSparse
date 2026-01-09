@@ -7,11 +7,10 @@ from quantumsparse.tools.quantum_mechanics import expectation_value
 
 def main():
     
-    description = "Prepare the calculation of the magnetic susceptibility."
+    description = "Compute the magnetic susceptibility."
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("-ia", "--input_magmom_a"   , type=str, required=True , help="pickle file with the first magnetic moment operator.")
-    parser.add_argument("-ib", "--input_magmom_b"   , type=str, required=False , help="pickle file with the second magnetic moment operator (default: same as 'input_magmom_a').", default=None)
-    parser.add_argument("-io", "--input_operator"   , type=str, required=True , help="pickle input file with the Hamiltonian operator.")
+    parser.add_argument("-i", "--input"   , type=str, required=True , help="csv input file produced by 'prepare_susceptibility.py'.")
+    parser.add_argument("-t", "--temperatures_file"   , type=str, required=True , help="txt file with the temperatures in Kelvin.")
     parser.add_argument("-o", "--output"      , type=str, required=True, help="csv output file with the results.")
     args = parser.parse_args()
     
