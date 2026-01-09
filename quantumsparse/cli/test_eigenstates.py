@@ -31,7 +31,7 @@ def main():
             
         print(f"Computing thermal average of operator {i} ... ", end="")
         O = Operator.load(file)
-        res = H.thermal_average(O,temperatures=T).real
+        res = H.thermal_average(operator=O,temperatures=T).real
         results.append(res)
         print("done.")
 
