@@ -6,13 +6,15 @@ from quantumsparse.tools.mathematics import unique_with_tolerance
 
 T = TypeVar('T', bound='Operator')
 
+OpArr = Union[List[T],T]
+
 class Operator(Matrix):
     """
     This class is a subclass of quantumsparse.matrix.Matrix and is used to represent a general operator.
     """
     
     @staticmethod
-    def identity(dimensions)->Union[T,List[T]]:
+    def identity(dimensions)->OpArr:
         """
         Parameters
         ----------

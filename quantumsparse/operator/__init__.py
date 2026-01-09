@@ -1,5 +1,2 @@
-from ._operator import Operator
-from ._symmetry import Symmetry
-
-from typing import Union, List
-OpArr = Union[List[Operator],Operator]
+from ._operator import *
+from ._symmetry import *
