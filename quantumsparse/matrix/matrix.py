@@ -989,7 +989,7 @@ class Matrix(csr_matrix):
         string += "{:>14s}: {} bytes\n".format('memory (deep)', str(get_deep_size(self)))
         string += "{:>14s}: {}\n".format('type', str(self.data.dtype))
         string += "{:>14s}: {}\n".format('shape', str(self.shape))
-        string += "{:>14s}: {:6f}\n".format('sparsity', self.sparsity())
+        string += "{:>14s}: {:6f}\n".format('sparsity [%]', 100*self.sparsity())
         string += "{:>14s}: {}\n".format('# all', str(self.count("all")))
         string += "{:>14s}: {}\n".format('#  on', str(self.count("diag")))
         string += "{:>14s}: {}\n".format('# off', str(self.count("off")))
