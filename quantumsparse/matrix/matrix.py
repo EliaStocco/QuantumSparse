@@ -2,6 +2,7 @@ import pickle
 import numpy as np
 from copy import copy, deepcopy
 from typing import TypeVar, Union, Type, List, Dict, Any, Optional, Callable
+from typing_extensions import Self
 from functools import wraps
 from dataclasses import dataclass, field
 from scipy import sparse
@@ -30,22 +31,13 @@ def preserve_type(method: Callable[..., spmatrix]) -> Callable[..., Any]:
 class Matrix(csr_matrix):
     """
     Class to handle sparse matrices.
-    """
-    
-    # module = sparse
-    
-    blocks:list
-    n_blocks:int
-    eigenvalues:np.ndarray 
-    eigenstates:"Matrix"
-    is_adjacency:bool
-    
+    """   
     
     #-----------------#
     # IO, construction, copy
     #-----------------#
 
-    def __init__(self: T, *argc, **argv) -> None:
+    def __init__(self, *argc, **argv) -> None:
         """
         Initializes a Matrix object.
 
@@ -66,9 +58,7 @@ class Matrix(csr_matrix):
         self.blocks: Optional[List] = None
         self.n_blocks: Optional[int] = None
         self.eigenvalues: Optional[np.ndarray] = None
-        self.eigenstates: Optional[T] = None
-        self.nearly_diag: Optional[bool] = None
-        self.is_adjacency: Optional[bool] = None
+        self.eigenstates: Optional[Self] = None
         self.extras: Dict[str, Any] = {}
     
     def clone(self:T,*argc,**argv)->T:
@@ -338,18 +328,6 @@ class Matrix(csr_matrix):
         test = self - self.as_diagonal()
         return test.norm() < tolerance
     
-    def det_is_adjacency(self:T):
-        """
-        Checks if the matrix is an adjacency matrix.
-
-        Returns:
-            bool: True if the matrix is an adjacency matrix, False otherwise.
-        """
-        if self.is_adjacency is None:
-            self.is_adjacency = self == self.adjacency()
-            
-        return self.is_adjacency
-
     def commute(self:T,A,tol=1e-6)->bool:
         """
         Checks if the matrix is commutative with another matrix A within a given tolerance.
@@ -367,7 +345,7 @@ class Matrix(csr_matrix):
     # Inspection
     #-----------------#
     
-    def adjacency(self:T)->T:
+    def adjacency(self):
         """
         Computes the adjacency matrix of the given matrix.
 
@@ -389,7 +367,6 @@ class Matrix(csr_matrix):
             out.blocks = self.blocks
         if self.n_blocks is not None:
             out.n_blocks = self.n_blocks
-        out.is_adjacency = True
         return out
 
     
