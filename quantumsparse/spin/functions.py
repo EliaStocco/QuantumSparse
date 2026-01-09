@@ -2,7 +2,6 @@ from quantumsparse.constants import muB,g
 import numpy as np
 from typing import Tuple, List
 from quantumsparse.operator import Operator, OpArr
-from quantumsparse.bookkeeping import ImplErr
 from quantumsparse.matrix import Matrix
 
 def extract_Sxyz(func):

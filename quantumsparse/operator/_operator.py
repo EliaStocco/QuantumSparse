@@ -242,7 +242,7 @@ def test_operator_save_load(tmp_path):
     """
     Test that saving and loading a Matrix preserves its data.
     """
-    from quantumsparse.bookkeeping import TOLERANCE
+    from quantumsparse.tools.bookkeeping import TOLERANCE
     # Create example data and Matrix instance
     data = np.array([[1, 2], [3, 4]], dtype=float)
     matrix = Operator(data)

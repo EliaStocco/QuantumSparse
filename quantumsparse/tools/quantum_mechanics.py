@@ -1,5 +1,6 @@
 import numpy as np
-from quantumsparse.operator import Operator, Matrix
+from quantumsparse.operator import Operator
+from quantumsparse.matrix import Matrix
 
 def expectation_value(Op: Operator, Psi: Matrix) -> np.ndarray:
     """

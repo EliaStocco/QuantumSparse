@@ -7,9 +7,8 @@ from dataclasses import dataclass, field
 from scipy import sparse
 from scipy.sparse import spmatrix
 from scipy.sparse import csr_matrix, bmat
-from quantumsparse.bookkeeping import ImplErr
+from quantumsparse.tools.bookkeeping import ImplErr, TOLERANCE, NOISE
 from quantumsparse.tools import first_larger_than_N
-from quantumsparse.bookkeeping import TOLERANCE, NOISE
 
 T = TypeVar('T',bound="Matrix") 
 

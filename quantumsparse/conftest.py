@@ -1,5 +1,5 @@
 import pytest
-from quantumsparse.bookkeeping import TOLERANCE as TOLERANCE
+from quantumsparse.tools.bookkeeping import TOLERANCE as TOLERANCE
 
 parametrize_method      = pytest.mark.parametrize("method", ["R", "U"])
 parametrize_interaction = pytest.mark.parametrize("interaction",  [
