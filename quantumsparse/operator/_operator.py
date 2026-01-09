@@ -11,9 +11,6 @@ class Operator(Matrix):
     This class is a subclass of quantumsparse.matrix.Matrix and is used to represent a general operator.
     """
     
-    # just for static typing purposes
-    eigenstates:'Matrix'
-    
     @staticmethod
     def identity(dimensions)->Union[T,List[T]]:
         """
