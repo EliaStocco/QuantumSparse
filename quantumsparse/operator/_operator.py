@@ -4,125 +4,15 @@ from typing import TypeVar, Union, List
 from quantumsparse.matrix import Matrix
 from quantumsparse.tools.mathematics import unique_with_tolerance
 
-T = TypeVar('T', bound='Operator')  # type of the class itself
-
-OpArr = Union[List[T],T]
+T = TypeVar('T', bound='Operator')
 
 class Operator(Matrix):
     """
     This class is a subclass of quantumsparse.matrix.Matrix and is used to represent a general operator.
     """
     
-    name:str
-    eigenstates:T
-    
-    
-    # def __mul__(self: T, other: T) -> T:
-    #     """
-    #     Implements the left matrix multiplication operator (*) for the Operator class.
-
-    #     Parameters
-    #     ----------
-    #     self : Operator
-    #         The Operator object to multiply.
-    #     other : Operator
-    #         The Operator object to multiply with.
-
-    #     Returns
-    #     -------
-    #     T
-    #         The result of the matrix multiplication.
-    #     """
-    #     return super().__mul__(other)
-    
-    # def __rmul__(self: T, other: T) -> T:
-    #     """
-    #     Implements the right matrix multiplication operator (*) for the Operator class.
-
-    #     Parameters
-    #     ----------
-    #     self : Operator
-    #         The Operator object to multiply.
-    #     other : Operator
-    #         The Operator object to multiply with.
-
-    #     Returns
-    #     -------
-    #     T
-    #         The result of the matrix multiplication.
-    #     """
-    #     return super().__rmul__(other)
-    
-    # def __matmul__(self,other):
-    #     """
-    #     Implements the matrix multiplication operator (@) for the Operator class.
-
-    #     Parameters
-    #     ----------
-    #     other : Operator
-    #         The Operator object to multiply with.
-
-    #     Returns
-    #     -------
-    #     Operator
-    #         The result of the matrix multiplication.
-    #     """
-    #     return super().__matmul__(other)
-
-    def __init__(self: T, *argc, **argv) -> None:
-        """
-        Initialize the Operator object.
-
-        Parameters
-        ----------
-        argc : tuple
-            Positional arguments passed to the constructor.
-        argv : dict
-            Keyword arguments passed to the constructor.
-
-        Returns
-        -------
-        None
-        """
-        super().__init__(*argc, **argv)
-        self.name = None
-        pass
-        
-    # def save(self: T, file: str) -> None:
-    #     """
-    #     Save the Operator object to a file.
-
-    #     Parameters
-    #     ----------
-    #     file : str
-    #         The file path to save the object.
-
-    #     Returns
-    #     -------
-    #     None
-    #     """
-    #     with open(file, 'wb') as f:
-    #         pickle.dump(self, f)
-
-    # @classmethod
-    # def load(cls: Type[T], file: str) -> T:
-    #     """
-    #     Load an Operator object from a file.
-
-    #     Parameters
-    #     ----------
-    #     file : str
-    #         The file path to load the object.
-
-    #     Returns
-    #     -------
-    #     T
-    #         The loaded Operator object.
-    #     """
-    #     with open(file, 'rb') as f:
-    #         obj = pickle.load(f)
-    #     return cls(obj)
-
+    # just for static typing purposes
+    eigenstates:'Matrix'
     
     @staticmethod
     def identity(dimensions)->Union[T,List[T]]:
@@ -148,42 +38,6 @@ class Operator(Matrix):
                 iden[i] = Matrix.identity(dim,dtype=int)  
             return iden
     
-    # def diagonalize(self:T,restart=False,tol:float=1.0e-3,max_iter:int=-1,**argv):
-    #     """
-    #     Diagonalize the operator using the specified method.
-
-    #     Parameters
-    #     ----------
-    #     restart : bool, optional
-    #         Whether to restart the diagonalization process (default is False).
-    #     tol : float, optional
-    #         The tolerance for the diagonalization process (default is 1.0e-3).
-    #     max_iter : int, optional
-    #         The maximum number of iterations for the diagonalization process (default is -1).
-    #     test : bool, optional
-    #         Whether to test the eigensolution (default is True).
-
-    #     Returns
-    #     -------
-    #     w : numpy.ndarray
-    #         The eigenvalues of the operator.
-    #     f : numpy.ndarray
-    #         The eigenstates of the operator.
-    #     """
-
-    #     if restart :
-    #         self.eigenvalues = None
-    #         self.eigenstates = None
-    #         ##NEARLY_DIAG## self.nearly_diag = None
-        
-    #     ##NEARLY_DIAG##w,f,_ = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
-    #     self.eigenvalues,self.eigenstates = super().eigensolver(original=True,tol=tol,max_iter=max_iter,**argv)
-        
-    #     self.eigenstates.n_blocks = self.n_blocks
-    #     self.eigenstates.blocks = self.blocks
-        
-    #     return self.eigenvalues,self.eigenstates
-
     def change_basis(self:T,S:T,direction="forward")->T:
         """
         Changes the basis of the operator using the given symmetry operator.
@@ -200,8 +54,6 @@ class Operator(Matrix):
         out : T
             The operator in the new basis.
         """
-        
-        # ToDo: specialize this function for the case when self == S
 
         if not S.is_diagonalized():
             raise ValueError("The operator 'S' should have already been diagonalized.")
@@ -212,14 +64,12 @@ class Operator(Matrix):
             if self.is_diagonalized():
                 out.eigenvalues = copy(self.eigenvalues)
                 out.eigenstates = dagger @ self.eigenstates
-                ##NEARLY_DIAG## out.nearly_diag = S.eigenstates.dagger() @ self.nearly_diag @ S.eigenstates
         
         elif direction == "backward":
             out = self.clone(S.eigenstates @ self @ S.eigenstates.dagger())
             if self.is_diagonalized():
                 out.eigenvalues = copy(self.eigenvalues)
                 out.eigenstates = S.eigenstates @ self.eigenstates
-                ##NEARLY_DIAG## out.nearly_diag = S.eigenstates @ self.nearly_diag @ S.eigenstates.dagger() 
 
         else:
             raise ValueError("'direction' can be only 'forward' or 'backward'")
@@ -303,8 +153,6 @@ class Operator(Matrix):
         self.eigenvalues = to_diag.eigenvalues
         self.eigenstates = to_diag.eigenstates # @ to_diag.eigenstates
         self.extras      = to_diag.extras
-        
-        ##NEARLY_DIAG## self.nearly_diag = to_diag.nearly_diag # @ to_diag.nearly_diag @ S.eigenstates.dagger()
 
         if test:
             solution = self.test_eigensolution()

@@ -38,7 +38,7 @@ class Matrix(csr_matrix):
     blocks:list
     n_blocks:int
     eigenvalues:np.ndarray 
-    eigenstates:T
+    eigenstates:"Matrix"
     is_adjacency:bool
     
     
@@ -634,8 +634,6 @@ class Matrix(csr_matrix):
             submatrix.eigenvalues = self.eigenvalues[mask]
         if self.eigenstates is not None:
             submatrix.eigenstates = self.eigenstates[mask][:, mask]
-        ##NEARLY_DIAG## if self.nearly_diag is not None:
-        ##NEARLY_DIAG##     submatrix.nearly_diag = self.nearly_diag[mask][:, mask]
 
         return submatrix
 
@@ -698,7 +696,6 @@ class Matrix(csr_matrix):
         Raises:
             ValueError: If original is False.
         """
-        ##NEARLY_DIAG##submatrices = np.full((self.n_blocks, self.n_blocks), None, dtype=object)
         eigenvalues = np.full(self.n_blocks, None, dtype=object)
         eigenstates = np.full(self.n_blocks, None, dtype=object)
 
@@ -726,8 +723,6 @@ class Matrix(csr_matrix):
             submatrix = self.mask2submatrix(mask)
 
             # diagonalize the block
-            ##NEARLY_DIAG##v, f, M = submatrix.eigensolver(original=False, method=method, tol=tol, max_iter=max_iter)
-            ##NEARLY_DIAG##submatrices[n, n] = M
             eigenvalues[n], eigenstates[n] = submatrix.eigensolver(original=False, tol=tol, max_iter=max_iter,**argv)
         
         if "blockeigenstates2extras" in argv and argv["blockeigenstates2extras"]:
@@ -752,9 +747,7 @@ class Matrix(csr_matrix):
             self.extras["permutation"]         = permutation
             self.extras["reverse_permutation"] = reverse_permutation
             
-        ##NEARLY_DIAG## nearly_diagonal = self.clone(bmat(submatrices))[reverse_permutation][:, reverse_permutation]
-        # type(self)(bmat(submatrices))
-        return eigenvalues, eigenstates##NEARLY_DIAG## , nearly_diagonal
+        return eigenvalues, eigenstates
  
     def eigensolver(self:T,original=True,tol:float=1.0e-3,max_iter:int=-1,**argv):
         """
@@ -806,14 +799,11 @@ class Matrix(csr_matrix):
             self.eigenvalues,self.eigenstates = eigh(M) if self.is_hermitean() else eig(M)
 
         elif self.n_blocks > 1:
-            ##NEARLY_DIAG## w,f,N = self.diagonalize_each_block(labels=labels,original=True,method=method,tol=tol,max_iter=max_iter)
             self.eigenvalues,self.eigenstates = self.diagonalize_each_block(labels=labels,original=True,tol=tol,max_iter=max_iter,**argv)
 
         else :
             raise ValueError("error: n. of block should be >= 1")
         
-        ##NEARLY_DIAG## self.nearly_diag = my_copy(N) if N is not None else None
-        # return w,f##NEARLY_DIAG##,N
         if isinstance(self.eigenstates,np.ndarray):
             self.eigenstates = Matrix(self.eigenstates)
         return self.eigenvalues,self.eigenstates
@@ -861,9 +851,7 @@ class Matrix(csr_matrix):
         if restart :
             self.eigenvalues = None
             self.eigenstates = None
-            ##NEARLY_DIAG## self.nearly_diag = None
         
-        ##NEARLY_DIAG##w,f,_ = super().eigensolver(method=method,original=True,tol=tol,max_iter=max_iter)
         self.eigenvalues,self.eigenstates = self.eigensolver(original=True,tol=tol,max_iter=max_iter,**argv)
         
         self.eigenstates.n_blocks = self.n_blocks
@@ -877,7 +865,6 @@ class Matrix(csr_matrix):
         out = self[index][:, index].copy()
         out.eigenvalues = self.eigenvalues[index]
         out.eigenstates = self.eigenstates[index][:, index]
-        ##NEARLY_DIAG## out.nearly_diag = self.nearly_diag[index][:, index]
         
         return out
     
