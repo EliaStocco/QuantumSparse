@@ -228,7 +228,7 @@ class Operator(Matrix):
             out.extras = deepcopy(self.extras)
         except:
             pass
-        return out
+        return out.clean()
 
 
     def diagonalize_with_symmetry(self:T,S:Union[List[T],T],test=False,**argv):
@@ -299,7 +299,7 @@ class Operator(Matrix):
             # to_diag.diagonalize_with_symmetry(S[1:],use_block_form,test,**argv)
 
         to_diag = to_diag.change_basis(sym,direction="backward")
-
+        
         self.eigenvalues = to_diag.eigenvalues
         self.eigenstates = to_diag.eigenstates # @ to_diag.eigenstates
         self.extras      = to_diag.extras
