@@ -3,7 +3,6 @@ from copy import copy, deepcopy
 from typing import TypeVar, Union, List
 from quantumsparse.matrix import Matrix
 from quantumsparse.tools.mathematics import unique_with_tolerance
-from quantumsparse.bookkeeping import TOLERANCE
 
 T = TypeVar('T', bound='Operator')  # type of the class itself
 
@@ -370,7 +369,7 @@ class Operator(Matrix):
 
         return w, submatrices
     
-    def thermal_average(self:T,operator:T,temperatures:np.ndarray)->np.ndarray:
+    def thermal_average(self:T,temperatures:np.ndarray,operator:T=None)->np.ndarray:
         """
         Calculate the thermal average of an operator at a given temperature.
 
@@ -389,12 +388,13 @@ class Operator(Matrix):
         from quantumsparse.statistics.statistical_physics import quantum_thermal_average_value
         if not self.is_diagonalized():
             raise ValueError("The operator has not been diagonalized yet.")        
-        return quantum_thermal_average_value(temperatures,self.eigenvalues,operator,self.eigenstates)
-        
+        return quantum_thermal_average_value(T=temperatures,E=self.eigenvalues,Op=operator,Psi=self.eigenstates)
+         
 def test_operator_save_load(tmp_path):
     """
     Test that saving and loading a Matrix preserves its data.
     """
+    from quantumsparse.bookkeeping import TOLERANCE
     # Create example data and Matrix instance
     data = np.array([[1, 2], [3, 4]], dtype=float)
     matrix = Operator(data)

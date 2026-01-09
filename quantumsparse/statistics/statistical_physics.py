@@ -73,8 +73,8 @@ def quantum_thermal_average_value(T: np.ndarray,E: np.ndarray,Op:Operator,Psi:Ma
     np.ndarray
         The quantum thermal average value of the observable.
     """
-    Obs = expectation_value(Op,Psi)
-    return classical_thermal_average_value(T,E,Obs)
+    exp_val = expectation_value(Op,Psi)
+    return classical_thermal_average_value(T,E,exp_val)
 
 def correlation_function(T: np.ndarray, E: np.ndarray, OpA: Operator, Psi: Matrix, OpB: Optional[Operator]=None) -> np.ndarray:
     """
@@ -165,7 +165,7 @@ def correlation_function(T: np.ndarray, E: np.ndarray, OpA: Operator, Psi: Matri
 #     return Chi
 
 
-def susceptibility(T: np.ndarray,H:Operator,OpAs:Operator,OpBs:Operator=None)->np.ndarray:
+def susceptibility(T: np.ndarray,H:Operator,OpA:Operator,OpB:Operator=None)->np.ndarray:
     """
     Calculates the magnetic susceptibility of a system.
 
@@ -186,7 +186,7 @@ def susceptibility(T: np.ndarray,H:Operator,OpAs:Operator,OpBs:Operator=None)->n
         The magnetic susceptibility of the system.
     """
     beta  = 1.0/(kB*T)
-    Chi = correlation_function(T,H.eigenvalues-np.min(H.eigenvalues),OpAs,H.eigenstates,OpBs) 
+    Chi = correlation_function(T=T,E=H.eigenvalues-np.min(H.eigenvalues),OpA=OpA,Psi=H.eigenstates,OpB=OpB) 
     return beta * Chi * _NA * _eV * 1E3  
 
 

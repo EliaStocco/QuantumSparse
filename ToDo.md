@@ -1,22 +1,15 @@
 # To Do list
 
+ - improvements:
+    - save memory for eigenstates 
+    - save operator to folder with matrix elements, eigenvalues and eigenstates as a txt or yaml file
+
  - create scripts to:
-    - saves Sx, Sy, and Sz to file
-    - rotate an operator to cylindrical coordinates
-    - build an hamiltonian given a JSON file and the Sx, Sy, and Sz operators (optional)
-    - plot the spectrum
+    - plot the spectrum and the DOS
     - compares two operators
     - computes the zz magnetic susceptibility
  
- - workflow:
-    - saves Sx, Sy, and Sz to file given N and S
-    - (optional) rotate Sx, Sy, and Sz onto cylindrical coordinates
-    - build the hamiltonian given the interactions in a JSON file and the spin operators
-    - (optional) rotate the hamiltonian onto cylindrical coordinates
-    - diagonalize the hamiltonian
-    - post-process
-
- - possibilities:
-    - cartesian spins, cartesian symmetry, cartesian hamiltonian, diagonalize, rotate
-    - cartesian spins, cartesian symmetry, rotate symmetry, cartesian hamiltonian, rotate hamiltonian, diagonalize
-    - cartesian spins, rotate spins, cartesian symmetry, rotate symmetry, cylindrical hamiltonian, diagonalize
+ - workflow for the susceptibility:
+    - compute the total Sx, Sy, Sz
+    - evaluate the expecation value of the spin_z and spin_z^2 with the eigenstates and save them with the energy to a csv file
+    - compute the thermal average
