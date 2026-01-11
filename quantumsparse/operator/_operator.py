@@ -1,6 +1,6 @@
 import numpy as np
 from copy import copy, deepcopy
-from typing import TypeVar, Union, List
+from typing import TypeVar, Union, List, Type
 from typing_extensions import Self
 from quantumsparse.matrix import Matrix
 from quantumsparse.tools.mathematics import unique_with_tolerance
@@ -38,7 +38,7 @@ class Operator(Matrix):
                 iden[i] = Matrix.identity(dim,dtype=int)  
             return iden
     
-    def change_basis(self:T,S:T,direction="forward")->T:
+    def change_basis(self:T,S:T,direction="forward",mem_save:bool=False)->T:
         """
         Changes the basis of the operator using the given symmetry operator.
 
@@ -73,13 +73,12 @@ class Operator(Matrix):
                 out = self.clone()
             
             if self.is_diagonalized():
-                from quantumsparse import get_memory_saving
-                if get_memory_saving():
-                    out.eigenstates = self.eigenstates
+                
+                out._eigenstates = S.eigenstates @ self.eigenstates                
+                if mem_save:
                     out.extras["memory-saving"] = True
-                    out.extras["memory-saving-matrix"] = S.eigenstates.copy()
-                else: # default
-                    out.eigenstates = S.eigenstates @ self.eigenstates
+                    out.extras["memory-saving-A"] = S.eigenstates.copy()
+                    out.extras["memory-saving-B"] = self.eigenstates.copy()
                 
         else:
             raise ValueError("'direction' can be only 'forward' or 'backward'")
@@ -95,7 +94,7 @@ class Operator(Matrix):
         return out.clean()
 
 
-    def diagonalize_with_symmetry(self:T,S:Union[List[T],T],test=False,**argv):
+    def diagonalize_with_symmetry(self:T,S:Union[List[T],T],test=False,mem_save=False,**argv):
         """
         Diagonalizes the operator using the given symmetry operator(s).
 
@@ -130,9 +129,9 @@ class Operator(Matrix):
 
         w,labels = unique_with_tolerance(sym.eigenvalues)
         
-        to_diag:T = self.change_basis(sym,direction="forward")
+        to_diag:T = self.change_basis(sym,direction="forward",mem_save=mem_save)
         for n in range(1,len(S)):
-            S[n] = S[n].change_basis(sym,direction="forward")
+            S[n] = S[n].change_basis(sym,direction="forward",mem_save=mem_save)
 
         #  `to_diag` will have the same block form of `sym`
         # and it will be usefull in `to_diag.clean_block_form` to remove 
@@ -162,7 +161,7 @@ class Operator(Matrix):
             # I should diagonalize the matrix at first, and then call diagonalize_with_symmetry
             # to_diag.diagonalize_with_symmetry(S[1:],use_block_form,test,**argv)
 
-        to_diag = to_diag.change_basis(sym,direction="backward-optimized")
+        to_diag = to_diag.change_basis(sym,direction="backward-optimized",mem_save=mem_save)
         
         self.eigenvalues = to_diag.eigenvalues
         self._eigenstates = to_diag._eigenstates
@@ -254,33 +253,63 @@ class Operator(Matrix):
     
     @property
     def eigenstates(self)->Self:
-        if self.extras.get("memory-saving",False):
-            return self.extras["memory-saving-matrix"] @ self._eigenstates
-        else:
-            return super().eigenstates
+        return super().eigenstates
     
     @eigenstates.setter
     def eigenstates(self,value:Self):
-        if self.extras.get("memory-saving",False):
-            raise ValueError("You can not modify the eigenstates of an Operator in memory-saving mode.")
+        # if self.extras.get("memory-saving",False) and self.eigenstates is not None:
+        #     raise ValueError("You can not modify the eigenstates of an Operator in memory-saving mode.")
+        self.extras["memory-saving"] = False
+        if "memory-saving-A" in self.extras:
+            del self.extras["memory-saving-A"]
+        if "memory-saving-B" in self.extras:
+            del self.extras["memory-saving-B"]
         self._eigenstates = value  # call parent setter
-        
-    def test_eigensolution(self:T)->T:
+            
+    def save(self: T, file: str) -> None:
         """
-        Test the eigensolution and return the norm of the error.
+        Saves a Matrix object to a file.
+
+        Parameters
+        ----------
+        file : str
+            The name of the file to save the matrix to.
 
         Returns
         -------
-        norm : float
-            The norm of the error.
+        None
+            Saves the matrix to the specified file.
         """
-        assert self.is_diagonalized(), "The matrix should be already diagonalized."
-        if isinstance(self.eigenstates,np.ndarray):
-            eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
+        if self.extras.get("memory-saving",False):
+            if "memory-saving-A" not in self.extras or "memory-saving-B" not in self.extras:
+                raise ValueError("This is a coding error.")
+            to_save = self.copy()
+            to_save._eigenstates = None
+            super(Operator,to_save).save(file)
         else:
-            eigvecs_norm = np.asarray([ self.eigenstates[:,n].norm() for n in range(self.eigenstates.shape[0])])
-        assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
-        return Matrix(self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues))
+            super().save(file)
+
+    @classmethod
+    def load(cls: Type[T], file: str) -> T:
+        """
+        Loads a Matrix object from a file.
+
+        Parameters
+        ----------
+        file : str
+            The file path to load the object from.
+
+        Returns
+        -------
+        T
+            The loaded Matrix object.
+        """
+        obj = super().load(file)
+        if obj.extras.get("memory-saving",False):
+            obj.eigenstates = obj.extras["memory-saving-A"] @ obj.extras["memory-saving-B"]
+            # obj.eigenstates = obj.extras.pop("memory-saving-A",None) @ obj.extras.pop("memory-saving-B",None)
+            # obj.extras["memory-saving"] = False
+        return cls(obj)
          
 def test_operator_save_load(tmp_path):
     """
@@ -313,4 +342,6 @@ def test_operator_save_load(tmp_path):
     
 
 if __name__ == "__main__":
-    test_operator_save_load()
+    from pathlib import Path
+    tmp_path = Path(".")
+    test_operator_save_load(tmp_path)

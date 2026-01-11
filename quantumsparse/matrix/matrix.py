@@ -37,7 +37,7 @@ class Matrix(csr_matrix):
     # IO, construction, copy
     #-----------------#
 
-    def __init__(self, *argc, **argv) -> None:
+    def __init__(self, arg1=None, shape=None, dtype=None, copy=False, blocks=None,n_blocks=None,eigenvalues=None,eigenstates=None, extras={}   ):
         """
         Initializes a Matrix object.
 
@@ -53,13 +53,20 @@ class Matrix(csr_matrix):
         None
             Initializes the Matrix object and sets its attributes.
         """
-        # https://realpython.com/python-super/
-        super().__init__(*argc, **argv)
-        self.blocks: Optional[List] = None
-        self.n_blocks: Optional[int] = None
-        self.eigenvalues: Optional[np.ndarray] = None
-        self._eigenstates: Optional[Self] = None
-        self.extras: Dict[str, Any] = {}
+        if isinstance(arg1,Matrix):
+            super().__init__(arg1)
+            self.blocks = arg1.blocks
+            self.n_blocks = arg1.n_blocks
+            self.eigenvalues = arg1.eigenvalues
+            self._eigenstates = arg1.eigenstates
+            self.extras = arg1.extras
+        else:
+            super().__init__(arg1=arg1, shape=shape, dtype=dtype, copy=copy)
+            self.blocks: Optional[List] = blocks
+            self.n_blocks: Optional[int] = n_blocks
+            self.eigenvalues: Optional[np.ndarray] = eigenvalues
+            self._eigenstates: Optional[Self] = eigenstates
+            self.extras: Dict[str, Any] = extras
         
     @property
     def eigenstates(self)->Self:
@@ -1235,7 +1242,9 @@ def test_matrix_save_load(tmp_path):
     
 
 if __name__ == "__main__":
+    from pathlib import Path
+    tmp_path = Path(".")
     test_DiagonalBlockMatrix()
     test_inplace_div()
     test_inplace_mult()
-    test_matrix_save_load()
+    test_matrix_save_load(tmp_path)
