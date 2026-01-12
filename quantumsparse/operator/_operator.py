@@ -115,7 +115,7 @@ class Operator(Matrix):
         """
 
         if type(S) is not list:
-            return self.diagonalize_with_symmetry([S],test,**argv)
+            return self.diagonalize_with_symmetry([S],test,mem_save,**argv)
         if len(S) == 0 :
             return self.diagonalize(**argv)
         
