@@ -1,10 +1,12 @@
 # some function recalling statistical physics results
 import numpy as np
+import pandas as pd
 from quantumsparse.constants import kB,g,_NA,_eV,muB
 from quantumsparse.tools.quantum_mechanics import expectation_value
 from quantumsparse.operator import Operator
 from quantumsparse.matrix import Matrix
-from typing import Optional
+from typing import Optional, Tuple
+from quantumsparse.tools.bookkeeping import TOLERANCE
 
 
 def T2beta(T:np.ndarray)->np.ndarray:
@@ -19,19 +21,38 @@ def T2beta(T:np.ndarray)->np.ndarray:
     """
     return 1.0/(kB*T)
 
+def statistical_weigths(E: np.ndarray, T: np.ndarray, tol=TOLERANCE) -> Tuple[np.ndarray, np.ndarray]:
+    assert E.ndim == 1, "only 1D arrays allowed."
+    
+    # Handle T = 0 separately
+    ii = np.isclose(T, 0.0)
 
-def partition_function(E: np.ndarray,beta:np.ndarray)->np.ndarray:
-    """
-    Calculates the partition function of a system.
+    temp = T.copy()
+    temp[ii] = 1.0  # safe value to avoid beta=inf
 
-    Parameters:
-        E (np.ndarray): The energy array.
-        beta (np.ndarray): The inverse temperature array.
+    beta = T2beta(temp)
 
-    Returns:
-        np.ndarray: The partition function of the system.
-    """
-    return np.exp(-np.tensordot(beta,E-min(E),axes=0)).sum(axis=1)
+    # numerical stabilization by shifting the spectrum
+    Emin = E.min()
+    w = np.exp(-np.tensordot(beta, E - Emin, axes=0))
+
+    # ground-state degeneracy
+    gs = Emin
+    deg_gs = np.abs(E - gs) < tol
+    jj_gs = np.where(deg_gs)[0]
+    jj_es = np.where(~deg_gs)[0]
+    deg = deg_gs.sum()
+
+    # T = 0 → equal probability over ground states only
+    if np.any(ii):
+        w[ii][:, jj_gs] = 1.0 / deg
+        w[ii][:, jj_es] = 0.0
+
+    # partition function
+    Z = w.sum(axis=1)
+
+    # normalize weights
+    return w / Z[:, None], Z
 
 
 def classical_thermal_average_value(T:np.ndarray,E:np.ndarray,Obs:np.ndarray)->np.ndarray:
@@ -46,11 +67,8 @@ def classical_thermal_average_value(T:np.ndarray,E:np.ndarray,Obs:np.ndarray)->n
     Returns:
         np.ndarray: The classical thermal average value of the observable.
     """
-    beta = T2beta(T)
-    # Z = partition_function(E,beta)
-    w = np.exp(-np.tensordot(beta,E-min(E),axes=0))
-    Z = w.sum(axis=1) # sum over eigenstates
-    return w @ Obs/Z
+    w, Z = statistical_weigths(T,E)
+    return w @ Obs
 
 
 def quantum_thermal_average_value(T: np.ndarray,E: np.ndarray,Op:Operator,Psi:Matrix)->np.ndarray:
@@ -115,56 +133,6 @@ def correlation_function(T: np.ndarray, E: np.ndarray, OpA: Operator, Psi: Matri
     Chi = square - meanA * meanB
     return Chi
 
-
-# def correlation_function(T: np.ndarray,E: np.ndarray,OpAs: Operator,OpBs: Operator,Psi:Matrix)->np.ndarray:
-#     """
-#     Calculates the correlation function of a system.
-
-#     Parameters
-#     ----------
-#     T : np.ndarray
-#         The temperature array.
-#     E : np.ndarray
-#         The energy array.
-#     OpAs : Operator
-#         The first set of operators.
-#     OpBs : Operator
-#         The second set of operators.
-#     Psi : Matrix
-#         The wave function of the system.
-
-#     Returns
-#     -------
-#     np.ndarray
-#         The correlation function of the system.
-#     """
-#     # REWRITE THIS FUNCTION EXPLOITING quantum_mechanics.standard_deviation
-#     NT = len(T)    
-#     meanA =  np.zeros((len(OpAs),NT))       
-#     for n,Op in enumerate(OpAs):
-#         meanA[n] = quantum_thermal_average_value(T,E,Op,Psi)
-#     #    
-#     meanB =  np.zeros((len(OpBs),NT))
-#     for n,Op in enumerate(OpBs):
-#         meanB[n] = quantum_thermal_average_value(T,E,Op,Psi)             
-#     #
-#     square =  np.zeros((len(OpAs),len(OpBs),NT))
-#     for n1,OpA in enumerate(OpAs):
-#         for n2,OpB in enumerate(OpBs):        
-#             if n2 < n1 :
-#                 square[n1,n2] =  square[n2,n1]
-#                 continue
-            
-#             square[n1,n2] = quantum_thermal_average_value(T,E,OpA@OpB,Psi)           
-#     #
-#     Chi =  np.zeros((3,3,NT))    
-#     for n1,OpA in enumerate(OpAs):
-#         for n2,OpB in enumerate(OpBs):            
-#             Chi[n1,n2] = (square[n1,n2] - meanA[n1]*meanB[n2])
-    
-#     return Chi
-
-
 def susceptibility(T: np.ndarray,H:Operator,OpA:Operator,OpB:Operator=None)->np.ndarray:
     """
     Calculates the magnetic susceptibility of a system.
@@ -185,10 +153,9 @@ def susceptibility(T: np.ndarray,H:Operator,OpA:Operator,OpB:Operator=None)->np.
     np.ndarray
         The magnetic susceptibility of the system.
     """
-    beta  = 1.0/(kB*T)
+    beta  = T2beta(T)
     Chi = correlation_function(T=T,E=H.eigenvalues-np.min(H.eigenvalues),OpA=OpA,Psi=H.eigenstates,OpB=OpB) 
     return beta * Chi * _NA * _eV * 1E3  
-
 
 def Curie_constant(spin_values,gfactors=None):
     N = len(spin_values)
@@ -200,3 +167,13 @@ def Curie_constant(spin_values,gfactors=None):
         CW[i] = _NA * _eV * 1E3  * chi 
     return CW.sum()
    
+def dfT2correlation_function(T: np.ndarray,df:pd.DataFrame)->np.ndarray:
+    exp_val_A  = classical_thermal_average_value(T,df["eigenvalues"].to_numpy(),df["A"].to_numpy())
+    exp_val_B  = classical_thermal_average_value(T,df["eigenvalues"].to_numpy(),df["B"].to_numpy())
+    exp_val_AB = classical_thermal_average_value(T,df["eigenvalues"].to_numpy(),df["AB"].to_numpy())
+    return exp_val_AB - exp_val_A * exp_val_B
+
+def dfT2susceptibility(T: np.ndarray,df:pd.DataFrame)->np.ndarray:
+    beta  = T2beta(T)
+    chi = dfT2correlation_function(T,df)
+    return beta * chi * _NA * _eV * 1E3  

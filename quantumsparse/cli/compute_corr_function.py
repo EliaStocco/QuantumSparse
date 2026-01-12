@@ -1,7 +1,7 @@
 import argparse
 import pandas as pd
 import numpy as np
-from quantumsparse.statistics import dfT2susceptibility
+from quantumsparse.statistics import dfT2correlation_function
 
 def main():
     
@@ -25,9 +25,9 @@ def main():
     assert temp.ndim == 1, f"'{args.temperatures_file}' should contain a 1D array."
     print("n. temperatures: ",len(temp))
     
-    sus = dfT2susceptibility(temp,df)
+    corr = dfT2correlation_function(temp,df)
     
-    results = pd.DataFrame({"temp":temp,"sus":sus})
+    results = pd.DataFrame({"temp":temp,"corr":corr})
     
     print(f"Saving results to file '{args.output}' ... ",end="")
     results.to_csv(args.output,index=False)

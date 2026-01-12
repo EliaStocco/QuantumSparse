@@ -34,8 +34,9 @@ rotate_operator              = "quantumsparse.cli.rotate_operator:main"
 generate_hermitean_operators = "quantumsparse.cli.generate_hermitean_operators:main"
 test_eigenstates             = "quantumsparse.cli.test_eigenstates:main"
 compute_magnetic_moments     = "quantumsparse.cli.compute_magnetic_moments:main"
-prepare_susceptibility       = "quantumsparse.cli.prepare_susceptibility:main"
+prepare_corr_function        = "quantumsparse.cli.prepare_corr_function:main"
 compute_susceptibility       = "quantumsparse.cli.compute_susceptibility:main"
+compute_corr_function        = "quantumsparse.cli.compute_corr_function:main"
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

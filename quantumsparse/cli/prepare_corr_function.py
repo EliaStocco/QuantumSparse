@@ -1,5 +1,4 @@
 import argparse
-import os
 import pandas as pd
 import numpy as np
 from quantumsparse.operator import Operator
@@ -7,10 +6,10 @@ from quantumsparse.tools.quantum_mechanics import expectation_value
 
 def main():
     
-    description = "Prepare the calculation of the magnetic susceptibility."
+    description = "Prepare the calculation of the a thermal correlation function between two operators A and B."
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("-ia", "--input_magmom_a"   , type=str, required=True , help="pickle file with the first magnetic moment operator.")
-    parser.add_argument("-ib", "--input_magmom_b"   , type=str, required=False , help="pickle file with the second magnetic moment operator (default: same as 'input_magmom_a').", default=None)
+    parser.add_argument("-ia", "--input_a"   , type=str, required=True , help="pickle file with the first operator.")
+    parser.add_argument("-ib", "--input_b"   , type=str, required=False , help="pickle file with the second operator (default: same as 'input_a').", default=None)
     parser.add_argument("-io", "--input_operator"   , type=str, required=True , help="pickle input file with the Hamiltonian operator.")
     parser.add_argument("-o", "--output"      , type=str, required=True, help="csv output file with the results.")
     args = parser.parse_args()
@@ -25,18 +24,18 @@ def main():
     assert H.is_hermitean(), "The operator is not hermitean"
     assert np.allclose(H.eigenvalues.imag,0.), "The eigenvalues of the Hamiltonian should be real."
     
-    print(f"Reading magnetic moment operator A from file '{args.input_magmom_a}' ... ", end="")
-    Ma = Operator.load(args.input_magmom_a)
+    print(f"Reading operator A from file '{args.input_a}' ... ", end="")
+    Ma = Operator.load(args.input_a)
     print("done.")
     
-    if args.input_magmom_b is not None:
-        print(f"Reading magnetic moment operator B from file '{args.input_magmom_b}' ... ", end="")
-        Mb = Operator.load(args.input_magmom_b)
+    if args.input_b is not None:
+        print(f"Reading operator B from file '{args.input_b}' ... ", end="")
+        Mb = Operator.load(args.input_b)
         print("done.")
     else:
         Mb = None
     
-    print(f"Computing expecation values of the magnetic moment operator A on the eigenstates ... ",end="")
+    print(f"Computing expecation values of the operator A on the eigenstates ... ",end="")
     expA = expectation_value(Ma,H.eigenstates)
     assert np.allclose(expA.imag,0.), "The expectation value should be real."
     print("done.")
@@ -48,7 +47,7 @@ def main():
         assert np.allclose(expAB.imag,0.), "The expectation value should be real."
         print("done.")
     else:
-        print(f"Computing expecation values of the magnetic moment operator B on the eigenstates ... ",end="")
+        print(f"Computing expecation values of the operator B on the eigenstates ... ",end="")
         expB = expectation_value(Ma,H.eigenstates)
         assert np.allclose(expB.imag,0.), "The expectation value should be real."
         print("done.")
@@ -77,4 +76,4 @@ if __name__ == "__main__":
     
 def test_script():
     from quantumsparse.conftest import template_test_script
-    template_test_script("prepare_susceptibility")
+    template_test_script("prepare_corr_function")
