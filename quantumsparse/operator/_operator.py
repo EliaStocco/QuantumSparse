@@ -77,8 +77,8 @@ class Operator(Matrix):
                 out._eigenstates = S.eigenstates @ self.eigenstates                
                 if mem_save:
                     out.extras["memory-saving"] = True
-                    out.extras["memory-saving-A"] = S.eigenstates.copy()
-                    out.extras["memory-saving-B"] = self.eigenstates.copy()
+                    out.extras["memory-saving-A"] = S.eigenstates.clean()
+                    out.extras["memory-saving-B"] = self.eigenstates.clean()
                 
         else:
             raise ValueError("'direction' can be only 'forward' or 'backward'")
