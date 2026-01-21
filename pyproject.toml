@@ -37,6 +37,10 @@ compute_magnetic_moments     = "quantumsparse.cli.compute_magnetic_moments:main"
 prepare_corr_function        = "quantumsparse.cli.prepare_corr_function:main"
 compute_susceptibility       = "quantumsparse.cli.compute_susceptibility:main"
 compute_corr_function        = "quantumsparse.cli.compute_corr_function:main"
+prepare_thermal_average      ="quantumsparse.cli.prepare_thermal_average:main"
+prepare_thermal_average_spins="quantumsparse.cli.prepare_thermal_average_spins:main"
+get_temperatures             ="quantumsparse.cli.get_temperatures:main"
+
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
