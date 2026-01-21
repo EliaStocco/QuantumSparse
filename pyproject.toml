@@ -49,6 +49,7 @@ spins_summary = "quantumsparse.cli.diagonalization.spins_summary:main"
 # --- susceptibility ---
 compute_magnetic_moments = "quantumsparse.cli.susceptibility.compute_magnetic_moments:main"
 compute_susceptibility = "quantumsparse.cli.susceptibility.compute_susceptibility:main"
+plot_susceptibility = "quantumsparse.cli.susceptibility.plot_susceptibility:main"
 
 # --- test ---
 generate_hermitean_operators = "quantumsparse.cli.test.generate_hermitean_operators:main"
