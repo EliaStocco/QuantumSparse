@@ -995,7 +995,7 @@ class Matrix(csr_matrix):
         tmp = "computed" if self.eigenvalues is not None else "unknown"
         string += "{:>14s}: {}\n".format('eigenvalues', tmp)
         tmp = "computed" if self._eigenstates is not None else "unknown"
-        string += "{:>14s}: {}\n".format('_eigenstates', tmp)
+        string += "{:>14s}: {}\n".format('eigenstates', tmp)
 
         return string
     
