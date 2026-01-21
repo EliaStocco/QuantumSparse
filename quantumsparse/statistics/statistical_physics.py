@@ -21,7 +21,7 @@ def T2beta(T:np.ndarray)->np.ndarray:
     """
     return 1.0/(kB*T)
 
-def statistical_weigths(E: np.ndarray, T: np.ndarray, tol=TOLERANCE) -> Tuple[np.ndarray, np.ndarray]:
+def statistical_weigths(T: np.ndarray, E: np.ndarray, tol=TOLERANCE) -> Tuple[np.ndarray, np.ndarray]:
     assert E.ndim == 1, "only 1D arrays allowed."
     
     # Handle T = 0 separately
@@ -50,9 +50,13 @@ def statistical_weigths(E: np.ndarray, T: np.ndarray, tol=TOLERANCE) -> Tuple[np
 
     # partition function
     Z = w.sum(axis=1)
+    
+    w = w / Z[:,None]
+    
+    assert np.allclose(w.sum(axis=1),1.), "error"
 
     # normalize weights
-    return w / Z[:, None], Z
+    return w, Z
 
 
 def classical_thermal_average_value(T:np.ndarray,E:np.ndarray,Obs:np.ndarray)->np.ndarray:
@@ -67,7 +71,7 @@ def classical_thermal_average_value(T:np.ndarray,E:np.ndarray,Obs:np.ndarray)->n
     Returns:
         np.ndarray: The classical thermal average value of the observable.
     """
-    w, Z = statistical_weigths(T,E)
+    w, Z = statistical_weigths(T=T,E=E)
     return w @ Obs
 
 
@@ -166,14 +170,28 @@ def Curie_constant(spin_values,gfactors=None):
         chi = gfactors[i]**2*muB**2*spin_values[i]*(spin_values[i]+1)/(3.*kB)
         CW[i] = _NA * _eV * 1E3  * chi 
     return CW.sum()
+
+def df2classical_thermal_average(T: np.ndarray,E: np.ndarray,Obs: np.ndarray)->np.ndarray:
+    """
+    To be filled
+    """
+    assert T.ndim == 1, "error"
+    assert E.ndim == 1, "error"
+    assert Obs.ndim == 1, "error"
+    w, _ = statistical_weigths(T=T,E=E)
+    assert w.ndim == 2, "error"
+    out = np.einsum("ij,j->i",w,Obs)
+    return out
    
 def dfT2correlation_function(T: np.ndarray,df:pd.DataFrame)->np.ndarray:
-    exp_val_A  = classical_thermal_average_value(T,df["eigenvalues"].to_numpy(),df["A"].to_numpy())
-    exp_val_B  = classical_thermal_average_value(T,df["eigenvalues"].to_numpy(),df["B"].to_numpy())
-    exp_val_AB = classical_thermal_average_value(T,df["eigenvalues"].to_numpy(),df["AB"].to_numpy())
+    
+    exp_val_A  = df2classical_thermal_average(T=T,E=df["eigenvalues"].to_numpy(),Obs=df["A"].to_numpy())
+    exp_val_B  = df2classical_thermal_average(T=T,E=df["eigenvalues"].to_numpy(),Obs=df["B"].to_numpy())
+    exp_val_AB = df2classical_thermal_average(T=T,E=df["eigenvalues"].to_numpy(),Obs=df["AB"].to_numpy())
     return exp_val_AB - exp_val_A * exp_val_B
 
 def dfT2susceptibility(T: np.ndarray,df:pd.DataFrame)->np.ndarray:
     beta  = T2beta(T)
     chi = dfT2correlation_function(T,df)
+    assert chi.shape == T.shape, "error"
     return beta * chi * _NA * _eV * 1E3  
