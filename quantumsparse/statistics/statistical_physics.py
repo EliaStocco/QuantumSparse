@@ -171,23 +171,27 @@ def Curie_constant(spin_values,gfactors=None):
         CW[i] = _NA * _eV * 1E3  * chi 
     return CW.sum()
 
-def df2classical_thermal_average(T: np.ndarray,E: np.ndarray,Obs: np.ndarray)->np.ndarray:
-    """
-    To be filled
-    """
-    assert T.ndim == 1, "error"
-    assert E.ndim == 1, "error"
-    assert Obs.ndim == 1, "error"
-    w, _ = statistical_weigths(T=T,E=E)
+# def df2classical_thermal_average(T: np.ndarray,E: np.ndarray,Obs: np.ndarray)->np.ndarray:
+#     """
+#     To be filled
+#     """
+#     assert T.ndim == 1, "error"
+#     assert E.ndim == 1, "error"
+#     assert Obs.ndim == 1, "error"
+#     w, _ = statistical_weigths(T=T,E=E)
+#     return weights2thermal_average(w=w,Obs=Obs)
+
+def weights2thermal_average(w: np.ndarray,Obs: np.ndarray)->np.ndarray:
     assert w.ndim == 2, "error"
+    assert Obs.ndim == 1, "error"
     out = np.einsum("ij,j->i",w,Obs)
     return out
    
 def dfT2correlation_function(T: np.ndarray,df:pd.DataFrame)->np.ndarray:
-    
-    exp_val_A  = df2classical_thermal_average(T=T,E=df["eigenvalues"].to_numpy(),Obs=df["A"].to_numpy())
-    exp_val_B  = df2classical_thermal_average(T=T,E=df["eigenvalues"].to_numpy(),Obs=df["B"].to_numpy())
-    exp_val_AB = df2classical_thermal_average(T=T,E=df["eigenvalues"].to_numpy(),Obs=df["AB"].to_numpy())
+    w, _ = statistical_weigths(T=T,E=df["eigenvalues"].to_numpy())
+    exp_val_A  = weights2thermal_average(w=w,Obs=df["A"].to_numpy())
+    exp_val_B  = weights2thermal_average(w=w,Obs=df["B"].to_numpy())
+    exp_val_AB = weights2thermal_average(w=w,Obs=df["AB"].to_numpy())
     return exp_val_AB - exp_val_A * exp_val_B
 
 def dfT2susceptibility(T: np.ndarray,df:pd.DataFrame)->np.ndarray:
