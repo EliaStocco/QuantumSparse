@@ -46,3 +46,5 @@ get_temperatures             ="quantumsparse.cli.get_temperatures:main"
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.package-data]
+quantumsparse = ["*.mplstyle"]
