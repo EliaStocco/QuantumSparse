@@ -35,6 +35,8 @@ def main():
         H.diagonalize()
         print("done.")
         
+    H = H.sort()
+        
     print("\nSummary:")
     print(repr(H))   
     
