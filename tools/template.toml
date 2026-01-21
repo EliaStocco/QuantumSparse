@@ -1,0 +1,30 @@
+[project]
+name = "quantumsparse"
+version = "1.0.0"
+description = "An efficient python package based on `scipy.sparse` to work with quantum spin operators"
+authors = [
+    { name = "Elia Stocco", email = "eliastocco@gmail.com" }
+]
+requires-python = ">=3.9"
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "typing-extensions",  # For better compatibility with type hints
+    "matplotlib",
+    "argparse",
+    "dataclasses; python_version < '3.10'",  # Built-in from Python 3.10+
+    "tqdm",
+    "pathlib"
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+quantumsparse = ["*.mplstyle"]

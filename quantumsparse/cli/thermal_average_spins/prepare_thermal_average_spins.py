@@ -3,7 +3,7 @@ import os
 import numpy as np
 from quantumsparse.spin import SpinOperators
 from quantumsparse.operator import Operator
-from quantumsparse.cli.prepare_thermal_average import compute_preparation
+from quantumsparse.cli.thermal_average.prepare_thermal_average import compute_preparation
 
 def main():
     
