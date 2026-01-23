@@ -8,7 +8,7 @@ use_default_style()
 
 def main():
     
-    description = "Plot the magnetic susceptibility."
+    description = "Plot the magnetic susceptibility vs the temperature."
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-i", "--input" , type=str, required=True , help="csv input file produced by 'compute_susceptibility.py'.")
     parser.add_argument("-is", "--input_spins"   , type=str, required=False, help="folder with the spin information to plot the free-spin susceptibility.", default=None)

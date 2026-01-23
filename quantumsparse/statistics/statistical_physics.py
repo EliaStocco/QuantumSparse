@@ -1,4 +1,3 @@
-# some function recalling statistical physics results
 import numpy as np
 import pandas as pd
 from quantumsparse.constants import kB,g,_NA,_eV,muB
@@ -19,6 +18,10 @@ def T2beta(T:np.ndarray)->np.ndarray:
     Returns:
         np.ndarray: The inverse temperature array.
     """
+    if np.any(T < 0.0):
+        raise ValueError("Temperature values must be non-negative.")
+    if np.any(np.isclose(T, 0.0)):
+        raise ValueError("For null temperatures, please use the function 'statistical_weigths'.")
     return 1.0/(kB*T)
 
 def statistical_weigths(T: np.ndarray, E: np.ndarray, tol=TOLERANCE) -> Tuple[np.ndarray, np.ndarray]:
@@ -51,11 +54,10 @@ def statistical_weigths(T: np.ndarray, E: np.ndarray, tol=TOLERANCE) -> Tuple[np
     # partition function
     Z = w.sum(axis=1)
     
-    w = w / Z[:,None]
-    
+    # normalize weights
+    w:np.ndarray = w / Z[:,None]
     assert np.allclose(w.sum(axis=1),1.), "error"
 
-    # normalize weights
     return w, Z
 
 
