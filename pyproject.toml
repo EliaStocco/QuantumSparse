@@ -56,7 +56,9 @@ generate_hermitean_operators = "quantumsparse.cli.test.generate_hermitean_operat
 test_eigenstates = "quantumsparse.cli.test.test_eigenstates:main"
 
 # --- thermal average ---
+compute_thermal_average = "quantumsparse.cli.thermal_average.compute_thermal_average:main"
 get_temperatures = "quantumsparse.cli.thermal_average.get_temperatures:main"
+plot_thermal_average = "quantumsparse.cli.thermal_average.plot_thermal_average:main"
 prepare_thermal_average = "quantumsparse.cli.thermal_average.prepare_thermal_average:main"
 
 # --- thermal average spins ---
