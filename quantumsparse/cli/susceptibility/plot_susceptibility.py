@@ -1,4 +1,5 @@
 import argparse
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from quantumsparse.spin import SpinOperators
@@ -34,35 +35,29 @@ def main():
     ax.plot(df["temp"], df["sus"])
     ax.set_ylabel(r"$\chi$")
     ax.set_xscale("log")
-    ax.set_ylim(0,None)
+    ax.set_yscale("log")
     if C is not None:
-        temps = ax.get_xlim()
-        temp_vals = [temps[0], temps[1]]
-        sus_vals = [C/temp for temp in temp_vals]
-        ax.plot(temp_vals, sus_vals, "--")
+        sus_vals = np.asarray(C/df["temp"])
+        ax.plot(df["temp"], sus_vals, "--")
     
     ax = axes[1]
     ax.plot(df["temp"], df["sus"]*df["temp"])
     ax.set_ylabel(r"$\chi T$")
     ax.set_xlabel("temperature [K]")
     ax.set_xscale("log")
-    ax.set_ylim(0,None)
+    ax.set_yscale("log")
     if C is not None:
-        temps = ax.get_xlim()
-        temp_vals = [temps[0], temps[1]]
-        susT_vals = [C for temp in temp_vals]
-        ax.plot(temp_vals, susT_vals, "--")
+        susT_vals = np.full(len(df["temp"]),C)
+        ax.plot(df["temp"], susT_vals, "--")
     
     ax = axes[2]
     ax.plot(df["temp"], 1./df["sus"])
     ax.set_ylabel(r"$\chi^{-1}$")
     ax.set_xscale("log")
-    ax.set_ylim(0,None)
+    ax.set_yscale("log")
     if C is not None:
-        temps = ax.get_xlim()
-        temp_vals = [temps[0], temps[1]]
-        inv_sus_vals = [temp/C for temp in temp_vals]
-        ax.plot(temp_vals, inv_sus_vals, "--")
+        inv_sus_vals = np.asarray(df["temp"]/C)
+        ax.plot(df["temp"], inv_sus_vals, "--")
         
     plt.tight_layout()
     plt.savefig(args.output, dpi=300)
