@@ -43,6 +43,8 @@ def main():
         H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg"],nn=2)
     if "heisenberg-3" in interactions:
         H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg"],nn=3)
+    if "heisenberg-4" in interactions:
+        H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg"],nn=4)
     if "DM" in interactions:
         H += Dzyaloshinskii_Moriya(*SpinOp.spins,couplings=interactions["DM"])
     if "biquadratic" in interactions:
