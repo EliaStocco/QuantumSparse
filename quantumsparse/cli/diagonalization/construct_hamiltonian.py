@@ -38,7 +38,11 @@ def main():
     print("Creating Hamiltonian operator ... ", end="")
     H = 0
     if "heisenberg" in interactions:
-        H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg"])
+        H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg"],nn=1)
+    if "heisenberg-2" in interactions:
+        H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg"],nn=2)
+    if "heisenberg-3" in interactions:
+        H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg"],nn=3)
     if "DM" in interactions:
         H += Dzyaloshinskii_Moriya(*SpinOp.spins,couplings=interactions["DM"])
     if "biquadratic" in interactions:
