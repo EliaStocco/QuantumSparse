@@ -1,6 +1,6 @@
 # QuantumSparse
 
-A `scipy.sparse` based package to represent quantum spin operators and exact diagonalization.
+A `python` package based on `scipy.sparse` to perform exact diagonalization on finite quantum spin systems.
 
 ## Installation
 You can install this package in *editable* mode using
