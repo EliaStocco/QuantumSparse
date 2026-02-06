@@ -4,5 +4,5 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: Stocco
     given-names: Elia
-date-released: 2022
+date-released: 2026-02-06
 url: https://github.com/EliaStocco/QuantumSparse
