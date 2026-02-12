@@ -4,7 +4,7 @@ on: push
 
 jobs:
   test:
-    name: Python ${{ matrix.python-version }} | QSDTYPE ${{ matrix.qsdtype }}
+    name: Python ${{ matrix.python-version }} with ${{ matrix.qsdtype }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
