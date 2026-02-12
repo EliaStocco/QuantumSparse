@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from scipy import sparse
 from scipy.sparse import spmatrix
 from scipy.sparse import csr_matrix, bmat
+from quantumsparse import get_dtype
 from quantumsparse.tools.bookkeeping import ImplErr, TOLERANCE, NOISE
 from quantumsparse.tools import first_larger_than_N
 
@@ -61,6 +62,8 @@ class Matrix(csr_matrix):
             self._eigenstates = arg1.eigenstates
             self.extras = arg1.extras
         else:
+            if dtype is None:
+                dtype = get_dtype()
             super().__init__(arg1=arg1, shape=shape, dtype=dtype, copy=copy)
             self.blocks: Optional[List] = blocks
             self.n_blocks: Optional[int] = n_blocks

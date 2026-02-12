@@ -1,0 +1,40 @@
+name: Run Pytest
+
+on: push
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }} | QSDTYPE ${{ matrix.qsdtype }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.12"]
+        qsdtype: ["complex128", "complex256"]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev]
+
+      - name: Run all tests
+        run: |
+          pytest quantumsparse
+          pytest tests/test_cylindrical
+          pytest tests/test_diagonalization
+          pytest tests/test_functions
+          pytest tests/test_mathematics
+          pytest tests/test_methods
+          pytest tests/test_symmetry
+          pytest tests/test_workflows
+        env:
+          QSDTYPE: ${{ matrix.qsdtype }}
