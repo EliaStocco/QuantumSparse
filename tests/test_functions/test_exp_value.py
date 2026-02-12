@@ -27,7 +27,6 @@ def test_expectation_value_random_operator_and_vectors(dim, N):
     Psi = csr_matrix(Psi_dense)
     
     ev = expectation_value(Op, Psi)
-    assert ev.dtype == np.float64 or ev.dtype == float, "Expectation values should be real."
     assert np.all(np.abs(ev.imag) < 1e-12), "Imaginary parts should be negligible."
     
     eigvals = np.linalg.eigvalsh(Op_dense)

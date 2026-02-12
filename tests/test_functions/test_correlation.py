@@ -14,7 +14,7 @@ def test_correlation_function_positive_when_OpB_none(dim, num_temps):
     E = np.linspace(0, dim-1, dim)
 
     # Create random sparse Operator OpA (csr_matrix)
-    OpA = sparse_random(dim, dim, density=0.3, format='csr', dtype=np.float64)
+    OpA = sparse_random(dim, dim, density=0.3, format='csr')
     # Make OpA symmetric (Hermitian) by averaging with its transpose
     OpA = (OpA + OpA.T) * 0.5
     OpA = Operator(OpA)
