@@ -45,6 +45,7 @@ prepare_spins = "quantumsparse.cli.diagonalization.prepare_spins:main"
 rotate_operator = "quantumsparse.cli.diagonalization.rotate_operator:main"
 rotate_spins = "quantumsparse.cli.diagonalization.rotate_spins:main"
 spins_summary = "quantumsparse.cli.diagonalization.spins_summary:main"
+test_diagonalization = "quantumsparse.cli.diagonalization.test_diagonalization:main"
 
 # --- susceptibility ---
 compute_magnetic_moments = "quantumsparse.cli.susceptibility.compute_magnetic_moments:main"
