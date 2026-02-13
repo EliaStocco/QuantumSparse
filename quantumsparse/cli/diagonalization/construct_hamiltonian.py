@@ -3,7 +3,8 @@ import json
 import numpy as np
 from quantumsparse.operator import Operator
 from quantumsparse.spin import SpinOperators
-from quantumsparse.spin import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg, anisotropy, rhombicity
+from quantumsparse.spin.functions import magnetic_moments
+from quantumsparse.spin.interactions import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg
 
 def main():
     
@@ -38,19 +39,34 @@ def main():
     print("Creating Hamiltonian operator ... ", end="")
     H = 0
     if "heisenberg" in interactions:
+        print("Adding Heisenberg interaction (1nn) with couplings ", interactions["heisenberg"])
         H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg"],nn=1)
     if "heisenberg-2" in interactions:
+        print("Adding Heisenberg interaction (2nn) with couplings ", interactions["heisenberg-2"])
         H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg-2"],nn=2)
     if "heisenberg-3" in interactions:
+        print("Adding Heisenberg interaction (3nn) with couplings ", interactions["heisenberg-3"])
         H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg-3"],nn=3)
     if "heisenberg-4" in interactions:
+        print("Adding Heisenberg interaction (4nn) with couplings ", interactions["heisenberg-4"])
         H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg-4"],nn=4)
     if "DM" in interactions:
+        print("Adding Dzyaloshinskii-Moriya interaction with couplings ", interactions["DM"])
         H += Dzyaloshinskii_Moriya(*SpinOp.spins,couplings=interactions["DM"])
     if "biquadratic" in interactions:
+        print("Adding biquadratic interaction with couplings ", interactions["biquadratic"])
         H += biquadratic_Heisenberg(*SpinOp.spins,couplings=interactions["biquadratic"])
-    print("done.")    
+    if "zeeman" in interactions:
+        
+        print("Computing the magnetic moments ... ", end="")
+        Mx, My, Mz = magnetic_moments(SpinOp.Sx, SpinOp.Sy, SpinOp.Sz)
+        print("done.")
+        
+        print("Adding Zeeman interaction with couplings ", interactions["zeeman"])
+        B = interactions["zeeman"]
+        H += -(Mx*B[0] + My*B[1] + Mz*B[2])
     
+    print("done.")    
     assert isinstance(H, Operator), "The Hamiltonian operator was not constructed properly."
     
     print(f"Saving operator to file '{args.output}' ... ", end="")
