@@ -40,11 +40,11 @@ def main():
     if "heisenberg" in interactions:
         H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg"],nn=1)
     if "heisenberg-2" in interactions:
-        H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg"],nn=2)
+        H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg-2"],nn=2)
     if "heisenberg-3" in interactions:
-        H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg"],nn=3)
+        H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg-3"],nn=3)
     if "heisenberg-4" in interactions:
-        H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg"],nn=4)
+        H += Heisenberg(*SpinOp.spins,couplings=interactions["heisenberg-4"],nn=4)
     if "DM" in interactions:
         H += Dzyaloshinskii_Moriya(*SpinOp.spins,couplings=interactions["DM"])
     if "biquadratic" in interactions:
