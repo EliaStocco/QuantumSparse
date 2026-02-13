@@ -37,6 +37,7 @@ compute_corr_function = "quantumsparse.cli.correlation_function.compute_corr_fun
 prepare_corr_function = "quantumsparse.cli.correlation_function.prepare_corr_function:main"
 
 # --- diagonalization ---
+add_Zeeman = "quantumsparse.cli.diagonalization.add_Zeeman:main"
 construct_hamiltonian = "quantumsparse.cli.diagonalization.construct_hamiltonian:main"
 diagonalize = "quantumsparse.cli.diagonalization.diagonalize:main"
 operator_summary = "quantumsparse.cli.diagonalization.operator_summary:main"
