@@ -3,7 +3,7 @@ from quantumsparse.operator import Operator
 
 def main():
     
-    description = "Diagonalize an operator."
+    description = "Test diagonalization."
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-io", "--input_operator"   , type=str, required=True , help="pickle input file with the operator.")
     args = parser.parse_args()
