@@ -196,6 +196,13 @@ def dfT2correlation_function(T: np.ndarray,df:pd.DataFrame)->np.ndarray:
     exp_val_AB = weights2thermal_average(w=w,Obs=df["AB"].to_numpy())
     return exp_val_AB - exp_val_A * exp_val_B
 
+def dfT2thermal_average_and_fluctuation(T: np.ndarray,df:pd.DataFrame)->Tuple[np.ndarray,np.ndarray]:
+    w, _ = statistical_weigths(T=T,E=df["eigenvalues"].to_numpy())
+    exp_val_A  = weights2thermal_average(w=w,Obs=df["A"].to_numpy())
+    exp_val_A2 = weights2thermal_average(w=w,Obs=df["A2"].to_numpy())
+    fluctuation = np.sqrt(exp_val_A2 - exp_val_A**2)
+    return exp_val_A, fluctuation
+
 def dfT2susceptibility(T: np.ndarray,df:pd.DataFrame)->np.ndarray:
     beta  = T2beta(T)
     chi = dfT2correlation_function(T,df)
