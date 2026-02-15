@@ -18,11 +18,11 @@ def main():
     df = pd.read_csv(args.input)
     print("done.")
     
-    fluctuation = (df["A2"] - df["A"]**2).sqrt() 
+    fluctuation = (df["fluctuation"] - df["average"]**2).sqrt() 
     
     fig, ax = plt.subplots()
-    ax.plot(df["temp"], df["A"])
-    ax.fill_between(df["temp"], df["A"] - fluctuation, df["A"] + fluctuation, alpha=0.3)
+    ax.plot(df["temp"], df["average"])
+    ax.fill_between(df["temp"], df["average"] - fluctuation, df["average"] + fluctuation, alpha=0.3)
     ax.set_ylabel(r"$<\hat{A}>$")
     ax.set_xscale("log")
     plt.tight_layout()
