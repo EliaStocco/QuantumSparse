@@ -49,6 +49,7 @@ spins_summary = "quantumsparse.cli.diagonalization.spins_summary:main"
 test_diagonalization = "quantumsparse.cli.diagonalization.test_diagonalization:main"
 
 # --- susceptibility ---
+compute_dMdB = "quantumsparse.cli.susceptibility.compute_dMdB:main"
 compute_magnetic_moments = "quantumsparse.cli.susceptibility.compute_magnetic_moments:main"
 compute_susceptibility = "quantumsparse.cli.susceptibility.compute_susceptibility:main"
 plot_susceptibility = "quantumsparse.cli.susceptibility.plot_susceptibility:main"
