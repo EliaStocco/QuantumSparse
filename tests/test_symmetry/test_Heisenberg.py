@@ -26,6 +26,7 @@ def test_heisenberg_with_vs_without_symmetry(S, N):
     # symmetry operator (translation / shift)
     D: Symmetry = shift(SpinOp)
     D.diagonalize()
+    check_diagonal(D)
     l, n = D.energy_levels()
 
     assert len(l) == N, "wrong number of energy levels for shift symmetry"
@@ -42,9 +43,11 @@ def test_heisenberg_with_vs_without_symmetry(S, N):
 
     # with symmetry
     H.diagonalize_with_symmetry(S=[D])
+    check_diagonal(H)
     
     # without symmetry
     Hnosym.diagonalize()
+    check_diagonal(Hnosym)
     
     # test
     compare_eigensolutions(H, Hnosym)

@@ -1,4 +1,5 @@
 import pytest
+from quantumsparse.matrix import Matrix
 from quantumsparse.tools.bookkeeping import TOLERANCE as TOLERANCE
 
 parametrize_method      = pytest.mark.parametrize("method", ["R", "U"])
@@ -12,6 +13,10 @@ parametrize_N           = pytest.mark.parametrize("N", [2, 3, 4])
 parametrize_S           = pytest.mark.parametrize("S", [0.5, 1.0, 1.5, 2.0])
 
 COUPLINGS = [1.0,2.1,3.5] # just some numbers
+
+def check_diagonal(H:Matrix):
+    norm = H.test_eigensolution().norm()
+    assert norm < TOLERANCE, f"Diagonalization failed: norm = {norm}"
 
 from typing import List, Tuple
 import numpy as np

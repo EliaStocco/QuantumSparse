@@ -15,6 +15,7 @@ def test_hamiltonian_with_vs_without_blocks(N: int, S: float,interaction:str) ->
 
     H = get_H(Sx=Sx, Sy=Sy, Sz=Sz, interaction=interaction)
     eigenvalues, eigenvectors = H.diagonalize()
+    check_diagonal(H)
     
     Hdense = H.todense()
     eigenvalues_dense, eigenvectors_dense = np.linalg.eigh(Hdense)

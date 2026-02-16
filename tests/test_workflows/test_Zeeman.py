@@ -24,6 +24,7 @@ def test_spin_system_diagonalization(N, S):
 
     # Diagonalize (no symmetry for smoke test)
     H.diagonalize()
+    check_diagonal(H)
 
     # Ensure eigenvalues exist and have correct length
     assert H.eigenvalues is not None

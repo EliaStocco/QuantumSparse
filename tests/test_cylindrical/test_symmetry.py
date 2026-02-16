@@ -28,9 +28,11 @@ def test_symmetry(N: int, S: float,method:str,interaction:str):
     H = get_H(Sx=Sx, Sy=Sy, Sz=Sz, interaction=interaction)
     D = shift(SpinOp)
     D.diagonalize()
+    check_diagonal(D)
     assert H.commute(D), "Hamiltonian does not commute with shift symmetry."
     assert D.commute(H), "Hamiltonian does not commute with shift symmetry."
-    H.diagonalize_with_symmetry([D])    
+    H.diagonalize_with_symmetry([D])
+    check_diagonal(H)    
     H = H.unitary_transformation(U)
     
     # Spin operators in cartesian frame --> rotation to cylindrical frame --> Hamiltonian in cylindrical frame
@@ -38,6 +40,7 @@ def test_symmetry(N: int, S: float,method:str,interaction:str):
     StR, SrR, SzR = rotate_spins(spins, EulerAngles=EulerAngles, method=method)
     Hcyl = get_H(Sx=StR, Sy=SrR, Sz=SzR, interaction=interaction)
     Hcyl.diagonalize()
+    check_diagonal(Hcyl)
     
     test = (Hcyl - H).norm()
     assert test < TOLERANCE, f"Hamiltonian mismatch in cylindrical coordinates (N={N}, S={S}): {test}"
@@ -49,6 +52,7 @@ def test_symmetry(N: int, S: float,method:str,interaction:str):
     assert Hcylsym.commute(Dcyl), "Hamiltonian does not commute with shift symmetry."
     assert Dcyl.commute(Hcylsym), "Hamiltonian does not commute with shift symmetry."
     Hcylsym.diagonalize_with_symmetry([Dcyl])
+    check_diagonal(Hcylsym)
     compare_eigensolutions(Hcyl, Hcylsym)
     compare_eigensolutions(H, Hcylsym)
     
