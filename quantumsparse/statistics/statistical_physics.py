@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import warnings
+from scipy.special import logsumexp
 from quantumsparse.constants import kB,g,_NA,_eV,muB
 from quantumsparse.tools.quantum_mechanics import expectation_value
 from quantumsparse.operator import Operator
@@ -24,122 +26,113 @@ def T2beta(T:np.ndarray)->np.ndarray:
         raise ValueError("For null temperatures, please use the function 'statistical_weigths'.")
     return 1.0/(kB*T)
 
-def statistical_weigths(T: np.ndarray, E: np.ndarray, tol=TOLERANCE) -> Tuple[np.ndarray, np.ndarray]:
-    assert E.ndim == 1, "only 1D arrays allowed."
-    
-    # Handle T = 0 separately
+def statistical_weights(T: np.ndarray, E: np.ndarray, tol=TOLERANCE):
+    """
+    Returns normalized weights w and partition function Z using log-sum-exp for numerical stability.
+    Handles T=0 by assigning equal weight to ground states.
+    """
+    assert E.ndim == 1
     ii = np.isclose(T, 0.0)
-
     temp = T.copy()
-    temp[ii] = 1.0  # safe value to avoid beta=inf
+    temp[ii] = 1.0  # temporary safe value
+    beta = 1.0 / temp  # or T2beta(temp) if you have it
 
-    beta = T2beta(temp)
-
-    # numerical stabilization by shifting the spectrum
     Emin = E.min()
-    w = np.exp(-np.tensordot(beta, E - Emin, axes=0))
-
-    # ground-state degeneracy
-    gs = Emin
-    deg_gs = np.abs(E - gs) < tol
-    jj_gs = np.where(deg_gs)[0]
-    jj_es = np.where(~deg_gs)[0]
-    deg = deg_gs.sum()
-
-    # T = 0 → equal probability over ground states only
-    if np.any(ii):
-        w[ii][:, jj_gs] = 1.0 / deg
-        w[ii][:, jj_es] = 0.0
-
-    # partition function
-    Z = w.sum(axis=1)
+    log_w = -np.tensordot(beta, E - Emin, axes=0)  # shape (len(T), len(E))
     
-    # normalize weights
-    w:np.ndarray = w / Z[:,None]
-    assert np.allclose(w.sum(axis=1),1.), "error"
+    # compute log-sum-exp for each temperature row
+    log_Z = logsumexp(log_w, axis=1, keepdims=True)
+    
+    # normalized weights
+    w = np.exp(log_w - log_Z)
+
+    # handle T=0 separately (equal probability over degenerate GS)
+    if np.any(ii):
+        deg_gs = np.abs(E - Emin) < tol
+        jj_gs = np.where(deg_gs)[0]
+        deg = deg_gs.sum()
+        for idx in np.where(ii)[0]:
+            w[idx, :] = 0.0
+            w[idx, jj_gs] = 1.0 / deg
+
+    # unnormalized partition function (including shift by Emin)
+    Z = np.exp(log_Z.flatten()) * np.exp(-beta * Emin)  # true Z
+
+    # ensure normalization
+    w /= w.sum(axis=1, keepdims=True)
+    assert np.allclose(w.sum(axis=1), 1.0)
 
     return w, Z
 
-
-def classical_thermal_average_value(T:np.ndarray,E:np.ndarray,Obs:np.ndarray)->np.ndarray:
+def classical_thermal_average_value(T: np.ndarray, E: np.ndarray, Obs: np.ndarray) -> np.ndarray:
     """
-    Calculate the classical thermal average value of an observable in a system.
-
-    Parameters:
-        T (np.ndarray): The temperature array.
-        E (np.ndarray): The energy array.
-        Obs (np.ndarray): The observable array.
-
-    Returns:
-        np.ndarray: The classical thermal average value of the observable.
+    Numerically stable classical thermal average <Obs>_T.
     """
-    w, Z = statistical_weigths(T=T,E=E)
-    return w @ Obs
+    w, _ = statistical_weights(T=T, E=E)
+    return weights2thermal_average(w, Obs)
 
-
-def quantum_thermal_average_value(T: np.ndarray,E: np.ndarray,Op:Operator,Psi:Matrix)->np.ndarray:
+def correlation_function(
+    T: np.ndarray, 
+    E: np.ndarray, 
+    OpA: Operator,  # or Operator diagonal in eigenbasis
+    Psi: np.ndarray,  # eigenvectors
+    OpB: Optional[Operator] = None
+) -> np.ndarray:
     """
-    Calculates the quantum thermal average value of an observable in a system.
+    Numerically stable correlation function <(A-<A>)(B-<B>)>_T for quantum or classical systems.
 
     Parameters
     ----------
     T : np.ndarray
-        The temperature array.
+        Temperatures.
     E : np.ndarray
-        The energy array.
-    Op : Operator
-        The operator representing the observable.
-    Psi : Matrix
-        The wave function of the system.
-
+        Eigenvalues of the Hamiltonian.
+    OpA : array-like
+        Diagonal elements of operator A in eigenbasis.
+    Psi : array-like
+        Eigenvectors (unused if OpA already diagonal)
+    OpB : array-like, optional
+        Diagonal elements of operator B (default: OpB = OpA)
+    
     Returns
     -------
     np.ndarray
-        The quantum thermal average value of the observable.
+        Correlation function at each temperature.
     """
-    exp_val = expectation_value(Op,Psi)
-    return classical_thermal_average_value(T,E,exp_val)
-
-def correlation_function(T: np.ndarray, E: np.ndarray, OpA: Operator, Psi: Matrix, OpB: Optional[Operator]=None) -> np.ndarray:
-    """
-    Calculates the correlation function of a system.
-
-    Parameters
-    ----------
-    T : np.ndarray
-        The temperature array.
-    E : np.ndarray
-        The energy array.
-    OpA : Operator
-        The first operator.
-    OpB : Operator
-        The second operator.
-    Psi : Matrix
-        The wave function of the system.
-
-    Returns
-    -------
-    np.ndarray
-        The correlation function of the system.
-    """
+    w, _ = statistical_weights(T=T, E=E)
     
-    # Compute the thermal averages for the operators
-    meanA = quantum_thermal_average_value(T, E, OpA, Psi)
-    if OpB is not None:
-        meanB = quantum_thermal_average_value(T, E, OpB, Psi)
-        OpAB = OpA @ OpB
-    else:
-        meanB = meanA
-        OpAB = OpA @ OpA
-    
-    # Calculate the correlation function
-    square = quantum_thermal_average_value(T, E, OpAB, Psi)
-    
-    # Initialize the Chi array to hold the correlation result
-    Chi = square - meanA * meanB
+    A = expectation_value(OpA, Psi)
     if OpB is None:
-        assert np.allclose(Chi.imag,0.0), "Correlation function should be real when A=B is None." 
-    return Chi
+        B = A.copy()
+
+    # Compute thermal averages    
+    meanA = weights2thermal_average(w, A)
+    meanB = weights2thermal_average(w, B)
+
+    # Centered correlation: (A-<A>)(B-<B>)
+    centered = (A[None, :] - meanA[:, None]) * (B[None, :] - meanB[:, None])
+    corr = np.sum(w * centered, axis=1)
+
+    # Handle tiny negatives due to numerical noise for variance
+    if OpB is None:
+        if np.any(corr.real < 0):
+            warnings.warn(
+                "Small negative variance due to floating-point noise. Clipping to zero.",
+                RuntimeWarning
+            )
+        corr = np.maximum(corr.real, 0.0)
+
+    return corr
+
+def quantum_thermal_average_value(T: np.ndarray, E: np.ndarray, Op: Operator, Psi: Matrix) -> np.ndarray:
+    """
+    Quantum thermal average <Op>_T using eigenbasis Psi.
+    """
+    # Diagonal elements in eigenbasis
+    exp_val = expectation_value(Op, Psi)  # shape (N_states,)
+    
+    # Classical thermal average over eigenstates
+    return classical_thermal_average_value(T, E, exp_val)
 
 def susceptibility(T: np.ndarray,H:Operator,OpA:Operator,OpB:Operator=None)->np.ndarray:
     """
@@ -180,20 +173,38 @@ def weights2thermal_average(w: np.ndarray,Obs: np.ndarray)->np.ndarray:
     assert Obs.ndim == 1, "error"
     out = np.einsum("ij,j->i",w,Obs)
     return out
-   
-def dfT2correlation_function(T: np.ndarray,df:pd.DataFrame)->np.ndarray:
-    w, _ = statistical_weigths(T=T,E=df["eigenvalues"].to_numpy())
-    exp_val_A  = weights2thermal_average(w=w,Obs=df["A"].to_numpy())
-    exp_val_B  = weights2thermal_average(w=w,Obs=df["B"].to_numpy())
-    exp_val_AB = weights2thermal_average(w=w,Obs=df["AB"].to_numpy())
-    return exp_val_AB - exp_val_A * exp_val_B
+
+def dfT2correlation_function(T: np.ndarray, df: pd.DataFrame) -> np.ndarray:
+    w, _ = statistical_weights(T=T, E=df["eigenvalues"].to_numpy())
+    A = df["A"].to_numpy()
+    B = df["B"].to_numpy() if "B" in df else A
+    
+    meanA = weights2thermal_average(w, A)
+    meanB = weights2thermal_average(w, B)
+    
+    centered = (A[None, :] - meanA[:, None]) * (B[None, :] - meanB[:, None])
+    corr = np.sum(w * centered, axis=1)
+    
+    if np.allclose(A, B):
+        # Handle tiny negative values due to numerical noise
+        if np.any(corr.real < 0):
+            warnings.warn(
+                "Small negative variance encountered due to floating-point noise. Clipping to 0.",
+                RuntimeWarning
+            )
+        corr = np.maximum(corr.real, 0.0)
+    return corr
 
 def dfT2thermal_average_and_fluctuation(T: np.ndarray,df:pd.DataFrame)->Tuple[np.ndarray,np.ndarray]:
-    w, _ = statistical_weigths(T=T,E=df["eigenvalues"].to_numpy())
+    w, _ = statistical_weights(T=T, E=df["eigenvalues"].to_numpy())
     exp_val_A  = weights2thermal_average(w=w,Obs=df["A"].to_numpy())
-    exp_val_A2 = weights2thermal_average(w=w,Obs=df["A2"].to_numpy())
-    fluctuation = np.sqrt(exp_val_A2 - exp_val_A**2)
-    return exp_val_A, fluctuation
+    tmp = pd.DataFrame({
+        "eigenvalues":df["eigenvalues"],
+        "A": df["A"], 
+        "B": df["A"], 
+        "AB": df["A2"]
+    })
+    return exp_val_A, dfT2correlation_function(T,tmp)
 
 def dfT2susceptibility(T: np.ndarray,df:pd.DataFrame)->np.ndarray:
     beta  = T2beta(T)

@@ -847,6 +847,9 @@ class Matrix(csr_matrix):
             self._eigenstates = None
         
         self.eigenvalues,self._eigenstates = self.eigensolver(original=True,tol=tol,max_iter=max_iter,**argv)
+        if self.is_hermitean():
+            assert np.allclose(self.eigenvalues.imag,0), "Eigenvalues should be real for a Hermitian matrix"
+            self.eigenvalues = self.eigenvalues.real
         
         self._eigenstates.n_blocks = self.n_blocks
         self._eigenstates.blocks = self.blocks

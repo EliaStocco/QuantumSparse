@@ -20,6 +20,7 @@ def expectation_value(Op: Operator, Psi: Matrix) -> np.ndarray:
     """
     Y:Matrix = Op @ Psi
     Y = Psi.conjugate().multiply(Y)
+    assert np.allclose(Y.imag.norm(), 0), "Expectation values should be real for a Hermitian operator."
     Y = Y.real
     return np.array(Y.sum(axis=0)).flatten()
 
