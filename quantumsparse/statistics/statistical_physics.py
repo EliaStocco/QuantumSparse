@@ -137,6 +137,8 @@ def correlation_function(T: np.ndarray, E: np.ndarray, OpA: Operator, Psi: Matri
     
     # Initialize the Chi array to hold the correlation result
     Chi = square - meanA * meanB
+    if OpB is None:
+        assert np.allclose(Chi.imag,0.0), "Correlation function should be real when A=B is None." 
     return Chi
 
 def susceptibility(T: np.ndarray,H:Operator,OpA:Operator,OpB:Operator=None)->np.ndarray:
@@ -172,16 +174,6 @@ def Curie_constant(spin_values,gfactors=None):
         chi = gfactors[i]**2*muB**2*spin_values[i]*(spin_values[i]+1)/(3.*kB)
         CW[i] = _NA * _eV * 1E3  * chi 
     return CW.sum()
-
-# def df2classical_thermal_average(T: np.ndarray,E: np.ndarray,Obs: np.ndarray)->np.ndarray:
-#     """
-#     To be filled
-#     """
-#     assert T.ndim == 1, "error"
-#     assert E.ndim == 1, "error"
-#     assert Obs.ndim == 1, "error"
-#     w, _ = statistical_weigths(T=T,E=E)
-#     return weights2thermal_average(w=w,Obs=Obs)
 
 def weights2thermal_average(w: np.ndarray,Obs: np.ndarray)->np.ndarray:
     assert w.ndim == 2, "error"
