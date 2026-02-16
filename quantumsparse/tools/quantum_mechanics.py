@@ -18,11 +18,14 @@ def expectation_value(Op: Operator, Psi: Matrix) -> np.ndarray:
     np.ndarray
         Expectation values array of length N.
     """
-    Y:Matrix = Op @ Psi
+    Y = Op @ Psi
     Y = Psi.conjugate().multiply(Y)
-    assert np.allclose(Y.imag.norm(), 0), "Expectation values should be real for a Hermitian operator."
-    Y = Y.real
-    return np.array(Y.sum(axis=0)).flatten()
+    Y = Matrix(Y)
+    out = np.array(Y.sum(axis=0)).flatten()
+    if Operator(Op).is_hermitean():
+        assert np.allclose(out.imag, 0), "Expectation values should be real for a Hermitian operator."
+        return out.real
+    return out
 
 
 #@jit
