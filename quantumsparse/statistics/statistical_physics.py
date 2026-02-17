@@ -26,43 +26,82 @@ def T2beta(T:np.ndarray)->np.ndarray:
         raise ValueError("For null temperatures, please use the function 'statistical_weigths'.")
     return 1.0/(kB*T)
 
-def statistical_weights(T: np.ndarray, E: np.ndarray, tol=TOLERANCE):
-    """
-    Returns normalized weights w and partition function Z using log-sum-exp for numerical stability.
-    Handles T=0 by assigning equal weight to ground states.
-    """
-    assert E.ndim == 1
+def statistical_weights(T: np.ndarray, E: np.ndarray, tol=TOLERANCE) -> Tuple[np.ndarray, np.ndarray]:
+    assert E.ndim == 1, "only 1D arrays allowed."
+    T = np.atleast_1d(T)
+    
+    # Handle T = 0 separately
     ii = np.isclose(T, 0.0)
+
     temp = T.copy()
-    temp[ii] = 1.0  # temporary safe value
-    beta = 1.0 / temp  # or T2beta(temp) if you have it
+    temp[ii] = 1.0  # safe value to avoid beta=inf
 
+    beta = T2beta(temp)
+
+    # numerical stabilization by shifting the spectrum
     Emin = E.min()
-    log_w = -np.tensordot(beta, E - Emin, axes=0)  # shape (len(T), len(E))
-    
-    # compute log-sum-exp for each temperature row
-    log_Z = logsumexp(log_w, axis=1, keepdims=True)
-    
-    # normalized weights
-    w = np.exp(log_w - log_Z)
+    w = np.exp(-np.tensordot(beta, E - Emin, axes=0))
 
-    # handle T=0 separately (equal probability over degenerate GS)
+    # ground-state degeneracy
+    gs = Emin
+    deg_gs = np.abs(E - gs) < tol
+    jj_gs = np.where(deg_gs)[0]
+    jj_es = np.where(~deg_gs)[0]
+    deg = deg_gs.sum()
+
+    # T = 0 → equal probability over ground states only
     if np.any(ii):
-        deg_gs = np.abs(E - Emin) < tol
-        jj_gs = np.where(deg_gs)[0]
-        deg = deg_gs.sum()
-        for idx in np.where(ii)[0]:
-            w[idx, :] = 0.0
-            w[idx, jj_gs] = 1.0 / deg
+        w[ii, jj_gs] = 1.0 / deg
+        w[ii, jj_es] = 0.0
 
-    # unnormalized partition function (including shift by Emin)
-    Z = np.exp(log_Z.flatten()) * np.exp(-beta * Emin)  # true Z
+    # partition function
+    Z = w.sum(axis=1)
+    
+    w = w / Z[:,None]
+    
+    assert np.allclose(w.sum(axis=1),1.), "error"
 
-    # ensure normalization
-    w /= w.sum(axis=1, keepdims=True)
-    assert np.allclose(w.sum(axis=1), 1.0)
-
+    # normalize weights
     return w, Z
+
+
+# def statistical_weights(T: np.ndarray, E: np.ndarray, tol=TOLERANCE):
+#     """
+#     Returns normalized weights w and partition function Z using log-sum-exp for numerical stability.
+#     Handles T=0 by assigning equal weight to ground states.
+#     """
+#     assert E.ndim == 1
+#     ii = np.isclose(T, 0.0)
+#     temp = T.copy()
+#     temp[ii] = 1.0  # temporary safe value
+#     beta = 1.0 / temp  # or T2beta(temp) if you have it
+
+#     Emin = E.min()
+#     log_w = -np.tensordot(beta, E - Emin, axes=0)  # shape (len(T), len(E))
+    
+#     # compute log-sum-exp for each temperature row
+#     log_Z = logsumexp(log_w, axis=1, keepdims=True)
+    
+#     # normalized weights
+#     w = np.exp(log_w - log_Z)
+
+#     # handle T=0 separately (equal probability over degenerate GS)
+#     if np.any(ii):
+#         deg_gs = np.abs(E - Emin) < tol
+#         jj_gs = np.where(deg_gs)[0]
+#         deg = deg_gs.sum()
+#         for idx in np.where(ii)[0]:
+#             w[idx, :] = 0.0
+#             w[idx, jj_gs] = 1.0 / deg
+
+#     # unnormalized partition function (including shift by Emin)
+#     Z = np.exp(log_Z.flatten()) * np.exp(-beta * Emin)  # true Z
+
+#     # ensure normalization
+#     w /= w.sum(axis=1, keepdims=True)
+#     assert np.allclose(w.sum(axis=1), 1.0)
+
+#     return w, Z
 
 def classical_thermal_average_value(T: np.ndarray, E: np.ndarray, Obs: np.ndarray) -> np.ndarray:
     """
@@ -174,26 +213,33 @@ def weights2thermal_average(w: np.ndarray,Obs: np.ndarray)->np.ndarray:
     out = np.einsum("ij,j->i",w,Obs)
     return out
 
-def dfT2correlation_function(T: np.ndarray, df: pd.DataFrame) -> np.ndarray:
-    w, _ = statistical_weights(T=T, E=df["eigenvalues"].to_numpy())
-    A = df["A"].to_numpy()
-    B = df["B"].to_numpy() if "B" in df else A
+# def dfT2correlation_function(T: np.ndarray, df: pd.DataFrame) -> np.ndarray:
+#     w, _ = statistical_weights(T=T, E=df["eigenvalues"].to_numpy())
+#     A = df["A"].to_numpy()
+#     B = df["B"].to_numpy() if "B" in df else A
     
-    meanA = weights2thermal_average(w, A)
-    meanB = weights2thermal_average(w, B)
+#     meanA = weights2thermal_average(w, A)
+#     meanB = weights2thermal_average(w, B)
     
-    centered = (A[None, :] - meanA[:, None]) * (B[None, :] - meanB[:, None])
-    corr = np.sum(w * centered, axis=1)
+#     centered = (A[None, :] - meanA[:, None]) * (B[None, :] - meanB[:, None])
+#     corr = np.sum(w * centered, axis=1)
     
-    if np.allclose(A, B):
-        # Handle tiny negative values due to numerical noise
-        if np.any(corr.real < 0):
-            warnings.warn(
-                "Small negative variance encountered due to floating-point noise. Clipping to 0.",
-                RuntimeWarning
-            )
-        corr = np.maximum(corr.real, 0.0)
-    return corr
+#     if np.allclose(A, B):
+#         # Handle tiny negative values due to numerical noise
+#         if np.any(corr.real < 0):
+#             warnings.warn(
+#                 "Small negative variance encountered due to floating-point noise. Clipping to 0.",
+#                 RuntimeWarning
+#             )
+#         corr = np.maximum(corr.real, 0.0)
+#     return corr
+   
+def dfT2correlation_function(T: np.ndarray,df:pd.DataFrame)->np.ndarray:
+    w, _ = statistical_weights(T=T,E=df["eigenvalues"].to_numpy())
+    meanA  = weights2thermal_average(w=w,Obs=df["A"].to_numpy())
+    meanB  = weights2thermal_average(w=w,Obs=df["B"].to_numpy())
+    exp_val_AB = weights2thermal_average(w=w,Obs=df["AB"].to_numpy())
+    return exp_val_AB - meanA * meanB
 
 def dfT2thermal_average_and_fluctuation(T: np.ndarray,df:pd.DataFrame)->Tuple[np.ndarray,np.ndarray]:
     w, _ = statistical_weights(T=T, E=df["eigenvalues"].to_numpy())
@@ -211,3 +257,8 @@ def dfT2susceptibility(T: np.ndarray,df:pd.DataFrame)->np.ndarray:
     chi = dfT2correlation_function(T,df)
     assert chi.shape == T.shape, "error"
     return beta * chi * _NA * _eV * 1E3  
+
+def corr2sus(T: np.ndarray,corr: np.ndarray)->np.ndarray:
+    beta  = T2beta(T)
+    assert corr.shape == T.shape, "error"
+    return beta * corr * _NA * _eV * 1E3

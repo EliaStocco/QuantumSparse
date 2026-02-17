@@ -52,6 +52,7 @@ test_diagonalization = "quantumsparse.cli.diagonalization.test_diagonalization:m
 compute_dMdB = "quantumsparse.cli.susceptibility.compute_dMdB:main"
 compute_magnetic_moments = "quantumsparse.cli.susceptibility.compute_magnetic_moments:main"
 compute_susceptibility = "quantumsparse.cli.susceptibility.compute_susceptibility:main"
+compute_susceptibility_numerical_stable = "quantumsparse.cli.susceptibility.compute_susceptibility_numerical_stable:main"
 plot_susceptibility = "quantumsparse.cli.susceptibility.plot_susceptibility:main"
 
 # --- test ---
