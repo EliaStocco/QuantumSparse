@@ -45,7 +45,8 @@ def main():
         meanB = H.thermal_average(temp,Mb)
     else:
         meanB = meanA
-        
+    
+    # Compute the correlation function <(A-<A>)(B-<B>)> for each temperature, and then convert it to susceptibility.
     N = len(H)
     Id = Operator.identity(N)
     results = pd.DataFrame({"temp":temp,"corr":np.zeros_like(temp)})
@@ -65,6 +66,18 @@ def main():
     sus = corr2sus(temp,results["corr"].to_numpy())
     results["X"] = sus
     results["XT"] = temp*sus
+    
+    # numerically unstable results
+    A = H.thermal_average(temp,Ma)
+    if Mb is not None:
+        B = H.thermal_average(temp,Mb)
+    else:        
+        B = A
+    AB = H.thermal_average(temp,Ma@Mb)
+    corr = AB - A*B
+    sus_unstable = corr2sus(temp,corr)
+    results["X_unstable"] = sus_unstable
+    results["XT_unstable"] = temp*sus_unstable
     
     print(f"Saving results to file '{args.output}' ... ",end="")
     results.to_csv(args.output,index=False)
