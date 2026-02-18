@@ -27,7 +27,7 @@ def main():
         print("done.")
         
         print("Diagonalizing operator in the symmetry-adapted basis ... ", end="")
-        H.diagonalize_with_symmetry(S=S,mem_save=args.mem_save)
+        H.diagonalize_with_symmetry(S=S)
         print("done.")
     
     else:
