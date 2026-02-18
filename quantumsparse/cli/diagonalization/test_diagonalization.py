@@ -1,5 +1,6 @@
 import argparse
 from quantumsparse.operator import Operator
+from quantumsparse.tools.bookkeeping import TOLERANCE 
 
 def main():
     
@@ -20,6 +21,10 @@ def main():
     solution = H.test_eigensolution()
     norm = solution.norm()
     print("\n\teigensolution norm:",norm)
+    if norm < TOLERANCE:
+        print("\nThe eigensolution is correct within numerical precision.")
+    else:
+        raise ValueError(f"\nDiagonalization failed for Hamiltonian {args.input_operator}")
     
     print("Job done :)\n")
     
