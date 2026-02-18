@@ -1,3 +1,4 @@
 *.txt
 .qs-*/
 tmp/
+eigenvalues/
