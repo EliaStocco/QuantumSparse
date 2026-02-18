@@ -7,7 +7,7 @@ def main():
     description = "Diagonalize an operator."
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-io", "--input_operator"   , type=str, required=True , help="pickle input file with the operator.")
-    parser.add_argument("-m", "--mem_save"   , type=str2bool, required=False , help="enable memory saving mode (default: %(default)s).",  default=False)
+    # parser.add_argument("-m", "--mem_save"   , type=str2bool, required=False , help="enable memory saving mode (default: %(default)s).",  default=False)
     parser.add_argument("-s", "--symmetry", type=str, required=False, help="pickle input file of the symmetry operator (default: %(default)s).", default=None)
     parser.add_argument("-o", "--output"      , type=str, required=True, help="pickle output file with the operator.")
     args = parser.parse_args()

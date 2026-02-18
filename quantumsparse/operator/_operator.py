@@ -113,7 +113,7 @@ class Operator(Matrix):
         Tuple[T, T]
             A tuple containing the eigenvalues and eigenstates of the operator.
         """
-
+        assert mem_save == False, "memory-saving mode is bugged"
         if type(S) is not list:
             return self.diagonalize_with_symmetry([S],test,mem_save,**argv)
         if len(S) == 0 :
