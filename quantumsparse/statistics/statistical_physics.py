@@ -62,7 +62,7 @@ def statistical_weights(T: np.ndarray, E: np.ndarray, tol=TOLERANCE) -> Tuple[np
     assert np.allclose(w.sum(axis=1),1.), "error"
 
     # normalize weights
-    w = np.ones_like(w)/len(w)
+    # w = np.ones_like(w)/len(w)
     return w, Z
 
 

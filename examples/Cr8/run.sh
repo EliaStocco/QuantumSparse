@@ -15,7 +15,7 @@ data="Cr8-U.json"
 # MEMSAVE="-m false"
 
 # run commands
-mkdir -p tmp eigenvalues sus sus-stable Mz
+mkdir -p tmp eigenvalues sus sus-stable Mz weights
 
 prepare_spins         -N ${N} -S ${S} -o ${folder}
 spins_summary         -is ${folder} # optional
@@ -27,6 +27,67 @@ compute_magnetic_moments  -is ${folder} -o ${folder}
 rotate_spins          -is ${folder} -o ${cylfolder}
 compute_magnetic_moments  -is ${cylfolder} -o ${cylfolder}
 rotate_operator       -is ${folder} -io ${folder}/Mz.pickle -o ${folder}/Mz.U.pickle
+
+# final
+prefix="final-with-sym-U"
+construct_hamiltonian -is ${folder} -j ${data} -o tmp/H.spin-H.pickle
+diagonalize           -io tmp/H.spin-H.pickle -o H.${prefix}.pickle -s tmp/D.cart.pickle # ${MEMSAVE}
+ln -s H.${prefix}.pickle H.pickle
+operator_summary      -io H.pickle -e eigenvalues/${prefix}.txt
+test_eigenstates      -is ${folder} -io H.pickle -o tmp/test.${prefix}.csv
+test_diagonalization  -io H.pickle
+rotate_operator       -is ${folder} -io H.pickle -o H.pickle
+test_diagonalization  -io H.pickle
+statistical_weights   -ih H.pickle -t temperatures.txt -o weights/weights.${prefix}.csv
+prepare_corr_function -ia ${folder}/Mz.pickle -io H.pickle -o Mz/Mz-corr.${prefix}.csv
+compute_susceptibility -i Mz/Mz-corr.${prefix}.csv -t temperatures.txt -o sus/sus.${prefix}.csv
+compute_susceptibility_numerical_stable -ih H.pickle -ia ${folder}/Mz.pickle -t temperatures.txt -o sus-stable/sus-stable.${prefix}.csv
+rm H.pickle
+
+# final
+prefix="final-with-sym-cart"
+construct_hamiltonian -is ${folder} -j ${data} -o tmp/H.spin-H.pickle
+diagonalize           -io tmp/H.spin-H.pickle -o H.${prefix}.pickle -s tmp/D.cart.pickle
+ln -s H.${prefix}.pickle H.pickle
+operator_summary      -io H.pickle -e eigenvalues/${prefix}.txt
+test_eigenstates      -is ${folder} -io H.pickle -o tmp/test.${prefix}.csv
+test_diagonalization  -io H.pickle
+statistical_weights   -ih H.pickle -t temperatures.txt -o weights/weights.${prefix}.csv
+prepare_corr_function -ia ${folder}/Mz.pickle -io H.pickle -o Mz/Mz-corr.${prefix}.csv
+compute_susceptibility -i Mz/Mz-corr.${prefix}.csv -t temperatures.txt -o sus/sus.${prefix}.csv
+compute_susceptibility_numerical_stable -ih H.pickle -ia ${folder}/Mz.pickle -t temperatures.txt -o sus-stable/sus-stable.${prefix}.csv
+rm H.pickle
+
+# final
+prefix="final-wo-sym-U"
+construct_hamiltonian -is ${folder} -j ${data} -o tmp/H.spin-H.pickle
+diagonalize           -io tmp/H.spin-H.pickle -o H.${prefix}.pickle #-s tmp/D.cart.pickle # ${MEMSAVE}
+ln -s H.${prefix}.pickle H.pickle
+operator_summary      -io H.pickle -e eigenvalues/${prefix}.txt
+test_eigenstates      -is ${folder} -io H.pickle -o tmp/test.${prefix}.csv
+test_diagonalization  -io H.pickle
+rotate_operator       -is ${folder} -io H.pickle -o H.pickle
+test_diagonalization  -io H.pickle
+statistical_weights   -ih H.pickle -t temperatures.txt -o weights/weights.${prefix}.csv
+prepare_corr_function -ia ${folder}/Mz.pickle -io H.pickle -o Mz/Mz-corr.${prefix}.csv
+compute_susceptibility -i Mz/Mz-corr.${prefix}.csv -t temperatures.txt -o sus/sus.${prefix}.csv
+compute_susceptibility_numerical_stable -ih H.pickle -ia ${folder}/Mz.pickle -t temperatures.txt -o sus-stable/sus-stable.${prefix}.csv
+rm H.pickle
+
+# final
+prefix="final-wo-sym-cart"
+construct_hamiltonian -is ${folder} -j ${data} -o tmp/H.spin-H.pickle
+diagonalize           -io tmp/H.spin-H.pickle -o H.${prefix}.pickle # -s tmp/D.cart.pickle
+ln -s H.${prefix}.pickle H.pickle
+operator_summary      -io H.pickle -e eigenvalues/${prefix}.txt
+test_eigenstates      -is ${folder} -io H.pickle -o tmp/test.${prefix}.csv
+test_diagonalization  -io H.pickle
+statistical_weights   -ih H.pickle -t temperatures.txt -o weights/weights.${prefix}.csv
+prepare_corr_function -ia ${folder}/Mz.pickle -io H.pickle -o Mz/Mz-corr.${prefix}.csv
+compute_susceptibility -i Mz/Mz-corr.${prefix}.csv -t temperatures.txt -o sus/sus.${prefix}.csv
+compute_susceptibility_numerical_stable -ih H.pickle -ia ${folder}/Mz.pickle -t temperatures.txt -o sus-stable/sus-stable.${prefix}.csv
+rm H.pickle
+
 
 # spin in cartesian coordinates --> spin in cylindrical coordinates --> Hamiltonian construction --> diagonalization without symmetries
 prefix="spin-cyl-H-diag-wo-sym"

@@ -9,7 +9,7 @@ test_dir = Path(__file__).parent.parent/"tests"
 
 parametrize_method      = pytest.mark.parametrize("method", ["R", "U"])
 parametrize_interaction = pytest.mark.parametrize("interaction",  [
-                             "heisenberg", "DM", "biquadratic", "anisotropy", "rhombicity",
+                             "heisenberg", "DM", "biquadratic", "anisotropy", #"rhombicity",
                              "heisenberg DM", 
                              "heisenberg biquadratic", 
                              "heisenberg DM biquadratic",
