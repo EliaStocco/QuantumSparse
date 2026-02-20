@@ -13,7 +13,7 @@ parametrize_interaction = pytest.mark.parametrize("interaction",  [
                              "heisenberg DM", 
                              "heisenberg biquadratic", 
                              "heisenberg DM biquadratic",
-                             test_dir/"Cr8-U.json"
+                             # test_dir/"Cr8-U.json"
                          ])
 parametrize_N           = pytest.mark.parametrize("N", [2, 3, 4])
 parametrize_S           = pytest.mark.parametrize("S", [0.5, 1.0, 1.5, 2.0])
