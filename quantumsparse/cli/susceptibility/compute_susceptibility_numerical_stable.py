@@ -42,7 +42,8 @@ def main():
     
     meanA = H.thermal_average(temp,Ma)
     if Mb is not None:
-        meanB = H.thermal_average(temp,Mb)
+        MbD = Mb.dagger()
+        meanB = H.thermal_average(temp,MbD)
     else:
         meanB = meanA
     
@@ -53,8 +54,8 @@ def main():
     for n,T in tqdm(enumerate(temp),desc="Computing susceptibility",total=len(temp)):
         
         deltaA = Ma - meanA[n]* Id   
-        if Mb is not None:
-            deltaB = Mb - meanB[n] * Id
+        if Mb is not None:    
+            deltaB = MbD - meanB[n] * Id
         else:
             deltaB = deltaA
             
@@ -70,10 +71,11 @@ def main():
     # numerically unstable results
     A = H.thermal_average(temp,Ma)
     if Mb is not None:
-        B = H.thermal_average(temp,Mb)
+        B = H.thermal_average(temp,Mb.dagger())
+        AB = H.thermal_average(temp,Ma@Mb.dagger())
     else:        
-        B = A
-    AB = H.thermal_average(temp,Ma@Mb)
+        B = A.conjugate()
+        AB = H.thermal_average(temp,Ma@Ma.dagger())
     corr = AB - A*B
     sus_unstable = corr2sus(temp,corr)
     results["X_unstable"] = sus_unstable

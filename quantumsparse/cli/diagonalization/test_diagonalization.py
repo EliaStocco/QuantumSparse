@@ -26,6 +26,15 @@ def main():
     else:
         raise ValueError(f"\nDiagonalization failed for Hamiltonian {args.input_operator}")
     
+    H = H.clean()
+    solution = H.test_eigensolution()
+    norm = solution.norm()
+    print("\n\teigensolution norm:",norm)
+    if norm < TOLERANCE:
+        print("\nThe eigensolution is correct within numerical precision.")
+    else:
+        raise ValueError(f"\nDiagonalization failed for Hamiltonian {args.input_operator}")
+    
     print("Job done :)\n")
     
     

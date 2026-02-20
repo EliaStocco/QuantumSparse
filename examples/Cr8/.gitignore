@@ -1,4 +1,4 @@
-*.txt
-.qs-*/
-tmp/
-eigenvalues/
+*
+!Cr8-U.json
+!run.sh
+!clean.sh

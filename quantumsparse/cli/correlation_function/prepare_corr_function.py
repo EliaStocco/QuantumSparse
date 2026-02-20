@@ -41,19 +41,19 @@ def main():
     print("done.")
     
     if Mb is None:
-        expB = expA
+        expB = expA.conjugate()
         print(f"Computing expecation values of the operator A squared on the eigenstates ... ",end="")
-        expAB = expectation_value(Ma@Ma,H.eigenstates)
+        expAB = expectation_value(Ma@Ma.dagger(),H.eigenstates)
         assert np.allclose(expAB.imag,0.), "The expectation value should be real."
         print("done.")
     else:
         print(f"Computing expecation values of the operator B on the eigenstates ... ",end="")
-        expB = expectation_value(Ma,H.eigenstates)
+        expB = expectation_value(Mb.dagger(),H.eigenstates)
         assert np.allclose(expB.imag,0.), "The expectation value should be real."
         print("done.")
         
         print(f"Computing expecation values of the operator A@B squared on the eigenstates ... ",end="")
-        expAB = expectation_value(Ma@Mb,H.eigenstates)
+        expAB = expectation_value(Ma@Mb.dagger(),H.eigenstates)
         assert np.allclose(expAB.imag,0.), "The expectation value should be real."
         print("done.")
         

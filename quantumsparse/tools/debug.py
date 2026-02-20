@@ -44,6 +44,21 @@ def compare_eigensolutions(H1:Operator, H2:Operator, atol:float=1e-10)->None:
         _H2.eigenstates = U@_H1.eigenstates
         test = _H2.test_eigensolution().norm() / N 
         assert test < atol, "Eigensolution of _H1 is not correct"
+        
+    hybrid = H1.copy()
+    hybrid.eigenvalues = H2.eigenvalues.copy()
+    hybrid.eigenstates = H2.eigenstates.copy()
+    
+    test = hybrid.test_eigensolution().norm() / N 
+    assert test < atol, "Eigensolution of hybrid(1) is not correct"
+    
+    hybrid = H2.copy()
+    hybrid.eigenvalues = H1.eigenvalues.copy()
+    hybrid.eigenstates = H1.eigenstates.copy()
+    
+    test = hybrid.test_eigensolution().norm() / N 
+    assert test < atol, "Eigensolution of hybrid(2) is not correct"
+    
 
 def compare_eigensolutions_dense_real(
     eigval1: np.ndarray,

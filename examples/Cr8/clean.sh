@@ -1,4 +1,3 @@
-rm *.txt
+rm -f *.txt *.pickle
 rm -rf .qs-*/
-rm -rf tmp/
-rm -rf eigenvalues/
+rm -rf tmp/ eigenvalues/ sus/ sus-stable/ Mz/

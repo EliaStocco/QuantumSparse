@@ -15,9 +15,23 @@ def test_rotation_method(N: int, S: float):
     StU, SrU, SzU = rotate_spins(spins, EulerAngles=EulerAngles, method="U")
     
     for n in range(N):
+        
+        # R and U are the same
         assert (StR[n] - StU[n]).norm() < TOLERANCE, "St rotation mismatch"
         assert (SrR[n] - SrU[n]).norm() < TOLERANCE, "Sr rotation mismatch"
         assert (SzR[n] - SzU[n]).norm() < TOLERANCE, "Sz rotation mismatch"
+        
+        # St and Sr change
+        assert not (n>0 and (StR[n] - Sx[n]).norm() < TOLERANCE), "StR rotation mismatch"
+        assert not (n>0 and (StU[n] - Sx[n]).norm() < TOLERANCE), "StU rotation mismatch"
+        assert not (n>0 and (SrR[n] - Sy[n]).norm() < TOLERANCE), "SrR rotation mismatch"
+        assert not (n>0 and (SrU[n] - Sy[n]).norm() < TOLERANCE), "SrU rotation mismatch"
+        
+        # Sz does not change
+        assert (SzR[n] - Sz[n]).norm() < TOLERANCE, "Sz rotation mismatch"
+        assert (SzU[n] - Sz[n]).norm() < TOLERANCE, "Sz rotation mismatch"
+        
+    return
 
     
 if __name__ == "__main__":

@@ -62,6 +62,7 @@ def statistical_weights(T: np.ndarray, E: np.ndarray, tol=TOLERANCE) -> Tuple[np
     assert np.allclose(w.sum(axis=1),1.), "error"
 
     # normalize weights
+    w = np.ones_like(w)/len(w)
     return w, Z
 
 
@@ -100,7 +101,7 @@ def statistical_weights(T: np.ndarray, E: np.ndarray, tol=TOLERANCE) -> Tuple[np
 #     # ensure normalization
 #     w /= w.sum(axis=1, keepdims=True)
 #     assert np.allclose(w.sum(axis=1), 1.0)
-
+#     # w = np.arange(len(w))
 #     return w, Z
 
 def classical_thermal_average_value(T: np.ndarray, E: np.ndarray, Obs: np.ndarray) -> np.ndarray:
@@ -108,7 +109,7 @@ def classical_thermal_average_value(T: np.ndarray, E: np.ndarray, Obs: np.ndarra
     Numerically stable classical thermal average <Obs>_T.
     """
     w, _ = statistical_weights(T=T, E=E)
-    return weights2thermal_average(w, Obs)
+    return weights2thermal_average(w=w, Obs=Obs)
 
 def correlation_function(
     T: np.ndarray, 
@@ -171,7 +172,7 @@ def quantum_thermal_average_value(T: np.ndarray, E: np.ndarray, Op: Operator, Ps
     exp_val = expectation_value(Op, Psi)  # shape (N_states,)
     
     # Classical thermal average over eigenstates
-    return classical_thermal_average_value(T, E, exp_val)
+    return classical_thermal_average_value(T=T, E=E, Obs=exp_val)
 
 def susceptibility(T: np.ndarray,H:Operator,OpA:Operator,OpB:Operator=None)->np.ndarray:
     """

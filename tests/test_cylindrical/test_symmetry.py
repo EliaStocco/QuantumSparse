@@ -52,6 +52,7 @@ def test_symmetry(N: int, S: float,method:str,interaction:str):
     assert Hcylsym.commute(Dcyl), "Hamiltonian does not commute with shift symmetry."
     assert Dcyl.commute(Hcylsym), "Hamiltonian does not commute with shift symmetry."
     Hcylsym.diagonalize_with_symmetry([Dcyl])
+    Hcylsym.count_blocks()
     check_diagonal(Hcylsym)
     compare_eigensolutions(Hcyl, Hcylsym)
     compare_eigensolutions(H, Hcylsym)

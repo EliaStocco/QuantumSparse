@@ -4,7 +4,7 @@ import numpy as np
 from quantumsparse.operator import Operator
 from quantumsparse.spin import SpinOperators
 from quantumsparse.spin.functions import magnetic_moments
-from quantumsparse.spin.interactions import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg
+from quantumsparse.spin.interactions import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg, break_all_symmetries
 
 def main():
     
@@ -36,7 +36,7 @@ def main():
         else:
             interactions[key] = factor * value
     
-    print("Creating Hamiltonian operator ... ", end="")
+    print("Creating Hamiltonian operator:")
     H = 0
     if "heisenberg" in interactions:
         print("Adding Heisenberg interaction (1nn) with couplings ", interactions["heisenberg"])
@@ -56,6 +56,9 @@ def main():
     if "biquadratic" in interactions:
         print("Adding biquadratic interaction with couplings ", interactions["biquadratic"])
         H += biquadratic_Heisenberg(*SpinOp.spins,couplings=interactions["biquadratic"])
+    if "break" in interactions:
+        print("Adding symmetry breaking term with intensity ", interactions["break"])
+        H += break_all_symmetries(SpinOp.Sz[0],intensity=interactions["break"])
     if "zeeman" in interactions:
         
         print("Computing the magnetic moments ... ", end="")
@@ -66,8 +69,11 @@ def main():
         B = interactions["zeeman"]
         H += -(Mx*B[0] + My*B[1] + Mz*B[2])
     
-    print("done.")    
     assert isinstance(H, Operator), "The Hamiltonian operator was not constructed properly."
+    
+    H.count_blocks()
+    print("\nSummary:")
+    print(repr(H))   
     
     print(f"Saving operator to file '{args.output}' ... ", end="")
     H.save(args.output)

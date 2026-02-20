@@ -38,7 +38,7 @@ class Operator(Matrix):
                 iden[i] = Matrix.identity(dim,dtype=int)  
             return iden
     
-    def change_basis(self:T,S:T,direction="forward",mem_save:bool=False)->T:
+    def change_basis(self:T,S:T,direction="forward")->T:
         """
         Changes the basis of the operator using the given symmetry operator.
 
@@ -58,43 +58,39 @@ class Operator(Matrix):
         if not S.is_diagonalized():
             raise ValueError("The operator 'S' should have already been diagonalized.")
         
-        if direction == "forward":
-            dagger = S.eigenstates.dagger()
-            out = Operator(dagger @ self @ S.eigenstates)
-            if self.is_diagonalized():
-                out.eigenstates = dagger @ self.eigenstates
-        
-        elif direction in ["backward","backward-optimized"]:
-            
-            if direction == "backward":
-                out = Operator(S.eigenstates @ self @ S.eigenstates.dagger()) 
-            elif direction == "backward-optimized":
-                # you should be knowing what you are doing
-                out = self.clone()
-            
-            if self.is_diagonalized():
-                
-                out._eigenstates = S.eigenstates @ self.eigenstates                
-                if mem_save:
-                    out.extras["memory-saving"] = True
-                    out.extras["memory-saving-A"] = S.eigenstates.clean()
-                    out.extras["memory-saving-B"] = self.eigenstates.clean()
-                
-        else:
+        if direction not in ["forward","backward"]:
             raise ValueError("'direction' can be only 'forward' or 'backward'")
         
-        # this is the same in all the cases
-        if self.is_diagonalized():
-            out.eigenvalues = copy(self.eigenvalues)
+        out = self.unitary_transformation(S.eigenstates,dagger=direction=="forward")
+        
+        # if direction == "forward":
+        #     dagger = S.eigenstates.dagger()
+        #     out = Operator(dagger @ self @ S.eigenstates)
+        #     if self.is_diagonalized():
+        #         out.eigenstates = dagger @ self.eigenstates
+        
+        # elif direction == "backward":
+            
+        #     # out = Operator(S.eigenstates @ self @ S.eigenstates.dagger()) 
+        #     out = self.unitary_transformation(S)
+        #     # if self.is_diagonalized():
+        #     #     out.eigenstates = S.eigenstates @ self.eigenstates                
+                
+        # else:
+        #     raise ValueError("'direction' can be only 'forward' or 'backward'")
+        
+        # # this is the same in all the cases
+        # if self.is_diagonalized():
+        #     out.eigenvalues = copy(self.eigenvalues)
         
         try:
             out.extras = deepcopy(self.extras)
         except:
             pass
-        return out.clean()
+        return out#.clean()
 
 
-    def diagonalize_with_symmetry(self:T,S:Union[List[T],T],test=False,mem_save=False,**argv):
+    def diagonalize_with_symmetry(self:T,S:Union[List[T],T],test=False,**argv):
         """
         Diagonalizes the operator using the given symmetry operator(s).
 
@@ -113,31 +109,30 @@ class Operator(Matrix):
         Tuple[T, T]
             A tuple containing the eigenvalues and eigenstates of the operator.
         """
-        assert mem_save == False, "memory-saving mode is bugged"
         if type(S) is not list:
-            return self.diagonalize_with_symmetry([S],test,mem_save,**argv)
+            return self.diagonalize_with_symmetry([S],test,**argv)
         if len(S) == 0 :
             return self.diagonalize(**argv)
         
-        sym = S[0]
+        sym = S[0].clean()
 
         if not self.commute(sym):
             raise ValueError('You have provided a symmetry operator which does not commute with the operator that you want to diagonalize.')
         
-        if sym.eigenvalues is None:
+        if not sym.is_diagonalized():
             raise ValueError("The symmetry operator 'S' should have already been diagonalized.")
 
         w,labels = unique_with_tolerance(sym.eigenvalues)
         
-        to_diag:T = self.change_basis(sym,direction="forward",mem_save=mem_save)
+        to_diag:T = self.change_basis(sym,direction="forward")
         for n in range(1,len(S)):
-            S[n] = S[n].change_basis(sym,direction="forward",mem_save=mem_save)
+            S[n] = S[n].change_basis(sym,direction="forward")
 
         #  `to_diag` will have the same block form of `sym`
         # and it will be usefull in `to_diag.clean_block_form` to remove 
         # sporious off diagonal elements (numerical noise)
-        to_diag.blocks = labels
-        to_diag.n_blocks = len(np.unique(labels))
+        # to_diag.blocks = labels
+        # to_diag.n_blocks = len(np.unique(labels))
     
         
         # This line removes all the off-diagonal small elements that could create numerical instabilities
@@ -161,11 +156,11 @@ class Operator(Matrix):
             # I should diagonalize the matrix at first, and then call diagonalize_with_symmetry
             # to_diag.diagonalize_with_symmetry(S[1:],use_block_form,test,**argv)
 
-        to_diag = to_diag.change_basis(sym,direction="backward-optimized",mem_save=mem_save)
+        to_diag = to_diag.change_basis(sym,direction="backward")
         
-        self.eigenvalues = to_diag.eigenvalues
-        self._eigenstates = to_diag._eigenstates
-        self.extras      = to_diag.extras
+        self.eigenvalues = to_diag.eigenvalues.copy()
+        self.eigenstates = to_diag.eigenstates.copy()
+        self.extras      = to_diag.extras.copy()
 
         if test:
             solution = self.test_eigensolution()
@@ -230,7 +225,7 @@ class Operator(Matrix):
 
         return w, submatrices
     
-    def thermal_average(self:T,temperatures:np.ndarray,operator:T=None)->np.ndarray:
+    def thermal_average(self:T,temperatures:np.ndarray,operator:T)->np.ndarray:
         """
         Calculate the thermal average of an operator at a given temperature.
 
@@ -251,20 +246,20 @@ class Operator(Matrix):
             raise ValueError("The operator has not been diagonalized yet.")        
         return quantum_thermal_average_value(T=temperatures,E=self.eigenvalues,Op=operator,Psi=self.eigenstates)
     
-    @property
-    def eigenstates(self)->Self:
-        return super().eigenstates
+    # @property
+    # def eigenstates(self)->Self:
+    #     return super().eigenstates
     
-    @eigenstates.setter
-    def eigenstates(self,value:Self):
-        # if self.extras.get("memory-saving",False) and self.eigenstates is not None:
-        #     raise ValueError("You can not modify the eigenstates of an Operator in memory-saving mode.")
-        self.extras["memory-saving"] = False
-        if "memory-saving-A" in self.extras:
-            del self.extras["memory-saving-A"]
-        if "memory-saving-B" in self.extras:
-            del self.extras["memory-saving-B"]
-        self._eigenstates = value  # call parent setter
+    # @eigenstates.setter
+    # def eigenstates(self,value:Self):
+    #     # if self.extras.get("memory-saving",False) and self.eigenstates is not None:
+    #     #     raise ValueError("You can not modify the eigenstates of an Operator in memory-saving mode.")
+    #     self.extras["memory-saving"] = False
+    #     if "memory-saving-A" in self.extras:
+    #         del self.extras["memory-saving-A"]
+    #     if "memory-saving-B" in self.extras:
+    #         del self.extras["memory-saving-B"]
+    #     self.eigenstates = value  # call parent setter
             
     def save(self: T, file: str) -> None:
         """
@@ -284,7 +279,7 @@ class Operator(Matrix):
             if "memory-saving-A" not in self.extras or "memory-saving-B" not in self.extras:
                 raise ValueError("This is a coding error.")
             to_save = self.copy()
-            to_save._eigenstates = None
+            to_save.eigenstates = None
             super(Operator,to_save).save(file)
         else:
             super().save(file)

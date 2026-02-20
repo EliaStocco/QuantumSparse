@@ -59,7 +59,7 @@ class Matrix(csr_matrix):
             self.blocks = arg1.blocks
             self.n_blocks = arg1.n_blocks
             self.eigenvalues = arg1.eigenvalues
-            self._eigenstates = arg1.eigenstates
+            self.eigenstates = arg1.eigenstates
             self.extras = arg1.extras
         else:
             if dtype is None:
@@ -68,16 +68,16 @@ class Matrix(csr_matrix):
             self.blocks: Optional[List] = blocks
             self.n_blocks: Optional[int] = n_blocks
             self.eigenvalues: Optional[np.ndarray] = eigenvalues
-            self._eigenstates: Optional[Self] = eigenstates
+            self.eigenstates: Optional[Self] = eigenstates
             self.extras: Dict[str, Any] = extras
         
-    @property
-    def eigenstates(self)->Self:
-        return self._eigenstates
+    # @property
+    # def eigenstates(self)->Self:
+    #     return self.eigenstates
     
-    @eigenstates.setter
-    def eigenstates(self,value:Self):
-        self._eigenstates = value
+    # @eigenstates.setter
+    # def eigenstates(self,value:Self):
+    #     self.eigenstates = value
     
     def clone(self:T)->T:
         """Clone a matrix
@@ -208,7 +208,7 @@ class Matrix(csr_matrix):
             b = type(A).diags(A.eigenvalues)
             w = type(self).kron(a,b)
             new.eigenvalues = w.diagonal()
-            new._eigenstates = type(self).kron(self._eigenstates,A._eigenstates)
+            new.eigenstates = type(self).kron(self.eigenstates,A.eigenstates)
         return new
     
     def iden(self:T)->T:
@@ -223,7 +223,7 @@ class Matrix(csr_matrix):
         out = self.__class__(dg)  # Construct new Matrix instance from sparse matrix
         if out.is_diagonalized():
             out.eigenvalues = np.conjugate(self.eigenvalues)
-            out._eigenstates = self._eigenstates.dagger()
+            out.eigenstates = self.eigenstates.dagger()
         return out
     
     #-----------------#
@@ -340,7 +340,7 @@ class Matrix(csr_matrix):
         Returns:
             bool: True if the matrix is diagonalized, False otherwise.
         """
-        return self.eigenvalues is not None and self._eigenstates  is not None
+        return self.eigenvalues is not None and self.eigenstates  is not None
     
     def is_diagonal(self:T,tolerance=TOLERANCE)->bool:
         test = self - self.as_diagonal()
@@ -363,28 +363,28 @@ class Matrix(csr_matrix):
     # Inspection
     #-----------------#
     
-    def adjacency(self:T)->T:
+    def adjacency(self: T) -> T:
         """
         Computes the adjacency matrix of the given matrix.
 
-        The adjacency matrix is a binary matrix where the entry at row i and column j is 1 if there is an edge between vertices i and j, and 0 otherwise.
-
-        Parameters:
-            self (Matrix): The matrix to compute the adjacency matrix of.
-
-        Returns:
-            T: The adjacency matrix of the given matrix.
+        The adjacency matrix is a binary matrix where entry (i, j)
+        is 1 if the matrix has a non-zero entry at (i, j).
         """
-        data    = self.data
-        indices = self.indices
-        indptr  = self.indptr
-        data = data.real.astype(int)
-        data.fill(1)
-        out = type(self)((data, indices, indptr),self.shape)
+
+        # Just create a ones array with same sparsity pattern
+        data = np.ones_like(self.data, dtype=int)
+
+        out = type(self)(
+            (data, self.indices, self.indptr),
+            self.shape,
+            dtype=int
+        )
+
         if self.blocks is not None:
             out.blocks = self.blocks
         if self.n_blocks is not None:
             out.n_blocks = self.n_blocks
+
         return out
 
     
@@ -626,8 +626,8 @@ class Matrix(csr_matrix):
         # this is needed to restart from a previous calculation
         if self.eigenvalues is not None:
             submatrix.eigenvalues = self.eigenvalues[mask]
-        if self._eigenstates is not None:
-            submatrix._eigenstates = self._eigenstates[mask][:, mask]
+        if self.eigenstates is not None:
+            submatrix.eigenstates = self.eigenstates[mask][:, mask]
 
         return submatrix
 
@@ -666,11 +666,13 @@ class Matrix(csr_matrix):
             
         return submatrices, permutation, np.argsort(permutation), labels
             
-    def clean_block_form(self: T, labels: np.ndarray, sort=True) -> T:
+    def clean_block_form(self: T, labels: np.ndarray) -> T:
         submatrices, permutation, reverse_permutation, _ = self.divide_into_blocks(labels)
         out = type(self)(bmat(submatrices))
-        if sort:
-            out = out[reverse_permutation][:, reverse_permutation]
+        # if sort:
+        out = out[reverse_permutation][:, reverse_permutation]
+        test = (self - out).norm()
+        assert test < TOLERANCE, "Ahia ahia"
         return out
 
     def diagonalize_each_block(self: T, labels: np.ndarray, original: bool, tol: float,
@@ -685,13 +687,13 @@ class Matrix(csr_matrix):
             max_iter (int): The maximum number of iterations. If -1, there is no maximum. Default is -1.
 
         Returns:
-            tuple: A tuple containing the eigenvalues, _eigenstates, and nearly diagonal matrix.
+            tuple: A tuple containing the eigenvalues, eigenstates, and nearly diagonal matrix.
 
         Raises:
             ValueError: If original is False.
         """
         eigenvalues = np.full(self.n_blocks, None, dtype=object)
-        _eigenstates = np.full(self.n_blocks, None, dtype=object)
+        eigenstates = np.full(self.n_blocks, None, dtype=object)
 
         if original:
             indeces = np.arange(self.shape[0])
@@ -717,31 +719,31 @@ class Matrix(csr_matrix):
             submatrix = self.mask2submatrix(mask)
 
             # diagonalize the block
-            eigenvalues[n], _eigenstates[n] = submatrix.eigensolver(original=False, tol=tol, max_iter=max_iter,**argv)
+            eigenvalues[n], eigenstates[n] = submatrix.eigensolver(original=False, tol=tol, max_iter=max_iter,**argv)
         
         if "blockeigenstates2extras" in argv and argv["blockeigenstates2extras"]:
-            self.extras["blockeigenstates"]    = deepcopy(_eigenstates)
+            self.extras["blockeigenstates"]    = deepcopy(eigenstates)
             self.extras["blockeigenvalues"]    = deepcopy(eigenvalues)
                     
         # Attention:
         # This is extremely inefficient for large matrices
         # because if you are using a symmetry operator
         # when coming back to the original basis 
-        # the _eigenstates will no longer be in block form.
-        _eigenstates = Matrix.from_blocks(_eigenstates)
-        # _eigenstates = DiagonalBlockMatrix(_eigenstates)
+        # the eigenstates will no longer be in block form.
+        eigenstates = Matrix.from_blocks(eigenstates)
+        # eigenstates = DiagonalBlockMatrix(eigenstates)
         eigenvalues = np.concatenate(eigenvalues)
         
         reverse_permutation = np.argsort(permutation)
         eigenvalues = eigenvalues[reverse_permutation]
-        _eigenstates = _eigenstates[reverse_permutation][:, reverse_permutation]
+        eigenstates = eigenstates[reverse_permutation][:, reverse_permutation]
         
         if "blockeigenstates2extras" in argv and argv["blockeigenstates2extras"]:
-            # self.extras["blockeigenstates"]    = _eigenstates
+            # self.extras["blockeigenstates"]    = eigenstates
             self.extras["permutation"]         = permutation
             self.extras["reverse_permutation"] = reverse_permutation
             
-        return eigenvalues, _eigenstates
+        return eigenvalues, eigenstates
  
     def eigensolver(self:T,original=True,tol:float=1.0e-3,max_iter:int=-1,**argv):
         """
@@ -761,7 +763,7 @@ class Matrix(csr_matrix):
         w : numpy.ndarray
             The eigenvalues of the matrix.
         f : numpy.ndarray
-            The _eigenstates of the matrix.
+            The eigenstates of the matrix.
         N : Matrix
             The nearly diagonal matrix.
         """
@@ -777,8 +779,8 @@ class Matrix(csr_matrix):
         
         if self.is_diagonal():
             self.eigenvalues = self.diagonal()
-            self._eigenstates = self.iden()
-            return self.eigenvalues, self._eigenstates
+            self.eigenstates = self.iden()
+            return self.eigenvalues, self.eigenstates
 
         n_components, labels = self.count_blocks(inplace=True)               
         if original : 
@@ -788,19 +790,22 @@ class Matrix(csr_matrix):
             raise ValueError("some error occurred")
 
         if self.n_blocks == 1 :
-            from scipy.linalg import eigh, eig
+            #from scipy.linalg import eigh, eig
+            from numpy.linalg import eigh, eig
             M = np.asarray(self.todense())
-            self.eigenvalues,self._eigenstates = eigh(M) if self.is_hermitean() else eig(M)
-
+            M = M * 1000.
+            self.eigenvalues,self.eigenstates = eigh(M) if self.is_hermitean() else eig(M)
+            self.eigenvalues = self.eigenvalues / 1000.
+            
         elif self.n_blocks > 1:
-            self.eigenvalues,self._eigenstates = self.diagonalize_each_block(labels=labels,original=True,tol=tol,max_iter=max_iter,**argv)
+            self.eigenvalues,self.eigenstates = self.diagonalize_each_block(labels=labels,original=True,tol=tol,max_iter=max_iter,**argv)
 
         else :
             raise ValueError("error: n. of block should be >= 1")
         
-        if isinstance(self._eigenstates,np.ndarray):
-            self._eigenstates = Matrix(self._eigenstates)
-        return self.eigenvalues,self._eigenstates
+        if isinstance(self.eigenstates,np.ndarray):
+            self.eigenstates = Matrix(self.eigenstates)
+        return self.eigenvalues,self.eigenstates
     
     def test_eigensolution(self:T)->T:
         """
@@ -812,12 +817,14 @@ class Matrix(csr_matrix):
             The norm of the error.
         """
         assert self.is_diagonalized(), "The matrix should be already diagonalized."
-        if isinstance(self._eigenstates,np.ndarray):
-            eigvecs_norm = np.linalg.norm(self._eigenstates,axis=0)
+        if isinstance(self.eigenstates,np.ndarray):
+            eigvecs_norm = np.linalg.norm(self.eigenstates,axis=0)
         else:
-            eigvecs_norm = np.asarray([ self._eigenstates[:,n].norm() for n in range(self._eigenstates.shape[0])])
+            eigvecs_norm = np.asarray([ self.eigenstates[:,n].norm() for n in range(self.eigenstates.shape[0])])
         assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
-        return Matrix(self @ self._eigenstates - self._eigenstates @ self.diags(self.eigenvalues))
+        from quantumsparse.tools.quantum_mechanics import expectation_value
+        assert np.allclose(expectation_value(self,self.eigenstates), self.eigenvalues), "This should not happen."
+        return Matrix(self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues))
     
     def diagonalize(self:T,restart=False,tol:float=1.0e-3,max_iter:int=-1,**argv):
         """
@@ -839,37 +846,37 @@ class Matrix(csr_matrix):
         w : numpy.ndarray
             The eigenvalues of the operator.
         f : numpy.ndarray
-            The _eigenstates of the operator.
+            The eigenstates of the operator.
         """
 
         if restart :
             self.eigenvalues = None
-            self._eigenstates = None
+            self.eigenstates = None
         
-        self.eigenvalues,self._eigenstates = self.eigensolver(original=True,tol=tol,max_iter=max_iter,**argv)
+        self.eigenvalues,self.eigenstates = self.eigensolver(original=True,tol=tol,max_iter=max_iter,**argv)
         if self.is_hermitean():
             assert np.allclose(self.eigenvalues.imag,0), "Eigenvalues should be real for a Hermitian matrix"
             self.eigenvalues = self.eigenvalues.real
         
-        self._eigenstates.n_blocks = self.n_blocks
-        self._eigenstates.blocks = self.blocks
+        self.eigenstates.n_blocks = self.n_blocks
+        self.eigenstates.blocks = self.blocks
         
-        return self.eigenvalues,self._eigenstates
+        return self.eigenvalues,self.eigenstates
 
     def sort(self:T)->T:
         """Sort the eigenvalues, and the eigenvectors acoordingly."""
         index = np.argsort(self.eigenvalues.real)
         out = self[index][:, index].copy()
         out.eigenvalues = self.eigenvalues[index]
-        out._eigenstates = self._eigenstates[index][:, index]
+        out.eigenstates = self.eigenstates[index][:, index]
         
         return out
     
     def normalize_eigenvecs(self:T):
         """Normalize inplace the eigenvectors."""
-        eigvecs_norm = self._eigenstates.column_norm()
-        self._eigenstates /= eigvecs_norm
-        eigvecs_norm = self._eigenstates.column_norm()
+        eigvecs_norm = self.eigenstates.column_norm()
+        self.eigenstates /= eigvecs_norm
+        eigvecs_norm = self.eigenstates.column_norm()
         assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
         
     def exp(self:T,alpha,method:str="qs",diag_inplace:bool=True,tol:float=1e-8,*argv,**kwargs)->T:
@@ -903,11 +910,11 @@ class Matrix(csr_matrix):
             if not new.is_diagonalized():
                 new.diagonalize(*argv,**kwargs)
         eigenvalues = func(new.eigenvalues)
-        _eigenstates:T = new._eigenstates
+        eigenstates:T = new.eigenstates
         cls = type(self)
-        new = cls(_eigenstates@cls.diags(eigenvalues)@_eigenstates.inv())
+        new = cls(eigenstates@cls.diags(eigenvalues)@eigenstates.inv())
         new.eigenvalues = eigenvalues
-        new._eigenstates = _eigenstates
+        new.eigenstates = eigenstates
         # test = new.test_eigensolution()
         # assert test.norm() < tol, "error"
         return new.clean()
@@ -923,7 +930,7 @@ class Matrix(csr_matrix):
         """
         return np.asarray([ self[:,n].norm() for n in range(self.shape[1])])
     
-    def unitary_transformation(self:T,U:T)->T:
+    def unitary_transformation(self:T,U:T,dagger:bool=False)->T:
         """
         Applies a unitary transformation to the matrix.
 
@@ -933,12 +940,18 @@ class Matrix(csr_matrix):
             The transformed matrix.
         """
         assert U.is_unitary(), "'U' should be unitary"
-        new = U @ self @ U.dagger()
+        if dagger:
+            new = U.dagger() @ self @ U
+        else:
+            new = U @ self @ U.dagger()
         new = type(self)(new)
         assert type(new) == type(self), "error: 'new' should be of the same type as 'self'"
         if self.is_diagonalized():
-            new.eigenvalues = self.eigenvalues
-            new._eigenstates = U @ self._eigenstates
+            new.eigenvalues = self.eigenvalues.copy()
+            if dagger:
+                new.eigenstates = U.dagger() @ self.eigenstates
+            else:
+                new.eigenstates = U @ self.eigenstates
         return new.clean()
         
     def clean(self: T, noise=NOISE):
@@ -954,8 +967,8 @@ class Matrix(csr_matrix):
         # Let SciPy handle removing zeros and fixing indptr
         self.eliminate_zeros()
 
-        if getattr(self, "_eigenstates", None) is not None:
-            self._eigenstates.clean()
+        if getattr(self, "eigenstates", None) is not None:
+            self.eigenstates.clean()
 
         return self
         
@@ -973,7 +986,7 @@ class Matrix(csr_matrix):
         string += "{:>14s}: {} bytes\n".format('memory (deep)', str(get_deep_size(self)))
         string += "{:>14s}: {}\n".format('type', str(self.data.dtype))
         string += "{:>14s}: {}\n".format('shape', str(self.shape))
-        string += "{:>14s}: {:6f}\n".format('sparsity [%]', 100*self.sparsity())
+        string += "{:>14s}: {:6f}\n".format('n. elements [%]', 100*self.sparsity())
         string += "{:>14s}: {}\n".format('# all', str(self.count("all")))
         string += "{:>14s}: {}\n".format('#  on', str(self.count("diag")))
         string += "{:>14s}: {}\n".format('# off', str(self.count("off")))
@@ -1000,7 +1013,7 @@ class Matrix(csr_matrix):
         
         tmp = "computed" if self.eigenvalues is not None else "unknown"
         string += "{:>14s}: {}\n".format('eigenvalues', tmp)
-        tmp = "computed" if self._eigenstates is not None else "unknown"
+        tmp = "computed" if self.eigenstates is not None else "unknown"
         string += "{:>14s}: {}\n".format('eigenstates', tmp)
 
         return string
@@ -1197,11 +1210,11 @@ def test_inplace_div():
     A = np.array([[1, 2], [3, 4]],dtype=float)
     block = Matrix(A)
     block.diagonalize()
-    eigvec = block._eigenstates.todense()
+    eigvec = block.eigenstates.todense()
     eigval = block.eigenvalues.copy()
     block /= 2.
     assert block.is_diagonalized(), "not diagonalized anymore"
-    assert np.allclose(block._eigenstates.todense(),eigvec), "changed eigenvectors"
+    assert np.allclose(block.eigenstates.todense(),eigvec), "changed eigenvectors"
     assert np.allclose(block.eigenvalues*2.,eigval), "wrong eigenvalues"
     
     
@@ -1209,11 +1222,11 @@ def test_inplace_mult():
     A = np.array([[1, 2], [3, 4]],dtype=float)
     block = Matrix(A)
     block.diagonalize()
-    eigvec = block._eigenstates.todense()
+    eigvec = block.eigenstates.todense()
     eigval = block.eigenvalues.copy()
     block *= 2.
     assert block.is_diagonalized(), "not diagonalized anymore"
-    assert np.allclose(block._eigenstates.todense(),eigvec), "changed eigenvectors"
+    assert np.allclose(block.eigenstates.todense(),eigvec), "changed eigenvectors"
     assert np.allclose(block.eigenvalues/2.,eigval), "wrong eigenvalues"
     
     

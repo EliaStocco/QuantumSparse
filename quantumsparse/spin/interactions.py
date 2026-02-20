@@ -149,6 +149,12 @@ def biquadratic_Ising(S:np.ndarray,couplings=1.0,nn=1)->Operator:
         
     return H
 
+def break_all_symmetries(Op:Operator=None,intensity:float=1.0):
+    N = len(Op)
+    diags = np.arange(1,N+1)*intensity
+    return Op.copy().diags(diags)
+    
+
 def biquadratic_Heisenberg(Sx:np.ndarray=None,Sy:np.ndarray=None,Sz:np.ndarray=None,couplings=1.0,nn=1)->Operator:
     """
     This function generates the biquadratic Heisenberg interaction Hamiltonian.

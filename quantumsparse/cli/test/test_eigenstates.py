@@ -10,7 +10,7 @@ def main():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("-is", "--input_spins"   , type=str, required=True , help="folder with the spin information (with the 'hermitean-operators' folder too).")
     parser.add_argument("-io", "--input_operator"   , type=str, required=True , help="pickle input file with the operator.")
-    parser.add_argument("-T", "--temperatures"   , type=float, nargs='+', required=False , help="list of temperatures (default: %(default)s).", default=[1.,10.,100.,1000.])
+    parser.add_argument("-T", "--temperatures"   , type=float, nargs='+', required=False , help="list of temperatures (default: %(default)s).", default=[0,1.,10.,100.,1000.])
     parser.add_argument("-o", "--output"      , type=str, required=True, help="csv output file with the results.")
     args = parser.parse_args()
     
@@ -31,7 +31,7 @@ def main():
             
         print(f"Computing thermal average of operator {i} ... ", end="")
         O = Operator.load(file)
-        res = H.thermal_average(operator=O,temperatures=T).real
+        res = H.thermal_average(operator=O,temperatures=T)
         results.append(res)
         print("done.")
 
