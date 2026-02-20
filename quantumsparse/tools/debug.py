@@ -26,7 +26,7 @@ def compare_eigensolutions(H1:Operator, H2:Operator, atol:float=1e-10)->None:
     # eigenvalues
     _H1 = H1.sort()
     _H2 = H2.sort()
-    assert np.allclose(_H1.eigenvalues, _H2.eigenvalues, atol=atol), \
+    assert np.allclose(_H1.eigenvalues,_H2.eigenvalues, atol=atol), \
         "Eigenvalues should be identical"
         
     # ------------------------- # 
@@ -45,6 +45,8 @@ def compare_eigensolutions(H1:Operator, H2:Operator, atol:float=1e-10)->None:
         test = _H2.test_eigensolution().norm() / N 
         assert test < atol, "Eigensolution of _H1 is not correct"
         
+    H1 = H1.sort()
+    H2 = H2.sort()
     hybrid = H1.copy()
     hybrid.eigenvalues = H2.eigenvalues.copy()
     hybrid.eigenstates = H2.eigenstates.copy()

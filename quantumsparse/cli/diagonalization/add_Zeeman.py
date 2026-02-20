@@ -4,7 +4,6 @@ import numpy as np
 from quantumsparse.operator import Operator
 from quantumsparse.spin import SpinOperators
 from quantumsparse.spin.functions import magnetic_moments
-from quantumsparse.spin.interactions import Heisenberg, Dzyaloshinskii_Moriya, biquadratic_Heisenberg
 
 def main():
     

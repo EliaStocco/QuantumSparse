@@ -4,11 +4,16 @@ from quantumsparse.operator import Operator, Symmetry
 from quantumsparse.tools.mathematics import roots_of_unity
 from quantumsparse.spin.shift import shift
 from quantumsparse.tools.debug import compare_eigensolutions
+from quantumsparse.spin.functions import magnetic_moments
+from quantumsparse.statistics.statistical_physics import expectation_value
 from quantumsparse.conftest import *
 
 @parametrize_N
 @parametrize_S
 @parametrize_interaction
+# @pytest.mark.parametrize("N", [4])
+# @pytest.mark.parametrize("S", [1.0, 1.5, 2.0])
+# @pytest.mark.parametrize("interaction",["Cr8-U.json"])
 def test_dm_with_vs_without_symmetry(S, N, interaction):
 
     # spin operators
@@ -31,10 +36,12 @@ def test_dm_with_vs_without_symmetry(S, N, interaction):
 
     # with symmetry
     H.diagonalize_with_symmetry(S=[D])
+    # H = H.sort()
     check_diagonal(H)
     
     # without symmetry
     Hnosym.diagonalize()
+    Hnosym = Hnosym.sort()
     check_diagonal(Hnosym)
     
     # test
@@ -51,6 +58,18 @@ def test_dm_with_vs_without_symmetry(S, N, interaction):
     H_not_diag.eigenstates = Hnosym.eigenstates.copy()
     test = H_not_diag.test_eigensolution().norm() / N 
     assert test < TOLERANCE, "Eigensolution of hybrid(2) is not correct"
+    
+    Mx, My, Mz = magnetic_moments(SpinOp.Sx, SpinOp.Sy, SpinOp.Sz)
+    
+    T = np.asarray([0.,1., 10., 100.])
+    exp_val1 = expectation_value(Mz, H.eigenstates)  # shape (N_states,)
+    exp_val2 = expectation_value(Mz, Hnosym.eigenstates)  # shape (N_states,)
+    MzH = H.thermal_average(operator=Mz, temperatures= T)
+    MzHnosym = Hnosym.thermal_average(operator=Mz, temperatures= T)
+    assert np.allclose(MzH, MzHnosym), "Thermal averages should be the same with and without symmetry."
+    
+    return
+    
 
 if __name__ == "__main__":
     pytest.main([__file__])
