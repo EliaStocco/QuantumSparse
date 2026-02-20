@@ -64,6 +64,7 @@ compute_thermal_average = "quantumsparse.cli.thermal_average.compute_thermal_ave
 get_temperatures = "quantumsparse.cli.thermal_average.get_temperatures:main"
 plot_thermal_average = "quantumsparse.cli.thermal_average.plot_thermal_average:main"
 prepare_thermal_average = "quantumsparse.cli.thermal_average.prepare_thermal_average:main"
+statistical_weights = "quantumsparse.cli.thermal_average.statistical_weights:main"
 
 # --- thermal average spins ---
 prepare_thermal_average_spins = "quantumsparse.cli.thermal_average_spins.prepare_thermal_average_spins:main"
