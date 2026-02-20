@@ -823,7 +823,8 @@ class Matrix(csr_matrix):
             eigvecs_norm = np.asarray([ self.eigenstates[:,n].norm() for n in range(self.eigenstates.shape[0])])
         assert np.allclose(eigvecs_norm,1), "Eigenstates should be normalized"
         from quantumsparse.tools.quantum_mechanics import expectation_value
-        assert np.allclose(expectation_value(self,self.eigenstates), self.eigenvalues), "This should not happen."
+        if not np.allclose(expectation_value(self,self.eigenstates), self.eigenvalues):
+            raise ValueError("This should not happen.")
         return Matrix(self @ self.eigenstates - self.eigenstates @ self.diags(self.eigenvalues))
     
     def diagonalize(self:T,restart=False,tol:float=1.0e-3,max_iter:int=-1,**argv):
@@ -865,11 +866,11 @@ class Matrix(csr_matrix):
 
     def sort(self:T)->T:
         """Sort the eigenvalues, and the eigenvectors acoordingly."""
-        index = np.argsort(self.eigenvalues.real)
-        out = self[index][:, index].copy()
-        out.eigenvalues = self.eigenvalues[index]
-        out.eigenstates = self.eigenstates[index][:, index]
-        
+        out = self.copy()
+        if out.is_diagonalized():
+            index = np.argsort(self.eigenvalues.real)
+            out.eigenvalues = self.eigenvalues[index]
+            out.eigenstates = out.eigenstates[:, index]
         return out
     
     def normalize_eigenvecs(self:T):
