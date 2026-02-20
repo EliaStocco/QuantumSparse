@@ -7,7 +7,7 @@ from functools import wraps
 from dataclasses import dataclass, field
 from scipy import sparse
 from scipy.sparse import spmatrix
-from scipy.sparse import csr_matrix, bmat
+from scipy.sparse import csr_matrix, lil_matrix, bmat
 from quantumsparse import get_dtype
 from quantumsparse.tools.bookkeeping import ImplErr, TOLERANCE, NOISE
 from quantumsparse.tools import first_larger_than_N
@@ -497,20 +497,21 @@ class Matrix(csr_matrix):
         return type(self)(self.shape,dtype=self.dtype)
     
     @classmethod
-    def one_hot(cls,dim:int,i:int,j:int,*argc,**argv)->T:
+    def one_hot(cls, dim: int, i: int, j: int, *argc, **argv) -> "Matrix":
         """
-        Creates a one-hot matrix of the same shape and with the same dtype as the original matrix.
-        
-        Parameters:
-            i (int): The row index of the one-hot element.
-            j (int): The column index of the one-hot element.
-        
-        Returns:
-            T: A new Matrix instance representing a one-hot matrix.
+        Creates a one-hot sparse matrix efficiently.
         """
-        empty = Matrix((dim,dim),*argc,**argv)
-        empty[i,j] = 1
-        return cls(empty)
+        # Step 1: create empty LIL matrix
+        temp = lil_matrix((dim, dim), dtype=argv.get("dtype") if "dtype" in argv else None)
+        
+        # Step 2: set the single one-hot element
+        temp[i, j] = 1
+        
+        # Step 3: convert to CSR
+        csr_temp = temp.tocsr()
+        
+        # Step 4: initialize the Matrix instance from the CSR data
+        return cls(csr_temp)
     
     def as_diagonal(self:T)->T:
         """

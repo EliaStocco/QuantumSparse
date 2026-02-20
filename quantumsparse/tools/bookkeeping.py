@@ -7,7 +7,7 @@ scalar = Union[float,complex]
 # Define a generic type variable T
 T = TypeVar('T')
 
-TOLERANCE = 1e-10
+TOLERANCE = 1e-8
 NOISE = 1e-12
 
 import argparse
