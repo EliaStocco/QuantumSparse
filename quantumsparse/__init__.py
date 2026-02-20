@@ -1,5 +1,8 @@
 import os
 import numpy as np
+import warnings
+# Turn **all warnings** into exceptions
+warnings.filterwarnings("error")
 
 def get_dtype():
     dtype_map = {
