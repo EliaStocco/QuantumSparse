@@ -1,5 +1,5 @@
 import pytest
-import os, json
+import json
 from quantumsparse.matrix import Matrix
 from quantumsparse.tools.bookkeeping import TOLERANCE as TOLERANCE
 from pathlib import Path
