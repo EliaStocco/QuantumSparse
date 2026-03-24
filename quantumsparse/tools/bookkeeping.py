@@ -4,6 +4,8 @@ ImplErr = ValueError("not implemented yet")
 
 scalar = Union[float,complex]
 
+float_format = "%20.12e"
+
 # Define a generic type variable T
 T = TypeVar('T')
 

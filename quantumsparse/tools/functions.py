@@ -115,3 +115,25 @@ def get_energy_levels(values,N=16):
     
     w = w*deltaE + np.min(old_values)
     return w,counts,ii
+
+def lorentzian(x:np.ndarray, x0:float, y0:float, gamma:float):
+    """
+    Lorentzian function.
+    
+    Parameters:
+    x : array-like
+        The x-values where the function is evaluated.
+    x0 : float
+        The x-value at which the Lorentzian is centered.
+    y0 : float
+        The height of the Lorentzian peak.
+    gamma : float
+        The half-width at half-maximum (HWHM) of the Lorentzian peak.
+        
+    Returns:
+    array-like
+        The Lorentzian function evaluated at each x-value.
+    """
+    out = y0 * gamma**2 / ((x - x0)**2 + gamma**2)
+    # assert np.allclose(np.max(out), y0), "y0 != max(out)"
+    return out

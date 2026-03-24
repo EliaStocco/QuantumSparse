@@ -40,6 +40,7 @@ prepare_corr_function = "quantumsparse.cli.correlation_function.prepare_corr_fun
 add_Zeeman = "quantumsparse.cli.diagonalization.add_Zeeman:main"
 construct_hamiltonian = "quantumsparse.cli.diagonalization.construct_hamiltonian:main"
 diagonalize = "quantumsparse.cli.diagonalization.diagonalize:main"
+dos = "quantumsparse.cli.diagonalization.dos:main"
 operator_summary = "quantumsparse.cli.diagonalization.operator_summary:main"
 prepare_shift = "quantumsparse.cli.diagonalization.prepare_shift:main"
 prepare_spins = "quantumsparse.cli.diagonalization.prepare_spins:main"
