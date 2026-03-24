@@ -1,7 +1,5 @@
 import argparse
 from quantumsparse.operator import Operator, Symmetry
-from quantumsparse.tools.bookkeeping import str2bool
-
 def main():
     
     description = "Diagonalize an operator."
