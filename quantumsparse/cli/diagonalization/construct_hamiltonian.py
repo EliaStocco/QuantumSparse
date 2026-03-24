@@ -30,11 +30,11 @@ def main():
         factor = interactions.pop("factor")
         print(f"Using conversion factor: {factor}.")
     
-    for key,value in interactions.items():
-        if isinstance(value, list):
-            interactions[key] = factor * np.asarray(value)
-        else:
-            interactions[key] = factor * value
+        for key,value in interactions.items():
+            if isinstance(value, list):
+                interactions[key] = factor * np.asarray(value)
+            else:
+                interactions[key] = factor * value
     
     print("Creating Hamiltonian operator:")
     H = 0
