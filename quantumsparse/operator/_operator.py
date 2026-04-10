@@ -1,7 +1,6 @@
 import numpy as np
-from copy import copy, deepcopy
+from copy import deepcopy
 from typing import TypeVar, Union, List, Type
-from typing_extensions import Self
 from quantumsparse.matrix import Matrix
 from quantumsparse.tools.mathematics import unique_with_tolerance
 
