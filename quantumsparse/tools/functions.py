@@ -1,7 +1,7 @@
 # some functions ...
 import numpy as np
 import bisect
-from typing import List
+from typing import List, Union
 import sys
 from collections import deque
 
@@ -137,3 +137,16 @@ def lorentzian(x:np.ndarray, x0:float, y0:float, gamma:float):
     out = y0 * gamma**2 / ((x - x0)**2 + gamma**2)
     # assert np.allclose(np.max(out), y0), "y0 != max(out)"
     return out
+
+def energy2dos(values:np.ndarray,n_points:int,gamma:float,xmin:float=None,xmax:float=None,normalize:bool=False)->Union[np.ndarray,np.ndarray]:
+    if xmin is None:
+        xmin = values.min()
+    if xmax is None:
+        xmax = values.max()
+    x = np.linspace(xmin,xmax,n_points,endpoint=True)
+    spectrum = np.zeros(n_points)
+    for x0 in values:
+        spectrum += lorentzian(x=x,x0=x0,y0=1,gamma=gamma)
+    if normalize:
+        spectrum /= spectrum.max()
+    return x, spectrum

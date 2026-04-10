@@ -186,6 +186,10 @@ class SpinOperators:
         for n,(x,y,z) in enumerate(zip(Sx,Sy,Sz)):
             S2[n] = x@x + y@y + z@z
         return S2
+    
+    def total_spin_square(self:T,opts=None)->Operator:
+        Mx,My,Mz = sum(self.Sx), sum(self.Sy), sum(self.Sz)
+        return Mx@Mx + My@My + Mz@Mz
 
     def empty(self):
         return self.Sx[0].empty()    
