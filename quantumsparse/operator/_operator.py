@@ -304,6 +304,10 @@ class Operator(Matrix):
             # obj.eigenstates = obj.extras.pop("memory-saving-A",None) @ obj.extras.pop("memory-saving-B",None)
             # obj.extras["memory-saving"] = False
         return cls(obj)
+    
+    def expectation_value(self,Op:'Operator')->np.ndarray:
+        from quantumsparse.tools.quantum_mechanics import expectation_value
+        return expectation_value(Op,self.eigenstates)
          
 def test_operator_save_load(tmp_path):
     """

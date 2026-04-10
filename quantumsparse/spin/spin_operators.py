@@ -35,6 +35,16 @@ class SpinOperators:
             self.Sx[n].save(folder / f"Sx_{n}.pickle")
             self.Sy[n].save(folder / f"Sy_{n}.pickle")
             self.Sz[n].save(folder / f"Sz_{n}.pickle")
+            
+        Sx = sum(self.Sx)
+        Sy = sum(self.Sy)
+        Sz = sum(self.Sz)
+        S2 = self.total_spin_square()
+        
+        Sx.save(folder / "Sx.pickle")
+        Sy.save(folder / "Sy.pickle")
+        Sz.save(folder / "Sz.pickle")
+        S2.save(folder / "S2.pickle")
 
 
     @classmethod
@@ -187,7 +197,7 @@ class SpinOperators:
             S2[n] = x@x + y@y + z@z
         return S2
     
-    def total_spin_square(self:T,opts=None)->Operator:
+    def total_spin_square(self:T)->Operator:
         Mx,My,Mz = sum(self.Sx), sum(self.Sy), sum(self.Sz)
         return Mx@Mx + My@My + Mz@Mz
 
