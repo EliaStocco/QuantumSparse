@@ -16,8 +16,7 @@ dependencies = [
     "argparse",
     "dataclasses; python_version < '3.10'",  # Built-in from Python 3.10+
     "tqdm",
-    "pathlib",
-    "imageio[ffmpeg]"
+    "pathlib"
 ]
 
 [project.optional-dependencies]
