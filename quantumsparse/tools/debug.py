@@ -11,9 +11,10 @@ def compare_eigensolutions(H1:Operator, H2:Operator, atol:float=1e-10)->None:
     assert H2.is_diagonalized(), "H2 is not diagonalized"
     
     # ------------------------- #
-    s1 = np.sort(H1.blocks)
-    s2 = np.sort(H2.blocks)
-    assert np.allclose(s1,s2), "Different number of blocks."
+    if H1.blocks is not None and H2.blocks is not None:
+        s1 = np.sort(H1.blocks)
+        s2 = np.sort(H2.blocks)
+        assert np.allclose(s1,s2), "Different number of blocks."
     
     # ------------------------- # 
     # check consistency
