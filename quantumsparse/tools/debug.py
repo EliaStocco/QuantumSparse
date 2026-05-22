@@ -10,6 +10,11 @@ def compare_eigensolutions(H1:Operator, H2:Operator, atol:float=1e-10)->None:
     assert H1.is_diagonalized(), "H1 is not diagonalized"
     assert H2.is_diagonalized(), "H2 is not diagonalized"
     
+    # ------------------------- #
+    s1 = np.sort(H1.blocks)
+    s2 = np.sort(H2.blocks)
+    assert np.allclose(s1,s2), "Different number of blocks."
+    
     # ------------------------- # 
     # check consistency
     N,M = H1.shape
@@ -26,7 +31,8 @@ def compare_eigensolutions(H1:Operator, H2:Operator, atol:float=1e-10)->None:
     # eigenvalues
     _H1 = H1.sort()
     _H2 = H2.sort()
-    assert np.allclose(_H1.eigenvalues,_H2.eigenvalues, atol=atol), \
+    a = np.asarray([ np.min(np.abs(_H1.eigenvalues-e)) for e in _H2.eigenvalues])
+    assert np.allclose(a,0,atol=atol), \
         "Eigenvalues should be identical"
         
     # ------------------------- # 

@@ -18,7 +18,7 @@ def shift_foundamental(N:int):
     assert test.norm() < 1e-8, "error"
     return T
 
-def shift(ops: SpinOperators, parallel: bool = True) -> Operator:
+def shift(ops: SpinOperators,diagonalize:bool=True) -> Operator:
     """
     Compute the shift/translation operator for a spin system.
 
@@ -49,69 +49,90 @@ def shift(ops: SpinOperators, parallel: bool = True) -> Operator:
             return (r, c)
         return None
 
-    parallel_failed = False
-    if parallel:
-        try:
-            from joblib import Parallel, delayed
-        except:
-            parallel_failed = True
-        if not parallel_failed:
-            results = Parallel(n_jobs=-1, prefer="threads")(
-                delayed(process_state)(c) for c in range(N)
-            )
-    if not parallel or parallel_failed:
-        results = [process_state(c) for c in range(N)]
+    results = [process_state(c) for c in range(N)]
 
     for result in results:
         if result is not None:
             r, c = result
             D[r, c] = 1 # this is a gauge choice, since it could be phase
-
-    return Symmetry(D)
-
-
-    D = ops.empty()
-
-
-    print(ops.degeneracies)
-    N = len(ops.degeneracies)
-
-    # D = None #ops.empty()
-    D = None #ops.empty()
-    for n in range(N): # cycle over all the sites
-        m = n+1 if n<N-1 else 0
-        deg = ops.degeneracies[n]
-        P = None # plus
-        M = None # minus
-        for i in range(deg-1): # cycle over the states
-            if i == 0 :
-                P = ops.Sp[m] 
-                M = ops.Sm[n] 
-            else:
-                P = P @ ops.Sp[m]  
-                M = M @ ops.Sm[n] 
-        # D += P @ M
-        if D is not None:
-            D = D + P @ M
-        else:
-            D = P @ M
-
-    # D.visualize()
-    w,f = D.diagonalize()
-
-    phi = 1 #2*np.pi/N
-    ew = np.exp(1.j*w*phi)
-    W = D.empty()
-    W.setdiag(ew)
-
-
+            
+    S = Symmetry(D)
     
-    
-    E = f.dagger() @ W @ f # np.linalg.inv(f.todense())
+    if diagonalize:
 
-    # E[ E < 0.5 ] = 0
-    # E[ E > 0.5 ] = 1
-    E.visualize(False)
+        # --- 1. build permutation ---
+        perm = np.full(N, -1, dtype=int)
 
-    return E
+        for c in range(N):
+            right = basis[c]
+            left = np.roll(right, 1)
+            r = basis_lookup.get(tuple(left))
+            if r is not None:
+                perm[c] = r
 
+        # --- 2. cycle decomposition ---
+        visited = np.zeros(N, dtype=bool)
+
+        eigenvalues = []
+        eigenstates = []
+
+        for start in range(N):
+            if visited[start]:
+                continue
+
+            # build orbit
+            cycle = []
+            x = start
+
+            while not visited[x]:
+                visited[x] = True
+                cycle.append(x)
+                x = perm[x]
+
+            L = len(cycle)
+
+            # --- 3. Fourier diagonalization on cycle ---
+            for k in range(L):
+                vec = np.zeros(N, dtype=complex)
+
+                phase = np.exp(-2j * np.pi * k * np.arange(L) / L)
+
+                for n, state in enumerate(cycle):
+                    vec[state] = phase[n] / np.sqrt(L)
+
+                eigenstates.append(vec)
+                eigenvalues.append(np.exp(2j * np.pi * k / L))
+
+        eigenvalues = np.array(eigenvalues)
+        eigenstates = np.array(eigenstates).T   # columns = eigenvectors
+        
+        S.eigenvalues = eigenvalues
+        S.eigenstates = Operator(eigenstates)
+        
+        # --- BLOCK STRUCTURE (replacement for count_blocks) ---
+
+        visited = np.zeros(N, dtype=bool)
+        labels = np.empty(N, dtype=int)
+
+        block_id = 0
+
+        for i in range(N):
+            if visited[i]:
+                continue
+
+            x = i
+
+            while not visited[x]:
+                visited[x] = True
+                labels[x] = block_id
+                x = perm[x]
+
+            block_id += 1
+
+        n_blocks = block_id
+
+        # store exactly like count_blocks(inplace=True)
+        S.blocks = labels
+        S.n_blocks = n_blocks
+
+    return S
