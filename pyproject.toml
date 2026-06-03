@@ -16,8 +16,7 @@ dependencies = [
     "argparse",
     "dataclasses; python_version < '3.10'",  # Built-in from Python 3.10+
     "tqdm",
-    "pathlib",
-    "imageio[ffmpeg]"
+    "pathlib"
 ]
 
 [project.optional-dependencies]
@@ -38,7 +37,10 @@ expectation_value_eigenstates = "quantumsparse.cli.analysis.expectation_value_ei
 
 # --- correlation function ---
 compute_corr_function = "quantumsparse.cli.correlation_function.compute_corr_function:main"
+compute_corr_function_spins = "quantumsparse.cli.correlation_function.compute_corr_function_spins:main"
+plot_corr_function_spin = "quantumsparse.cli.correlation_function.plot_corr_function_spin:main"
 prepare_corr_function = "quantumsparse.cli.correlation_function.prepare_corr_function:main"
+prepare_corr_function_spins = "quantumsparse.cli.correlation_function.prepare_corr_function_spins:main"
 
 # --- diagonalization ---
 add_Zeeman = "quantumsparse.cli.diagonalization.add_Zeeman:main"
