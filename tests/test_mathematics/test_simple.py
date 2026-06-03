@@ -58,7 +58,7 @@ def test_simple(S, N, interaction):
     C2 = np.zeros_like(T)
     for n, t in enumerate(T):
         delta = H - average[n] * H.iden()
-        C2[n] = H.thermal_average(np.asarray([t]), delta @ delta)
+        C2[n] = H.thermal_average(np.asarray([t]), delta @ delta)[0]
         
     assert np.allclose(C,C2)
         
