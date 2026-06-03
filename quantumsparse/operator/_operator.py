@@ -308,6 +308,94 @@ class Operator(Matrix):
     def expectation_value(self,Op:'Operator')->np.ndarray:
         from quantumsparse.tools.quantum_mechanics import expectation_value
         return expectation_value(Op,self.eigenstates)
+    
+    
+    def spectral_function(self, other_operator:"Operator", broadening=0.05,
+                          energy_grid=None, a_grid=None):
+        """
+        Compute the spectral weight rho(E,a) between this operator
+        (assumed to be the Hamiltonian) and another operator A.
+
+        Parameters
+        ----------
+        other_operator : Operator
+            Operator A whose distribution is resolved in energy.
+
+        broadening : float
+            Gaussian width used for smoothing delta peaks.
+
+        energy_grid : ndarray or None
+            Energy axis. If None, generated automatically.
+
+        a_grid : ndarray or None
+            Axis for eigenvalues of A. If None, generated automatically.
+
+        Returns
+        -------
+        Egrid : ndarray
+        Agrid : ndarray
+        rho : ndarray
+            2D spectral density rho(E,a)
+        """
+
+        # Hamiltonian spectrum
+        E = np.asarray(self.eigenvalues)
+        psi = np.asarray(self.eigenstates)
+
+        # A spectrum
+        Avals = np.asarray(other_operator.eigenvalues)
+
+        # Convention:
+        # eigenstates[:,n] = nth eigenvector
+        # shape = (dim, nstates)
+
+        # Projection coefficients:
+        # c_{alpha,n} = <a_alpha|psi_n>
+        coeffs:Operator = other_operator.eigenstates.dagger() @ self.eigenstates
+
+        # Spectral weights
+        weights = np.abs(coeffs.todense())**2
+
+        # Automatic grids
+        if energy_grid is None:
+            emin, emax = E.min(), E.max()
+            pad = 0.1 * (emax - emin + 1e-12)
+            energy_grid = np.linspace(emin - pad,
+                                      emax + pad,
+                                      400)
+
+        if a_grid is None:
+            amin, amax = Avals.min(), Avals.max()
+            pad = 0.1 * (amax - amin + 1e-12)
+            a_grid = np.linspace(amin - pad,
+                                 amax + pad,
+                                 400)
+
+        rho = np.zeros((len(energy_grid), len(a_grid)),
+                       dtype=float)
+
+        # Build smooth spectral function
+        for n, En in enumerate(E):
+
+            gE = np.exp(-(energy_grid - En)**2 /
+                        (2 * broadening**2))
+
+            for alpha, aval in enumerate(Avals):
+
+                w = weights[alpha, n]
+
+                if w < 1e-14:
+                    continue
+
+                gA = np.exp(-(a_grid - aval)**2 /
+                            (2 * broadening**2))
+
+                rho += w * np.outer(gE, gA)
+
+        # Normalize Gaussian prefactor
+        rho /= (2 * np.pi * broadening**2)
+
+        return energy_grid, a_grid, rho
          
 def test_operator_save_load(tmp_path):
     """

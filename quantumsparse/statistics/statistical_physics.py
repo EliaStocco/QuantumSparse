@@ -65,6 +65,23 @@ def statistical_weights(T: np.ndarray, E: np.ndarray, tol=TOLERANCE) -> Tuple[np
     # w = np.ones_like(w)/len(w)
     return w, Z
 
+def classical_thermal_average_value(T: np.ndarray, E: np.ndarray, Obs: np.ndarray) -> np.ndarray:
+    """
+    Numerically stable classical thermal average <Obs>_T.
+    """
+    w, _ = statistical_weights(T=T, E=E)
+    return weights2thermal_average(w=w, Obs=Obs)
+
+
+def quantum_thermal_average_value(T: np.ndarray, E: np.ndarray, Op: Operator, Psi: Matrix) -> np.ndarray:
+    """
+    Quantum thermal average <Op>_T using eigenbasis Psi.
+    """
+    # Diagonal elements in eigenbasis
+    exp_val = expectation_value(Op, Psi)  # shape (N_states,)
+    
+    # Classical thermal average over eigenstates
+    return classical_thermal_average_value(T=T, E=E, Obs=exp_val)
 
 # def statistical_weights(T: np.ndarray, E: np.ndarray, tol=TOLERANCE):
 #     """
@@ -104,12 +121,7 @@ def statistical_weights(T: np.ndarray, E: np.ndarray, tol=TOLERANCE) -> Tuple[np
 #     # w = np.arange(len(w))
 #     return w, Z
 
-def classical_thermal_average_value(T: np.ndarray, E: np.ndarray, Obs: np.ndarray) -> np.ndarray:
-    """
-    Numerically stable classical thermal average <Obs>_T.
-    """
-    w, _ = statistical_weights(T=T, E=E)
-    return weights2thermal_average(w=w, Obs=Obs)
+
 
 def correlation_function(
     T: np.ndarray, 
@@ -163,16 +175,6 @@ def correlation_function(
         corr = np.maximum(corr.real, 0.0)
 
     return corr
-
-def quantum_thermal_average_value(T: np.ndarray, E: np.ndarray, Op: Operator, Psi: Matrix) -> np.ndarray:
-    """
-    Quantum thermal average <Op>_T using eigenbasis Psi.
-    """
-    # Diagonal elements in eigenbasis
-    exp_val = expectation_value(Op, Psi)  # shape (N_states,)
-    
-    # Classical thermal average over eigenstates
-    return classical_thermal_average_value(T=T, E=E, Obs=exp_val)
 
 def susceptibility(T: np.ndarray,H:Operator,OpA:Operator,OpB:Operator=None)->np.ndarray:
     """
