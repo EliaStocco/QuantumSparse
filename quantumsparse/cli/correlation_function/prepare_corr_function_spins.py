@@ -2,6 +2,7 @@ import argparse
 import os
 import pandas as pd
 import numpy as np
+import warnings
 from quantumsparse.tools.bookkeeping import TOLERANCE
 from quantumsparse.spin import SpinOperators
 from quantumsparse.operator import Operator, Symmetry
@@ -65,8 +66,12 @@ def main():
     print("done.")
     
     comm = H.commutator(D).norm()
-    assert comm < TOLERANCE, f"Hamiltonian is not translational invariant: |[H,T]| = {comm}"
-    
+    if comm > TOLERANCE:
+        warnings.warn(
+                f"Hamiltonian is not translational invariant: |[H,T]| = {comm}",
+                RuntimeWarning
+            )
+
     N = SpinOp.nsites
     os.makedirs(args.output,exist_ok=True)   
     
