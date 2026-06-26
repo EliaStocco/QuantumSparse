@@ -3,6 +3,7 @@ from copy import deepcopy
 from typing import TypeVar, Union, List, Type
 from quantumsparse.matrix import Matrix
 from quantumsparse.tools.mathematics import unique_with_tolerance
+from quantumsparse.tools import energy_levels
 
 T = TypeVar('T', bound='Operator')
 
@@ -169,17 +170,12 @@ class Operator(Matrix):
         return self.eigenvalues, self.eigenstates
         # return copy(self.eigenvalues),copy(self.eigenstates)
     
-    def energy_levels(self,tol=1e-8,return_indices=False):
+    def energy_levels(self,**kwargs):
         
         if self.eigenvalues is None:
             raise ValueError("The operator has not been diagonalized yet.")
         
-        w,index = unique_with_tolerance(self.eigenvalues,tol)
-
-        if return_indices:
-            return w,np.asarray([ (index==a).sum() for a in range(len(w)) ]), index
-        else:
-            return w,np.asarray([ (index==a).sum() for a in range(len(w)) ])
+        return energy_levels(self.eigenvalues,**kwargs)
     
     def band_diagram(self:T,sym:T):
         

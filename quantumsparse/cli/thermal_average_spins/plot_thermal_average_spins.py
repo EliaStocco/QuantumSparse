@@ -31,7 +31,7 @@ def main():
     files = [file for file in os.listdir(args.input)]
     Nsites = int(len(files) / 3)
     
-    fig, axes = plt.subplots(Nsites, 3, figsize=(1.5 * Nsites, 4.5),
+    fig, axes = plt.subplots(Nsites, 3, figsize=(4.5,1.5 * Nsites),
                              sharey=True, sharex=True)
         
     for site in range(Nsites):

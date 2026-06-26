@@ -150,3 +150,66 @@ def energy2dos(values:np.ndarray,n_points:int,gamma:float,xmin:float=None,xmax:f
     if normalize:
         spectrum /= spectrum.max()
     return x, spectrum
+
+def energy_levels(eigenvalues:np.ndarray,tol: float=1e-8,return_indices:bool=False):
+    from quantumsparse.tools.mathematics import unique_with_tolerance
+    w,index = unique_with_tolerance(eigenvalues,tol)
+
+    if return_indices:
+        return w,np.asarray([ (index==a).sum() for a in range(len(w)) ]), index
+    else:
+        return w,np.asarray([ (index==a).sum() for a in range(len(w)) ])
+    
+def resolved_energy_levels(data: np.ndarray,
+                           tols: dict):
+    """
+    Parameters
+    ----------
+    data : (N,M) ndarray
+        Columns correspond to the keys in `tols`.
+        The first column must be the energy.
+    tols : dict
+        Example:
+        {
+            "energy": 1e-8,
+            "exp_value_1": 1e-8,
+            "exp_value_2": 1e-8,
+        }
+
+    Returns
+    -------
+    rows : list of dict
+        Ready for pd.DataFrame(rows).
+    """
+    from quantumsparse.tools.mathematics import unique_with_tolerance
+
+    columns = list(tols.keys())
+    tolerances = list(tols.values())
+
+    rows = []
+
+    def recurse(indices, level, values):
+        # finished: one resolved subspace
+        if level == len(columns):
+            rows.append({
+                **values,
+                "degeneracy": len(indices)
+            })
+            return
+
+        col = level
+        vals = data[indices, col]
+
+        unique, group = unique_with_tolerance(vals, tolerances[level])
+
+        for i, u in enumerate(unique):
+            recurse(
+                indices[group == i],
+                level + 1,
+                {**values, columns[level]: u}
+            )
+
+    recurse(np.arange(len(data)), 0, {})
+
+    return rows
+    

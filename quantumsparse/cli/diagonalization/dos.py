@@ -54,7 +54,7 @@ def main():
         
         fig, ax = plt.subplots()
         ax.plot(energy,spectrum)
-        ax.set_yscale("symlog")
+        # ax.set_yscale("symlog")
         ax.set_xlabel("energy [eV]")
         ax.set_ylabel("DOS")
         

@@ -45,6 +45,7 @@ add_Zeeman = "quantumsparse.cli.diagonalization.add_Zeeman:main"
 construct_hamiltonian = "quantumsparse.cli.diagonalization.construct_hamiltonian:main"
 diagonalize = "quantumsparse.cli.diagonalization.diagonalize:main"
 dos = "quantumsparse.cli.diagonalization.dos:main"
+energy_levels = "quantumsparse.cli.diagonalization.energy_levels:main"
 operator_summary = "quantumsparse.cli.diagonalization.operator_summary:main"
 prepare_shift = "quantumsparse.cli.diagonalization.prepare_shift:main"
 prepare_spins = "quantumsparse.cli.diagonalization.prepare_spins:main"
@@ -72,5 +73,8 @@ prepare_thermal_average = "quantumsparse.cli.thermal_average.prepare_thermal_ave
 statistical_weights = "quantumsparse.cli.thermal_average.statistical_weights:main"
 
 # --- thermal average spins ---
+compute_thermal_average_spins = "quantumsparse.cli.thermal_average_spins.compute_thermal_average_spins:main"
+plot_thermal_average_spins = "quantumsparse.cli.thermal_average_spins.plot_thermal_average_spins:main"
 prepare_thermal_average_spins = "quantumsparse.cli.thermal_average_spins.prepare_thermal_average_spins:main"
+spin_resolved_energy_levels = "quantumsparse.cli.thermal_average_spins.spin_resolved_energy_levels:main"
 
