@@ -81,4 +81,4 @@ if __name__ == "__main__":
     
 def test_script():
     from quantumsparse.conftest import template_test_script
-    template_test_script("eigenstate_overview")
+    template_test_script("eigenstates_overview")
